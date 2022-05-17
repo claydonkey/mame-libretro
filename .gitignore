@@ -41,6 +41,7 @@
 !/mame.doxygen
 !/*.md
 !/*.bdf
+!/*.sh
 !/LICENSE
 /.idea
 .vscode
