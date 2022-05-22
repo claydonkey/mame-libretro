@@ -15,9 +15,14 @@ files {
 	MAME_DIR .. "src/devices/video/sprite.h",
 	MAME_DIR .. "src/devices/video/vector.cpp",
 	MAME_DIR .. "src/devices/video/vector.h",
-	MAME_DIR .. "src/devices/video/alt_vector.cpp",
-	MAME_DIR .. "src/devices/video/alt_vector.h",    
-	MAME_DIR .. "src/devices/video/alt_vector_usb_dvg.cpp",
+	MAME_DIR .. "src/devices/video/vector_override.cpp",
+	MAME_DIR .. "src/devices/video/vector_override.h",  
+	MAME_DIR .. "src/devices/video/vector_device_t.cpp",
+	MAME_DIR .. "src/devices/video/vector_device_t.h",    
+	MAME_DIR .. "src/devices/video/vector_usb_dvg.cpp",
+	MAME_DIR .. "src/devices/video/vector_usb_dvg.h",
+	MAME_DIR .. "src/devices/video/vector_v_st.cpp",
+	MAME_DIR .. "src/devices/video/vector_v_st.h",
 }
 includedirs {
     ext_includedir("rapidjson")

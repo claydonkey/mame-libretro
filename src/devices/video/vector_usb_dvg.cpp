@@ -1,17 +1,17 @@
 // license:BSD-3-Clause
-// copyright-holders:Mario Montminy
+// copyright-holders:Mario Montminy, Anthony Campbell
 #include "emu.h"
 #include "emuopts.h"
 #include "rendutil.h"
-#include "video/alt_vector.h"
-
+#include "video/vector_device_t.h"
+#include "video/vector_usb_dvg.h"
 #include <rapidjson/document.h>
 
 #define VERBOSE 0
 #include "logmacro.h"
 
 
-DEFINE_DEVICE_TYPE(ALT_VECTOR_USB_DVG, alt_vector_device_usb_dvg, "alt_vector_usb_dvg", "ALT_VECTOR_USB_DVG")
+DEFINE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg, "vector_usb_dvg", "VECTOR_USB_DVG")
 
 // 0-15
 #define DVG_RELEASE             0
@@ -44,7 +44,7 @@ DEFINE_DEVICE_TYPE(ALT_VECTOR_USB_DVG, alt_vector_device_usb_dvg, "alt_vector_us
 #define GAME_ARMORA              1
 #define GAME_WARRIOR             2
 
-const alt_vector_device_usb_dvg::game_info_t alt_vector_device_usb_dvg::s_games[] ={
+const vector_device_usb_dvg::game_info_t vector_device_usb_dvg::s_games[] ={
     {"armora",   false, GAME_ARMORA,  true},
     {"armorap",  false, GAME_ARMORA,  true},
     {"armorar",  false, GAME_ARMORA,  true},
@@ -85,7 +85,7 @@ using namespace rapidjson;
 //
 // Function to compute region code for a point(x, y) 
 //
-uint32_t alt_vector_device_usb_dvg::compute_code(int32_t x, int32_t y)
+uint32_t vector_device_usb_dvg::compute_code(int32_t x, int32_t y)
 {
     // initialized as being inside 
     uint32_t code = 0;
@@ -106,7 +106,7 @@ uint32_t alt_vector_device_usb_dvg::compute_code(int32_t x, int32_t y)
 // Cohen-Sutherland line-clipping algorithm.  Some games (such as starwars)
 // generate coordinates outside the view window, so we need to clip them here.
 //
-uint32_t alt_vector_device_usb_dvg::line_clip(int32_t *pX1, int32_t *pY1, int32_t *pX2, int32_t *pY2)
+uint32_t vector_device_usb_dvg::line_clip(int32_t *pX1, int32_t *pY1, int32_t *pX2, int32_t *pY2)
 {
     int32_t x = 0, y = 0, x1, y1, x2, y2;
     uint32_t accept, code1, code2, code_out;
@@ -194,7 +194,7 @@ uint32_t alt_vector_device_usb_dvg::line_clip(int32_t *pX1, int32_t *pY1, int32_
     *pY2 = y2;
     return accept;
 }
-void alt_vector_device_usb_dvg::cmd_vec_postproc()
+void vector_device_usb_dvg::cmd_vec_postproc()
 {
     int32_t  last_x = 0;
     int32_t  last_y = 0;
@@ -246,7 +246,7 @@ void alt_vector_device_usb_dvg::cmd_vec_postproc()
 //
 // Reset the indexes to the vector list and command buffer.
 //
-void alt_vector_device_usb_dvg::cmd_reset(uint32_t initial)
+void vector_device_usb_dvg::cmd_reset(uint32_t initial)
 {
     m_in_vec_last_x  = 0;
     m_in_vec_last_y  = 0;
@@ -261,7 +261,7 @@ void alt_vector_device_usb_dvg::cmd_reset(uint32_t initial)
 // Add a vector to the input vector list.  We don't keep
 // blank vectors.  They will be added later.
 //
-void alt_vector_device_usb_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
+void vector_device_usb_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
 {
     uint32_t   blank, add;
     int32_t    x0, y0, x1, y1;
@@ -312,7 +312,7 @@ void alt_vector_device_usb_dvg::cmd_add_vec(int x, int y, rgb_t color, bool scre
 // As an optimization there is a blank flag in the XY coord which
 // allows USB-DVG to blank the beam without updating the RGB color DACs.
 //
-void alt_vector_device_usb_dvg::cmd_add_point(int x, int y, rgb_t color)
+void vector_device_usb_dvg::cmd_add_point(int x, int y, rgb_t color)
 {
     uint32_t   cmd;
     uint32_t   color_change;
@@ -352,7 +352,7 @@ void alt_vector_device_usb_dvg::cmd_add_point(int x, int y, rgb_t color)
 //
 //  Convert the MAME-supplied coordinates to USB-DVG-compatible coordinates.
 // 
-void  alt_vector_device_usb_dvg::transform_and_scale_coords(int *px, int *py)
+void  vector_device_usb_dvg::transform_and_scale_coords(int *px, int *py)
 {
     float x, y;
 
@@ -368,7 +368,7 @@ void  alt_vector_device_usb_dvg::transform_and_scale_coords(int *px, int *py)
 //
 // Determine game type, orientation
 //
-int alt_vector_device_usb_dvg::determine_game_settings()
+int vector_device_usb_dvg::determine_game_settings()
 {
     uint32_t i;
     Document d;
@@ -417,7 +417,7 @@ int alt_vector_device_usb_dvg::determine_game_settings()
 //
 //  Compute a final transformation to coordinates (flip and swap).
 //
-void alt_vector_device_usb_dvg::transform_final(int *px, int *py)
+void vector_device_usb_dvg::transform_final(int *px, int *py)
 {
     int x, y, tmp;
     x = *px;
@@ -469,7 +469,7 @@ void alt_vector_device_usb_dvg::transform_final(int *px, int *py)
 //
 //  Read responses from USB-DVG via the virtual serial port over USB.
 // 
-int alt_vector_device_usb_dvg::serial_read(uint8_t *buf, int size)
+int vector_device_usb_dvg::serial_read(uint8_t *buf, int size)
 {
     int result = size;
     uint32_t read = 0;
@@ -485,7 +485,7 @@ int alt_vector_device_usb_dvg::serial_read(uint8_t *buf, int size)
 //
 //  Send commands to USB-DVG via the virtual serial port over USB.
 // 
-int alt_vector_device_usb_dvg::serial_write(uint8_t *buf, int size)
+int vector_device_usb_dvg::serial_write(uint8_t *buf, int size)
 {
     int result = -1;
     uint32_t written = 0, chunk, total;
@@ -511,7 +511,7 @@ END:
 //
 // Preprocess and send commands to USB-DVG over the virtual serial port.
 //
-int alt_vector_device_usb_dvg::serial_send()
+int vector_device_usb_dvg::serial_send()
 {
     int      result = -1;
     uint32_t cmd;
@@ -538,8 +538,8 @@ int alt_vector_device_usb_dvg::serial_send()
     m_last_r = m_last_g = m_last_b = -1;
     return result;
 }
-alt_vector_device_usb_dvg::alt_vector_device_usb_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-: alt_vector_device_base(mconfig, ALT_VECTOR_USB_DVG, tag, owner, clock),
+vector_device_usb_dvg::vector_device_usb_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+: vector_device_t(mconfig, VECTOR_USB_DVG, tag, owner, clock),
 m_exclude_blank_vectors(false),
 m_xmin(0),
 m_xmax(0),
@@ -569,7 +569,7 @@ m_mirror(false),
 m_json_length(0)
 {
 }
-void alt_vector_device_usb_dvg::device_start()
+void vector_device_usb_dvg::device_start()
 {
 
     m_mirror = machine().config().options().vector_screen_mirror();
@@ -581,7 +581,7 @@ void alt_vector_device_usb_dvg::device_start()
 
     if (filerr)
     {
-        fprintf(stderr, "alt_vector_device_usb_dvg: error: osd_file::open failed: %s on port %s\n" , const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_port());
+        fprintf(stderr, "vector_device_usb_dvg: error: osd_file::open failed: %s on port %s\n" , const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_port());
         ::exit(1);
     }
 
@@ -603,7 +603,7 @@ void alt_vector_device_usb_dvg::device_start()
     m_clipx_max = DVG_RES_MAX;
     m_clipy_max = DVG_RES_MAX;
 }
-void alt_vector_device_usb_dvg::device_stop()
+void vector_device_usb_dvg::device_stop()
 {
     uint32_t cmd;
 
@@ -615,10 +615,10 @@ void alt_vector_device_usb_dvg::device_stop()
     m_cmd_buf[m_cmd_offs++] = cmd >>  0;
     serial_write(&m_cmd_buf[0], m_cmd_offs);
 }
-void alt_vector_device_usb_dvg::device_reset()
+void vector_device_usb_dvg::device_reset()
 {
 }
-int alt_vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
+void vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
 {
     intensity = std::clamp(intensity, 0, 255);
     if (intensity == 0)
@@ -634,9 +634,9 @@ int alt_vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensit
         color.set_b(cscale * color.b());
     }
     cmd_add_vec(x, y, color, true);
-    return m_mirror ? 0 : 1;
+ //   return m_mirror ? 0 : 1;
 }
-void alt_vector_device_usb_dvg::get_dvg_info()
+void vector_device_usb_dvg::get_dvg_info()
 {
     uint32_t cmd;
     uint8_t  cmd_buf[4];
@@ -666,7 +666,7 @@ void alt_vector_device_usb_dvg::get_dvg_info()
 END:
     ;
 }
-int alt_vector_device_usb_dvg::update(screen_device &screen, const rectangle &cliprect)
+uint32_t vector_device_usb_dvg::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
     rgb_t color = rgb_t(108, 108, 108);
     rgb_t black = rgb_t(0, 0, 0);

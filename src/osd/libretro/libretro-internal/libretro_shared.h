@@ -54,7 +54,8 @@ enum
 enum
 {
    RETRO_SETTING_VECTOR_DRIVER_SCREEN,
-   RETRO_SETTING_VECTOR_DRIVER_USB_DVG
+   RETRO_SETTING_VECTOR_DRIVER_USB_DVG,
+   RETRO_SETTING_VECTOR_DRIVER_V_ST
 };
 extern int NEWGAME_FROM_OSD;
 
@@ -88,6 +89,13 @@ extern char mame_4way_map[256];
 extern int  vector_driver;
 extern char vector_port[20];
 extern bool vector_screen_mirror;
+extern float vector_scale;
+extern float vector_scale_x;
+extern float vector_scale_y;
+extern float vector_offset_x;
+extern float vector_offset_y;
+extern int  vector_rotate;
+extern int  vector_bright;
 extern bool res_43;
 extern bool video_changed;
 
