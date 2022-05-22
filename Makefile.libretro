@@ -2,7 +2,7 @@
 VERBOSE ?= 1
 RETRO ?= 1
 NOWERROR ?= 1
-CONFIG ?= libretro"
+CONFIG ?= libretro
 NO_USE_MIDI ?= 1
 NO_USE_PORTAUDIO ?= 1
 PTR64 ?= 1

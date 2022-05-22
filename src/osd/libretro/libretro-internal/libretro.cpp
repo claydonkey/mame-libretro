@@ -72,7 +72,7 @@ static char option_vector_bright[50];
 const char *retro_save_directory;
 const char *retro_system_directory;
 const char *retro_content_directory;
-
+static bool vector_device_found = false;
 retro_log_printf_t log_cb;
 retro_variable  option_vector_port_var;
 static bool draw_this_frame;
@@ -288,7 +288,7 @@ retro_variable retro_get_available_usb_dvg_devices()
     }
 
     sprintf(optports, "Vector driver serial port; %s",ports);
-
+    vector_device_found = vector_device_found || dvg_found;
     if (dvg_found)
     {
         optports[strlen(optports)-1] = '\0';
@@ -297,10 +297,11 @@ retro_variable retro_get_available_usb_dvg_devices()
         return  { option_vector_port, optports};
     } else
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) 
-        return  {option_vector_port, "Vector driver serial port; \\\\.\\COM1"};
+    //    return  {option_vector_port, "Vector driver serial port; \\\\.\\COM1"};
 #else        
-        return  {option_vector_port, "Vector driver serial port; /dev/ttyACM0"};
+    //    return  {option_vector_port, "Vector driver serial port; /dev/ttyACM0"};
 #endif
+return  {option_vector_port, "Vector driver serial port; N/A"};
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -359,7 +360,7 @@ void retro_set_environment(retro_environment_t cb)
     { option_mame_paths, "MAME INI Paths; disabled|enabled" },
 
     { option_mame_4way, "MAME Joystick 4-way simulation; disabled|4way|strict|qbert"},
-    { option_vector_driver, "Vector driver (USB DVG); screen|usb_dvg"},
+    { option_vector_driver, "Vector driver (DVG); screen|usb_dvg|v_st"},
         option_vector_port_var,
     { option_vector_screen_mirror, "Enable Vector driver screen mirror; disabled|enabled"},
     { option_vector_scale, "Vector scale; 1.0|1.5|2.0"},
@@ -434,9 +435,7 @@ static void check_variables(void)
 
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
     {
-        if (!strcmp(var.value, "screen"))
-            vector_driver = RETRO_SETTING_VECTOR_DRIVER_SCREEN ;
-        else
+       if (!strcmp(var.value, "usb_dvg") && vector_device_found)
         {
             vector_driver = RETRO_SETTING_VECTOR_DRIVER_USB_DVG;
             var.key   = option_vector_port;
@@ -446,8 +445,24 @@ static void check_variables(void)
             {
                 sprintf(vector_port, "%s", var.value);
             }
-            NEWGAME_FROM_OSD=1;
-            video_changed=true;
+            //NEWGAME_FROM_OSD=1;
+            //video_changed=true;
+        }
+         else if (!strcmp(var.value, "v_st") && vector_device_found)
+        {
+            vector_driver = RETRO_SETTING_VECTOR_DRIVER_V_ST;
+            var.key   = option_vector_port;
+            var.value = NULL;
+
+            if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            {
+                sprintf(vector_port, "%s", var.value);
+            }
+            //NEWGAME_FROM_OSD=1;
+            //video_changed=true;
+        } else
+        {
+           vector_driver = RETRO_SETTING_VECTOR_DRIVER_SCREEN ;
         }
     }
 
