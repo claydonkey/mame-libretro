@@ -66,6 +66,9 @@ static char option_res[50];
 static char option_vector_driver[50];
 static char option_vector_port[50];
 static char option_vector_screen_mirror[50];
+static char option_vector_scale[50];
+static char option_vector_rotate[50];
+static char option_vector_bright[50];
 const char *retro_save_directory;
 const char *retro_system_directory;
 const char *retro_content_directory;
@@ -227,11 +230,9 @@ void get_dvg_info()
 
     result = serial_read(&m_json_buf[0], m_json_length);
 
-    if (result < 0) return ;
-
-
-
+    return ;
 }
+
 retro_variable retro_get_available_usb_dvg_devices()
 {
     char optports[256];
@@ -262,7 +263,7 @@ retro_variable retro_get_available_usb_dvg_devices()
         {
             if (log_cb)
             {
-                //         log_cb(RETRO_LOG_INFO, "[USB_DVG] Device not present: Port: %s Val: %d Error: %s\n", &port, errcond.value(), const_cast<char*>(errcond.message().c_str()));
+                log_cb(RETRO_LOG_INFO, "[USB_DVG] Device not present: Port: %s Val: %d Error: %s\n", &port, errcond.value(), const_cast<char*>(errcond.message().c_str()));
             }
         } else
         {
@@ -301,6 +302,7 @@ retro_variable retro_get_available_usb_dvg_devices()
         return  {option_vector_port, "Vector driver serial port; /dev/ttyACM0"};
 #endif
 }
+
 void retro_set_environment(retro_environment_t cb)
 {
    sprintf(option_mouse, "%s_%s", core, "mouse_enable");
@@ -324,9 +326,12 @@ void retro_set_environment(retro_environment_t cb)
    sprintf(option_buttons_profiles, "%s_%s", core, "buttons_profiles");
    sprintf(option_mame_paths, "%s_%s", core, "mame_paths_enable");
    sprintf(option_mame_4way, "%s_%s", core, "mame_4way_enable");
-    sprintf(option_vector_driver, "%s_%s", core, "vector_driver");
-    sprintf(option_vector_port, "%s_%s", core, "vector_port");
-    sprintf(option_vector_screen_mirror, "%s_%s", core, "vector_mirror");
+   sprintf(option_vector_driver, "%s_%s", core, "vector_driver");
+   sprintf(option_vector_port, "%s_%s", core, "vector_port");
+   sprintf(option_vector_screen_mirror, "%s_%s", core, "vector_mirror");
+   sprintf(option_vector_scale, "%s_%s", core, "vector_scale");
+   sprintf(option_vector_rotate, "%s_%s", core, "vector_rotate");
+   sprintf(option_vector_bright, "%s_%s", core, "vector_bright");
 
 
     option_vector_port_var = retro_get_available_usb_dvg_devices();
@@ -354,9 +359,12 @@ void retro_set_environment(retro_environment_t cb)
     { option_mame_paths, "MAME INI Paths; disabled|enabled" },
 
     { option_mame_4way, "MAME Joystick 4-way simulation; disabled|4way|strict|qbert"},
-        { option_vector_driver, "Vector driver (USB DVG); screen|usb_dvg"},
+    { option_vector_driver, "Vector driver (USB DVG); screen|usb_dvg"},
         option_vector_port_var,
-        { option_vector_screen_mirror, "Enable Vector driver screen mirror; disabled|enabled"},
+    { option_vector_screen_mirror, "Enable Vector driver screen mirror; disabled|enabled"},
+    { option_vector_scale, "Vector scale; 1.0|1.5|2.0"},
+    { option_vector_rotate, "Vector rotate; 0|1|2|3"},
+    { option_vector_bright, "Vector brightness; 100|110|120|130|140|150|160|170|180|190|200"},
     { NULL, NULL },
    };
 

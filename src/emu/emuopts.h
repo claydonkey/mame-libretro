@@ -117,6 +117,9 @@
 #define OPTION_VECTOR_DRIVER        "vector_driver"
 #define OPTION_VECTOR_PORT          "vector_port"
 #define OPTION_VECTOR_SCREEN_MIRROR "vector_screen_mirror"
+#define OPTION_VECTOR_ROTATE        "vector_rotate"
+#define OPTION_VECTOR_BRIGHT        "vector_bright"
+#define OPTION_VECTOR_SCALE         "vector_scale"
 
 // core sound options
 #define OPTION_SAMPLERATE           "samplerate"
@@ -405,7 +408,9 @@ public:
 	const char *vector_driver() const { return value(OPTION_VECTOR_DRIVER); }
 	const char *vector_port() const { return value(OPTION_VECTOR_PORT); }
 	bool  vector_screen_mirror() const { return bool_value(OPTION_VECTOR_SCREEN_MIRROR); }
-
+	float vector_scale() const { return float_value(OPTION_VECTOR_SCALE); }
+	int vector_rotate() const { return int_value(OPTION_VECTOR_ROTATE); }
+	int vector_bright() const { return int_value(OPTION_VECTOR_BRIGHT); }
 
 	// core sound options
 	int sample_rate() const { return int_value(OPTION_SAMPLERATE); }

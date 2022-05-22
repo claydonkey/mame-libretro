@@ -138,7 +138,10 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_VECTOR_DRIVER,                              "screen",    OPTION_STRING,     "set vector driver (screen | usb_dvg)" },
 	{ OPTION_VECTOR_PORT,                              "\\\\.\\COM4",  OPTION_STRING,     "set vector serial port"},
 	{ OPTION_VECTOR_SCREEN_MIRROR,                        "0",        OPTION_BOOLEAN,    "enable screen mirror"},
-
+	{ OPTION_VECTOR_SCALE,                               "1.0",       OPTION_FLOAT,      "set vector serial output scale" },
+	{ OPTION_VECTOR_ROTATE,                              "0",         OPTION_INTEGER,    "set vector serial rotation (0,1,2,3)" },
+	{ OPTION_VECTOR_BRIGHT,                              "200",       OPTION_INTEGER,    "set vector threshold for bright lines (0-255)" },
+	
 	// sound options
 	{ nullptr,                                           nullptr,     OPTION_HEADER,     "CORE SOUND OPTIONS" },
 	{ OPTION_SAMPLERATE ";sr(1000-1000000)",             "48000",     OPTION_INTEGER,    "set sound output sample rate" },

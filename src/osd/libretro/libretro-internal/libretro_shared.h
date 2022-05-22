@@ -88,6 +88,9 @@ extern char mame_4way_map[256];
 extern int  vector_driver;
 extern char vector_port[20];
 extern bool vector_screen_mirror;
+extern float vector_scale;
+extern int  vector_rotate;
+extern int  vector_bright;
 extern bool res_43;
 extern bool video_changed;
 
