@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include "video/alt_vector.h"
+#include "video/vector_base.h"
+#include "video/vector_usb_dvg.h"
+#include "video/vector_v_st.h"
 
 class vector_device;
 
@@ -53,7 +55,7 @@ private:
 		int intensity;
 	};
 
-    optional_device<alt_vector_device_base> m_alt_vector;
+    optional_device<vector_device_base> m_vector_base;
         
 	std::unique_ptr<point[]> m_vector_list;
 	int m_vector_index;

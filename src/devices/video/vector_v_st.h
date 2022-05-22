@@ -1,37 +1,13 @@
 // license:BSD-3-Clause
-// copyright-holders:Mario Montminy
-#ifndef MAME_VIDEO_ALT_VECTOR_H
-#define MAME_VIDEO_ALT_VECTOR_H
-
+// copyright-holders:Mario Montminy, Anthony Campbell
+#ifndef VECTOR_V_ST_H
+#define VECTOR_V_ST_H
 #pragma once
 
 #include "osdcore.h"
 #include "screen.h"
-
-#define ALT_VECTOR_DRIVER_INSTANTIATE(driver_name, config, opt_device) \
-									if (!strcmp(driver_name, "usb_dvg")) \
-									{ \
-										ALT_VECTOR_USB_DVG(config, opt_device); \
-									}
-
-//**************************************************************************
-//  TYPE DEFINITIONS
-//**************************************************************************
-
-class alt_vector_device_base : public device_t
-{
-public:
-	// construction/destruction
-	alt_vector_device_base(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock = 0);
-
-	// 0 = continue, 1 = handled (skip)
-	virtual int add_point(int x, int y, rgb_t color, int intensity);
-	virtual int update(screen_device &screen, const rectangle &cliprect);
-
-};
-
-
-class alt_vector_device_usb_dvg : public alt_vector_device_base
+#include "vector_base.h"
+class vector_device_v_st : public vector_device_base
 {
 public:
 	typedef struct vec_t {
@@ -51,7 +27,7 @@ public:
 		bool         bw_game;
 	} game_info_t;
 
-	alt_vector_device_usb_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
+	vector_device_v_st(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
 	// device-level overrides
 	virtual void device_start() override;
@@ -114,6 +90,5 @@ private:
 
 
 // device type definition
-DECLARE_DEVICE_TYPE(ALT_VECTOR_USB_DVG, alt_vector_device_usb_dvg)
-
-#endif // MAME_VIDEO_ALT_VECTOR_H
+DECLARE_DEVICE_TYPE(VECTOR_V_ST, vector_device_v_st)
+#endif //VECTOR_V_ST_H

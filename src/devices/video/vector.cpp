@@ -42,7 +42,7 @@
  **************************************************************************** */
 
 #include "emu.h"
-#include "vector.h"
+#include "video/vector.h"
 
 #include "emuopts.h"
 #include "render.h"
@@ -75,7 +75,7 @@ DEFINE_DEVICE_TYPE(VECTOR, vector_device, "vector_device", "VECTOR")
 vector_device::vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, VECTOR, tag, owner, clock),
 		device_video_interface(mconfig, *this),
-        m_alt_vector(*this, "alt_vector"),      
+        m_vector_base(*this, "vector_base"),      
 		m_vector_list(nullptr),
 		m_min_intensity(255),
 		m_max_intensity(0)
@@ -84,7 +84,7 @@ vector_device::vector_device(const machine_config &mconfig, const char *tag, dev
 void vector_device::device_add_mconfig(machine_config &config)
 {
 	const char *driver_str = config.options().vector_driver();
-	ALT_VECTOR_DRIVER_INSTANTIATE(driver_str, config, m_alt_vector);
+	VECTOR_DRIVER_INSTANTIATE(driver_str, config, m_vector_base);
 }
 
 void vector_device::device_start()
@@ -113,9 +113,9 @@ float vector_device::normalized_sigmoid(float n, float k)
  */
 void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 {
-        if (m_alt_vector.found()) 
+        if (m_vector_base.found()) 
         {
-                if (m_alt_vector->add_point(x, y, color, intensity)) 
+                if (m_vector_base->add_point(x, y, color, intensity)) 
                 {
                 return;
                 }
@@ -163,9 +163,9 @@ void vector_device::clear_list(void)
 
 uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
-	if (m_alt_vector.found()) 
+	if (m_vector_base.found()) 
 	{
-		m_alt_vector->update(screen, cliprect);
+		m_vector_base->update(screen, cliprect);
 		if (m_vector_index == 0) 
         {
 			return 0;
