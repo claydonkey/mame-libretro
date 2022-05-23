@@ -2,7 +2,7 @@
 VERBOSE ?= 1
 RETRO ?= 1
 NOWERROR ?= 1
-CONFIG ?= libretro
+CONFIG ?= libretro"
 NO_USE_MIDI ?= 1
 NO_USE_PORTAUDIO ?= 1
 PTR64 ?= 1
@@ -11,7 +11,7 @@ TARGET ?= mame
 # TARGETOS ?= linux
 PYTHON_EXECUTABLE ?= python3
 REGENIE ?= 1
-GITHUB_REPO ?= https://github.com/libretro/mame/
+GITHUB_REPO ?= https://github.com/claydonkey/mame-libretro/
 DEBUG ?= 0
 
 ###########################################################################

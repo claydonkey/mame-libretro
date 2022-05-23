@@ -38,7 +38,7 @@ char slash = '/';
 
 
 /* Args for experimental_commandline */
-static char ARGUV[32][1024];
+static char ARGUV[48][1024];
 static unsigned char ARGUC=0;
 
 /* state */
@@ -64,7 +64,7 @@ bool buttons_profiles = true;
 bool mame_paths_enable = false;
 bool mame_4way_enable = false;
 char mame_4way_map[256];
-int  vector_driver = RETRO_SETTING_VECTOR_DRIVER_USB_DVG;
+int  vector_driver = RETRO_SETTING_VECTOR_DRIVER_SCREEN;
 char vector_port[20];
 bool vector_screen_mirror;
 float vector_scale;
@@ -72,6 +72,8 @@ float vector_scale_x;
 float vector_scale_y;
 float vector_offset_x;
 float vector_offset_y;
+int vector_rotate;
+int vector_bright;
 bool res_43 = false;
 bool video_changed = false;
 // emu flags
@@ -91,8 +93,8 @@ static char MsystemName[512];
 static char gameName[1024];
 
 // args for cores
-static char XARGV[64][1024];
-static const char* xargv_cmd[64];
+static char XARGV[96][1024];
+static const char* xargv_cmd[96];
 int PARAMCOUNT=0;
 
 
@@ -352,7 +354,7 @@ static void Set_Default_Option(void)
    if(mouse_enable)
    {
       Add_Option("-mouse");
-	  Add_Option("-multimouse");
+	   Add_Option("-multimouse");
    }
    else
       Add_Option("-nomouse");
@@ -363,8 +365,11 @@ static void Set_Default_Option(void)
       Add_Option("-nolightgun");
 
    Add_Option("-vector_driver");
-   
-   if ( vector_driver == RETRO_SETTING_VECTOR_DRIVER_USB_DVG )
+   if ( vector_driver == RETRO_SETTING_VECTOR_DRIVER_SCREEN)
+   {
+      Add_Option("screen");
+   }
+   else if ( vector_driver == RETRO_SETTING_VECTOR_DRIVER_USB_DVG )
    {    
       Add_Option("usb_dvg");
       sprintf(tmp_vec, "%s", vector_port);
@@ -407,10 +412,6 @@ static void Set_Default_Option(void)
          sprintf(tmp_vec, "%5.2f", vector_offset_y);
          Add_Option((char*)tmp_vec);       
       }
-   }
-   else 
-   {
-      Add_Option("screen");
    }
 
    if(write_config_enable)
@@ -486,7 +487,7 @@ static int execute_game(char* path)
 
    screenRot = 0;
 
-   for (i = 0; i < 64; i++)
+   for (i = 0; i < 96; i++)
       xargv_cmd[i]=NULL;
 
    Extract_AllPath(path);
@@ -689,7 +690,7 @@ if (log_cb)log_cb(RETRO_LOG_INFO,"ARGUV[0]=%s\n",ARGUV[0]);
 
    screenRot = 0;
 
-   for (i = 0; i < 64; i++)
+   for (i = 0; i < 96; i++)
       xargv_cmd[i]=NULL;
 
    /* split the path to directory and the name without the zip extension */

@@ -61,7 +61,6 @@ static char option_saves[50];
 static char option_buttons_profiles[50];
 static char option_mame_paths[50];
 static char option_mame_4way[50];
-
 static char option_res[50];
 static char option_vector_driver[50];
 static char option_vector_port[50];
@@ -102,6 +101,7 @@ retro_environment_t environ_cb = NULL;
 #define MAX_JSON_SIZE            512
 #define FLAG_CMD_GET_DVG_INFO   0x1
 #define FLAG_CMD                0x5
+
 static void extract_basename(char *buf, const char *path, size_t size)
 {
    char *ext = NULL;
@@ -372,7 +372,7 @@ void retro_set_environment(retro_environment_t cb)
     { option_vector_scale_x, "Vector scale x; 1.0|1.5|2.0"},
     { option_vector_scale_y, "Vector scale y; 1.0|1.5|2.0"},
     { option_vector_offset_x, "Vector offset x; 512|1024|2048"},
-    { option_vector_offset_x, "Vector offset y; 512|1024|2048"},
+    { option_vector_offset_y, "Vector offset y; 512|1024|2048"},
     { option_vector_rotate, "Vector rotate; 0|1|2|3"},
     { option_vector_bright, "Vector brightness; 100|110|120|130|140|150|160|170|180|190|200"},
     { NULL, NULL },
