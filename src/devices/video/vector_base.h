@@ -13,10 +13,10 @@
 									{ \
 										VECTOR_USB_DVG(config, opt_device); \
 									} \
-									else if (!strcmp(driver_name, "usb_v_st")) \
+									else if (!strcmp(driver_name, "v_st")) \
 									{ \
 										VECTOR_V_ST(config, opt_device); \
-									} \
+									} 
 
 //**************************************************************************
 //  TYPE DEFINITIONS

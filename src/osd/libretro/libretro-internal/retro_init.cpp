@@ -67,6 +67,11 @@ char mame_4way_map[256];
 int  vector_driver = RETRO_SETTING_VECTOR_DRIVER_USB_DVG;
 char vector_port[20];
 bool vector_screen_mirror;
+float vector_scale;
+float vector_scale_x;
+float vector_scale_y;
+float vector_offset_x;
+float vector_offset_y;
 bool res_43 = false;
 bool video_changed = false;
 // emu flags
@@ -323,7 +328,7 @@ static void Add_Option(const char* option)
 static void Set_Default_Option(void)
 {
    /* some hardcoded default options. */
-
+   char tmp_vec[20];
    Add_Option(core);
 
    if(throttle_enable)
@@ -359,16 +364,48 @@ static void Set_Default_Option(void)
 
    Add_Option("-vector_driver");
    
-   if ( vector_driver != RETRO_SETTING_VECTOR_DRIVER_SCREEN )
+   if ( vector_driver == RETRO_SETTING_VECTOR_DRIVER_USB_DVG )
    {    
-      char tmp[20];
       Add_Option("usb_dvg");
-      sprintf(tmp, "%s", vector_port);
+      sprintf(tmp_vec, "%s", vector_port);
       Add_Option("-vector_port");
-      Add_Option((char*)(tmp));
+      Add_Option((char*)tmp_vec);
     
       if(vector_screen_mirror) {
          Add_Option("-vector_screen_mirror");    
+      }
+   }
+   else if ( vector_driver == RETRO_SETTING_VECTOR_DRIVER_V_ST )
+   {    
+      Add_Option("v_st");
+      sprintf(tmp_vec, "%s", vector_port);
+      Add_Option("-vector_port");
+      Add_Option((char*)tmp_vec);
+    
+      if(vector_scale) {
+         Add_Option("-vector_scale");  
+         sprintf(tmp_vec, "%5.2f", vector_scale);
+         Add_Option((char*)tmp_vec);       
+      }
+      if(vector_scale_x) {
+         Add_Option("-vector_scale_x");  
+         sprintf(tmp_vec, "%5.2f", vector_scale_x);
+         Add_Option((char*)tmp_vec);   
+      }
+      if(vector_scale_y) {
+         Add_Option("-vector_scale_y");  
+         sprintf(tmp_vec, "%5.2f", vector_scale_y);
+         Add_Option((char*)tmp_vec);   
+      }
+      if(vector_offset_x) {
+         Add_Option("-vector_offset_x");  
+         sprintf(tmp_vec, "%5.2f", vector_offset_x);
+         Add_Option((char*)tmp_vec);   
+      }
+      if(vector_offset_y) {
+         Add_Option("-vector_offset_y");  
+         sprintf(tmp_vec, "%5.2f", vector_offset_y);
+         Add_Option((char*)tmp_vec);       
       }
    }
    else 

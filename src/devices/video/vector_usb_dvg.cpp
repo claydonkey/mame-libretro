@@ -11,7 +11,7 @@
 #include "logmacro.h"
 
 
-DEFINE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg, "vector_usb_dvg", "ALT_VECTOR_USB_DVG")
+DEFINE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg, "vector_usb_dvg", "VECTOR_USB_DVG")
 
 // 0-15
 #define DVG_RELEASE             0
@@ -581,7 +581,7 @@ void vector_device_usb_dvg::device_start()
 
     if (filerr)
     {
-        fprintf(stderr, "alt_vector_device_usb_dvg: error: osd_file::open failed: %s on port %s\n" , const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_port());
+        fprintf(stderr, "vector_device_usb_dvg: error: osd_file::open failed: %s on port %s\n" , const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_port());
         ::exit(1);
     }
 

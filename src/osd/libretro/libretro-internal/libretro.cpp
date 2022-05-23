@@ -67,6 +67,10 @@ static char option_vector_driver[50];
 static char option_vector_port[50];
 static char option_vector_screen_mirror[50];
 static char option_vector_scale[50];
+static char option_vector_scale_x[50];
+static char option_vector_scale_y[50];
+static char option_vector_offset_x[50];
+static char option_vector_offset_y[50];
 static char option_vector_rotate[50];
 static char option_vector_bright[50];
 const char *retro_save_directory;
@@ -74,7 +78,7 @@ const char *retro_system_directory;
 const char *retro_content_directory;
 static bool vector_device_found = false;
 retro_log_printf_t log_cb;
-retro_variable  option_vector_port_var;
+retro_variable  vector_port_retro_variable;
 static bool draw_this_frame;
 static int cpu_overclock = 100;
 
@@ -233,7 +237,7 @@ void get_dvg_info()
     return ;
 }
 
-retro_variable retro_get_available_usb_dvg_devices()
+retro_variable retro_get_available_vector_devices()
 {
     char optports[256];
     char ports[150];
@@ -255,21 +259,17 @@ retro_variable retro_get_available_usb_dvg_devices()
 #endif
 
         if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[USB_DVG] Checking for Device on Port:  %s\n",(char *) port);
+            log_cb(RETRO_LOG_INFO, "[USB_DVG] Checking for Device on Port: %s\n",(char *) port);
 
         uint64_t size =0;
         std::error_condition errcond = osd_file::open((char *) port, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_serial, size);
         if (errcond.value() == 2) //Bug in os_file::open. error_condition reports an available port as Error: 13:Permission denied ...
         {
-            if (log_cb)
-            {
-                log_cb(RETRO_LOG_INFO, "[USB_DVG] Device not present: Port: %s Val: %d Error: %s\n", &port, errcond.value(), const_cast<char*>(errcond.message().c_str()));
-            }
+            if (log_cb) 
+             log_cb(RETRO_LOG_INFO, "[USB_DVG] Device not present on Port: %s\n", &port, errcond.value());
+            
         } else
         {
-            if (log_cb)
-                log_cb(RETRO_LOG_INFO, "[USB_DVG] Port Found:  %s\n",(char *) port);
-
             sprintf (ports,"%s|", (char *) port);
             get_dvg_info();
 
@@ -289,7 +289,7 @@ retro_variable retro_get_available_usb_dvg_devices()
 
     sprintf(optports, "Vector driver serial port; %s",ports);
     vector_device_found = vector_device_found || dvg_found;
-    if (dvg_found)
+    if (vector_device_found)
     {
         optports[strlen(optports)-1] = '\0';
         if (log_cb)
@@ -297,11 +297,11 @@ retro_variable retro_get_available_usb_dvg_devices()
         return  { option_vector_port, optports};
     } else
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) 
-    //    return  {option_vector_port, "Vector driver serial port; \\\\.\\COM1"};
+        return  {option_vector_port, "Vector driver serial port; \\\\.\\COM1"};
 #else        
-    //    return  {option_vector_port, "Vector driver serial port; /dev/ttyACM0"};
+        return  {option_vector_port, "Vector driver serial port; /dev/ttyACM0"};
 #endif
-return  {option_vector_port, "Vector driver serial port; N/A"};
+
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -331,11 +331,16 @@ void retro_set_environment(retro_environment_t cb)
    sprintf(option_vector_port, "%s_%s", core, "vector_port");
    sprintf(option_vector_screen_mirror, "%s_%s", core, "vector_mirror");
    sprintf(option_vector_scale, "%s_%s", core, "vector_scale");
+   sprintf(option_vector_scale_x, "%s_%s", core, "vector_scale_x");
+   sprintf(option_vector_scale_y, "%s_%s", core, "vector_scale_y");
+   sprintf(option_vector_offset_x, "%s_%s", core, "vector_offset_x");
+   sprintf(option_vector_offset_y, "%s_%s", core, "vector_offset_y");
    sprintf(option_vector_rotate, "%s_%s", core, "vector_rotate");
    sprintf(option_vector_bright, "%s_%s", core, "vector_bright");
 
 
-    option_vector_port_var = retro_get_available_usb_dvg_devices();
+  vector_port_retro_variable = retro_get_available_vector_devices();
+
    static const struct retro_variable vars[] = {
     { option_read_config, "Read configuration; disabled|enabled" },
     { option_write_config, "Write configuration; disabled|enabled" },
@@ -361,9 +366,13 @@ void retro_set_environment(retro_environment_t cb)
 
     { option_mame_4way, "MAME Joystick 4-way simulation; disabled|4way|strict|qbert"},
     { option_vector_driver, "Vector driver (DVG); screen|usb_dvg|v_st"},
-        option_vector_port_var,
+      vector_port_retro_variable,
     { option_vector_screen_mirror, "Enable Vector driver screen mirror; disabled|enabled"},
     { option_vector_scale, "Vector scale; 1.0|1.5|2.0"},
+    { option_vector_scale_x, "Vector scale x; 1.0|1.5|2.0"},
+    { option_vector_scale_y, "Vector scale y; 1.0|1.5|2.0"},
+    { option_vector_offset_x, "Vector offset x; 512|1024|2048"},
+    { option_vector_offset_x, "Vector offset y; 512|1024|2048"},
     { option_vector_rotate, "Vector rotate; 0|1|2|3"},
     { option_vector_bright, "Vector brightness; 100|110|120|130|140|150|160|170|180|190|200"},
     { NULL, NULL },
@@ -437,6 +446,9 @@ static void check_variables(void)
     {
        if (!strcmp(var.value, "usb_dvg") && vector_device_found)
         {
+            if (log_cb)
+            log_cb(RETRO_LOG_INFO, "Found usb_dvg.\n");
+
             vector_driver = RETRO_SETTING_VECTOR_DRIVER_USB_DVG;
             var.key   = option_vector_port;
             var.value = NULL;
@@ -450,6 +462,10 @@ static void check_variables(void)
         }
          else if (!strcmp(var.value, "v_st") && vector_device_found)
         {
+
+            if (log_cb)
+            log_cb(RETRO_LOG_INFO, "Found v_st.\n");
+
             vector_driver = RETRO_SETTING_VECTOR_DRIVER_V_ST;
             var.key   = option_vector_port;
             var.value = NULL;
@@ -457,6 +473,46 @@ static void check_variables(void)
             if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
             {
                 sprintf(vector_port, "%s", var.value);
+            }
+
+            var.key   = option_vector_scale;
+            var.value = NULL;
+
+            if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            {
+                vector_scale = atof(var.value);
+            }
+
+            var.key   = option_vector_scale_x;
+            var.value = NULL;
+
+            if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            {
+                 vector_scale_x = atof(var.value);
+            }
+
+            var.key   = option_vector_scale_y;
+            var.value = NULL;
+
+            if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            {
+                 vector_scale_y = atof(var.value);
+            }
+
+            var.key   = option_vector_offset_x;
+            var.value = NULL;
+
+            if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            {
+                 vector_offset_x = atof(var.value);
+            }
+
+            var.key   = option_vector_offset_y;
+            var.value = NULL;
+
+            if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            {
+                 vector_offset_y = atof(var.value);
             }
             //NEWGAME_FROM_OSD=1;
             //video_changed=true;
