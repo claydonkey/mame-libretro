@@ -48,7 +48,6 @@
 #include "render.h"
 #include "screen.h"
 
-
 #define VECTOR_WIDTH_DENOM 512
 
 // 20000 is needed for mhavoc (see MT 06668) 10000 is enough for other games
@@ -60,7 +59,7 @@ float vector_options::s_beam_width_max = 0.0f;
 float vector_options::s_beam_dot_size = 0.0f;
 float vector_options::s_beam_intensity_weight = 0.0f;
 
-void vector_options::init(emu_options& options)
+void vector_options::init(emu_options &options)
 {
 	s_beam_width_min = options.beam_width_min();
 	s_beam_width_max = options.beam_width_max();
@@ -74,16 +73,15 @@ DEFINE_DEVICE_TYPE(VECTOR, vector_device, "vector_device", "VECTOR")
 
 vector_device::vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, VECTOR, tag, owner, clock),
-		device_video_interface(mconfig, *this),
-        m_vector_base(*this, "vector_base"),      
-		m_vector_list(nullptr),
-		m_min_intensity(255),
-		m_max_intensity(0)
+	  device_video_interface(mconfig, *this),
+	  m_vector_base(*this, "vector_base"),
+	  m_vector_list(nullptr),
+	  m_min_intensity(255),
+	  m_max_intensity(0)
 {
 }
 void vector_device::device_add_mconfig(machine_config &config)
 {
-	
 	VECTOR_DRIVER_INSTANTIATE(config.options().vector_driver(), config, m_vector_base);
 }
 
@@ -106,20 +104,20 @@ float vector_device::normalized_sigmoid(float n, float k)
 	return (n - n * k) / (k - fabs(n) * 2.0f * k + 1.0f);
 }
 
-
 /*
  * Adds a line end point to the vertices list. The vector processor emulation
  * needs to call this.
  */
 void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 {
-        if (m_vector_base.found()) 
-        {
-                if (m_vector_base->add_point(x, y, color, intensity)) 
-                {
-                return;
-                }
-        }
+	if (m_vector_base.found())
+	{
+		if (m_vector_base->add_point(x, y, color, intensity))
+		{
+			return;
+		}
+	}
+
 	point *newpoint;
 
 	intensity = std::clamp(intensity, 0, 255);
@@ -150,7 +148,6 @@ void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 	}
 }
 
-
 /*
  * The vector CPU creates a new display list. We save the old display list,
  * but only once per refresh.
@@ -160,18 +157,17 @@ void vector_device::clear_list(void)
 	m_vector_index = 0;
 }
 
-
 uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
-	if (m_vector_base.found()) 
+	if (m_vector_base.found())
 	{
 		m_vector_base->update(screen, cliprect);
-		if (m_vector_index == 0) 
-        {
+		if (m_vector_index == 0)
+		{
 			return 0;
 		}
 	}
-        
+
 	uint32_t flags = PRIMFLAG_ANTIALIAS(1) | PRIMFLAG_BLENDMODE(BLENDMODE_ADD) | PRIMFLAG_VECTOR(1);
 	const rectangle &visarea = screen.visible_area();
 	float xscale = 1.0f / (65536 * visarea.width());
@@ -186,7 +182,7 @@ uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 	curpoint = m_vector_list.get();
 
 	screen.container().empty();
-	screen.container().add_rect(0.0f, 0.0f, 1.0f, 1.0f, rgb_t(0xff,0x00,0x00,0x00), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_VECTORBUF(1));
+	screen.container().add_rect(0.0f, 0.0f, 1.0f, 1.0f, rgb_t(0xff, 0x00, 0x00, 0x00), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_VECTORBUF(1));
 
 	for (int i = 0; i < m_vector_index; i++)
 	{
@@ -197,8 +193,8 @@ uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 
 		// check for static intensity
 		float beam_width = m_min_intensity == m_max_intensity
-			? vector_options::s_beam_width_min
-			: vector_options::s_beam_width_min + intensity_weight * (vector_options::s_beam_width_max - vector_options::s_beam_width_min);
+							   ? vector_options::s_beam_width_min
+							   : vector_options::s_beam_width_min + intensity_weight * (vector_options::s_beam_width_max - vector_options::s_beam_width_min);
 
 		// normalize width
 		beam_width *= 1.0f / (float)VECTOR_WIDTH_DENOM;
@@ -219,6 +215,7 @@ uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 				beam_width,
 				(curpoint->intensity << 24) | (curpoint->col & 0xffffff),
 				flags);
+			serial_draw_line(coords.x0, coords.y0, coords.x1, coords.y1, curpoint->intensity);
 		}
 
 		lastx = curpoint->x;

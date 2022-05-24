@@ -15,7 +15,7 @@ class vector_options
 {
 public:
 	friend class vector_device;
-
+ 
 	static float s_flicker;
 	static float s_beam_width_min;
 	static float s_beam_width_max;
@@ -23,24 +23,27 @@ public:
 	static float s_beam_intensity_weight;
 
 protected:
-	static void init(emu_options& options);
+	static void init(emu_options &options);
 };
 
 class vector_device : public device_t, public device_video_interface
 {
 public:
-	template <typename T> static constexpr rgb_t color111(T c) { return rgb_t(pal1bit(c >> 2), pal1bit(c >> 1), pal1bit(c >> 0)); }
-	template <typename T> static constexpr rgb_t color222(T c) { return rgb_t(pal2bit(c >> 4), pal2bit(c >> 2), pal2bit(c >> 0)); }
-	template <typename T> static constexpr rgb_t color444(T c) { return rgb_t(pal4bit(c >> 8), pal4bit(c >> 4), pal4bit(c >> 0)); }
+	template <typename T>
+	static constexpr rgb_t color111(T c) { return rgb_t(pal1bit(c >> 2), pal1bit(c >> 1), pal1bit(c >> 0)); }
+	template <typename T>
+	static constexpr rgb_t color222(T c) { return rgb_t(pal2bit(c >> 4), pal2bit(c >> 2), pal2bit(c >> 0)); }
+	template <typename T>
+	static constexpr rgb_t color444(T c) { return rgb_t(pal4bit(c >> 8), pal4bit(c >> 4), pal4bit(c >> 0)); }
 
 	// construction/destruction
 	vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
+	virtual void serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity);
+	virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+	virtual void clear_list();
 
-	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	void clear_list();
-
-	void add_point(int x, int y, rgb_t color, int intensity);
-    virtual void device_add_mconfig(machine_config &config) override;
+	virtual void add_point(int x, int y, rgb_t color, int intensity);
+	virtual void device_add_mconfig(machine_config &config) override;
 	// device-level overrides
 	virtual void device_start() override;
 
@@ -48,15 +51,16 @@ private:
 	/* The vertices are buffered here */
 	struct point
 	{
-		point() : x(0), y(0), col(0), intensity(0) { }
+		point() : x(0), y(0), col(0), intensity(0) {}
 
-		int x; int y;
+		int x;
+		int y;
 		rgb_t col;
 		int intensity;
 	};
 
-    optional_device<vector_device_base> m_vector_base;
-        
+	optional_device<vector_device_base> m_vector_base;
+
 	std::unique_ptr<point[]> m_vector_list;
 	int m_vector_index;
 	int m_min_intensity;

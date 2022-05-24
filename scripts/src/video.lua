@@ -15,6 +15,8 @@ files {
 	MAME_DIR .. "src/devices/video/sprite.h",
 	MAME_DIR .. "src/devices/video/vector.cpp",
 	MAME_DIR .. "src/devices/video/vector.h",
+	MAME_DIR .. "src/devices/video/vector_override.cpp",
+	MAME_DIR .. "src/devices/video/vector_override.h",  
 	MAME_DIR .. "src/devices/video/vector_base.cpp",
 	MAME_DIR .. "src/devices/video/vector_base.h",    
 	MAME_DIR .. "src/devices/video/vector_usb_dvg.cpp",
