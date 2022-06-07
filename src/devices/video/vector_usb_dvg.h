@@ -10,6 +10,7 @@
 
 class vector_device_usb_dvg : public vector_device_t
 {
+
 public:
 	typedef struct vec_t
 	{
@@ -86,10 +87,12 @@ private:
 	int m_json_length;
 	std::unique_ptr<uint8_t[]> m_json_buf;
 	std::unique_ptr<float[]> m_gamma_table;
+
 protected:
     virtual void device_start() override;
     virtual void device_reset() override;
     virtual void device_stop() override;
+
 };
 
 // device type definition

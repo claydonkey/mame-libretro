@@ -84,12 +84,14 @@ BUSES["VECTREX"] = true
 -- in vector.lst
 --------------------------------------------------
 
+
 function createProjects_mame_vector(_target, _subtarget)
 	project ("mame_vector")
 	targetsubdir(_target .."_" .. _subtarget)
 	kind (LIBTYPE)
 	uuid (os.uuid("drv-mame-vector"))
 	
+
 	includedirs {
 		MAME_DIR .. "src/osd",
 		MAME_DIR .. "src/emu",
@@ -100,6 +102,13 @@ function createProjects_mame_vector(_target, _subtarget)
 		MAME_DIR .. "src/lib/netlist",
 		MAME_DIR .. "3rdparty",
 		GEN_DIR  .. "mame/layout",
+	}
+
+	includedirs {
+		ext_includedir("flac"),
+		ext_includedir("glm"),
+		ext_includedir("jpeg"),
+		ext_includedir("rapidjson"),
 	}
 
 files {

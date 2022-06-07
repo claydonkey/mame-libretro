@@ -299,7 +299,6 @@ void starwars_state::starwars(machine_config &config)
 	screen.set_size(400, 300);
 	screen.set_visarea(0, 250, 0, 280);
 	screen.set_screen_update("vector_vectrx2020", FUNC(vector_vectrx2020_device::screen_update));
-
 	avg_device &avg(AVG_STARWARS(config, "avg", 0));
 	avg.set_vector("vector_vectrx2020");
 	avg.set_memory(m_maincpu, AS_PROGRAM, 0x0000);

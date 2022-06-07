@@ -269,6 +269,9 @@ retro_variable retro_get_online_dvg()
    bool st_v_found = false;
    rapidjson::Document m_document;
 
+   char msg_local[256];
+   struct retro_message msg;
+
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Mame Build Version:  %s\n", emulator_info::get_build_version());
 
@@ -297,11 +300,17 @@ retro_variable retro_get_online_dvg()
       {
          sprintf(ports, "%s|", (char *)port);
          m_document.Parse(reinterpret_cast<const char *>(&m_json_buf[0]));
-         char cinfo[100];
+
+         char cinfo[256];
          sprintf(cinfo, "%s %s. crtType: %s", m_document["productName"].GetString(), m_document["version"].GetString(), m_document["crtType"].GetString());
 
          if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[DVG] USB_DVG found:  %s\n", cinfo); // HOOK this into Retroarch Onscreen Notifications
+            log_cb(RETRO_LOG_INFO, "[DVG] USB_DVG found:  %s\n", cinfo); 
+
+         snprintf(msg_local, sizeof(msg_local), "[DVG] USB_DVG found:  %s", cinfo);
+         msg.msg = msg_local;
+         msg.frames = 360;
+         environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, (void *)&msg);
 
          dvg_found = true;
       }
@@ -310,13 +319,17 @@ retro_variable retro_get_online_dvg()
          sprintf(ports, "%s|", (char *)port);
 
          if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[DVG] ST_V found on Com Port:  %s\n", &port); // HOOK this into Retroarch Onscreen Notifications
 
+            log_cb(RETRO_LOG_INFO, "[DVG] ST_V found on Com Port:  %s\n", &port); 
+         snprintf(msg_local, sizeof(msg_local), "[DVG] UST_V found on Com Port: %s", port);
+         msg.msg = msg_local;
+         msg.frames = 360;
+         environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, (void *)&msg);
          st_v_found = true;
       }
 
-      osd_file::remove((char *)port);
-      m_serial = NULL;
+   //   osd_file::remove((char *)port);
+   //   m_serial = NULL;
    }
 
    sprintf(optports, "Vector driver serial port; %s", ports);

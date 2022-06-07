@@ -54,20 +54,13 @@ void vector_device_v_st::device_start()
 void vector_device_v_st::device_stop()
 {
 
-
 }
 
 void vector_device_v_st::device_reset()
 {
 
-
 }
-//void vector_device_v_st::device_stop()
-//{
-//}
-//void vector_device_v_st::device_reset()
-//{
-//}
+ 
 
 uint32_t vector_device_v_st::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {

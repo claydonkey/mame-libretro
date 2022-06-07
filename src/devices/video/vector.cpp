@@ -59,6 +59,7 @@ float vector_options::s_beam_width_min = 0.0f;
 float vector_options::s_beam_width_max = 0.0f;
 float vector_options::s_beam_dot_size = 0.0f;
 float vector_options::s_beam_intensity_weight = 0.0f;
+char *vector_options::s_vector_driver;
 
 void vector_options::init(emu_options &options)
 {
@@ -67,10 +68,14 @@ void vector_options::init(emu_options &options)
 	s_beam_dot_size = options.beam_dot_size();
 	s_beam_intensity_weight = options.beam_intensity_weight();
 	s_flicker = options.flicker();
+	s_vector_driver = const_cast<char *>(options.vector_driver());
+	
 }
 
 // device type definition
 DEFINE_DEVICE_TYPE(VECTOR, vector_device, "vector_device", "VECTOR")
+
+void vector_device::serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity){};
 
 vector_device::vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: vector_device_t(mconfig, VECTOR, tag, owner, clock),
@@ -82,8 +87,17 @@ vector_device::vector_device(const machine_config &mconfig, const char *tag, dev
 }
 void vector_device::device_add_mconfig(machine_config &config)
 {
-	VECTOR_DRIVER_INSTANTIATE(config.options().vector_driver(), config, m_alt_vector);
+    if (!strcmp(vector_options::s_vector_driver, "usb_dvg"))
+	{
+		VECTOR_USB_DVG(config, "vector_device_usb_dvg");
+	}
+	else if (!strcmp(vector_options::s_vector_driver, "v_st"))
+	{
+		VECTOR_V_ST(config, "vector_device_v_st");
+	}
 }
+
+void serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity){};
 
 void vector_device::device_start()
 {
@@ -117,9 +131,11 @@ float vector_device::normalized_sigmoid(float n, float k)
  */
 void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 {
+
 	if (m_alt_vector.found())
 	{
         m_alt_vector->add_point(x, y, color, intensity);
+
 
 		return;
 	}
@@ -165,9 +181,11 @@ void vector_device::clear_list(void)
 
 uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
+
 	if (m_alt_vector.found())
 	{
         m_alt_vector->screen_update(screen, bitmap, cliprect);
+
 		if (m_vector_index == 0)
 		{
 			return 0;
@@ -221,6 +239,9 @@ uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 				beam_width,
 				(curpoint->intensity << 24) | (curpoint->col & 0xffffff),
 				flags);
+
+			//Screen Update for Derived Class
+
 			serial_draw_line(coords.x0, coords.y0, coords.x1, coords.y1, curpoint->intensity);
 		}
 

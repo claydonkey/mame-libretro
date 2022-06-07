@@ -37,6 +37,7 @@ private:
 	int m_serial_drop_frame;
 	bool m_mirror;
 	unsigned m_vector_transit[3];
+
     std::unique_ptr<unsigned char[]> m_serial_buf;
 	size_t m_serial_offset;
 protected:

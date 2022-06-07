@@ -8,7 +8,8 @@
 #include "video/vector.h"
 #include "video/vector_usb_dvg.h"
 #include "video/vector_v_st.h"
-#include "vector_device_t.h"
+#include "video/vector_device_t.h"
+
 
 class vector_device;
 
@@ -22,13 +23,16 @@ public:
 	static float s_beam_width_max;
 	static float s_beam_dot_size;
 	static float s_beam_intensity_weight;
+	static char * s_vector_driver;
 
 protected:
 	static void init(emu_options &options);
 };
 
 class vector_device :  public vector_device_t
+
 {
+
 public:
 	template <typename T>
 	static constexpr rgb_t color111(T c) { return rgb_t(pal1bit(c >> 2), pal1bit(c >> 1), pal1bit(c >> 0)); }
@@ -46,6 +50,8 @@ public:
 	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
 
 
+	// device-level overrides
+
 private:
 	/* The vertices are buffered here */
 	struct point
@@ -58,7 +64,9 @@ private:
 		int intensity;
 	};
 
+
 	optional_device<vector_device_t> m_alt_vector;
+
 
 	std::unique_ptr<point[]> m_vector_list;
 	int m_vector_index;

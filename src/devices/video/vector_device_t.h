@@ -7,20 +7,13 @@
 
 #include "osdcore.h"
 #include "screen.h"
+#include "device.h"
 
-#define VECTOR_DRIVER_INSTANTIATE(driver_name, config, opt_device) \
-									if (!strcmp(driver_name, "usb_dvg")) \
-									{ \
-										VECTOR_USB_DVG(config, opt_device); \
-									} \
-									else if (!strcmp(driver_name, "v_st")) \
-									{ \
-										VECTOR_V_ST(config, opt_device); \
-									} 
 
 //**************************************************************************
 //  TYPE DEFINITIONS
 //**************************************************************************
+
 
 class vector_device_t : public device_t , public device_video_interface
 {
