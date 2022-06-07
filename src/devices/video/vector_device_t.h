@@ -22,16 +22,21 @@
 //  TYPE DEFINITIONS
 //**************************************************************************
 
-class vector_device_base : public device_t
+class vector_device_t : public device_t , public device_video_interface
 {
 public:
 	// construction/destruction
-	vector_device_base(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock = 0);
+	vector_device_t(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock = 0);
 
-	// 0 = continue, 1 = handled (skip)
-	virtual int add_point(int x, int y, rgb_t color, int intensity);
-	virtual int update(screen_device &screen, const rectangle &cliprect);
+	virtual void add_point(int x, int y, rgb_t color, int intensity);
+	virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) ;
 
+
+protected:
+virtual void device_start() override;
+virtual void device_reset() override;
+virtual void device_stop() override;
+virtual void device_add_mconfig(machine_config &config) override;
 };
 
 

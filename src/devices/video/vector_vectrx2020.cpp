@@ -1,35 +1,44 @@
 #include "emu.h"
 #include "video/vector.h"
-#include "video/vector_override.h"
+#include "video/vector_vectrx2020.h"
+#include "emuopts.h"
 
 #define VECTOR_SERIAL_MAX 4095
 
-DEFINE_DEVICE_TYPE(VECTOR_OVERRIDE, vector_override_device, "vector_override", "VECTOR_OVERRIDE")
+DEFINE_DEVICE_TYPE(VECTOR_VECTRX2020, vector_vectrx2020_device, "vector_vectrx2020_device", "VECTOR_VECTRX2020")
 
-void vector_override_options::init(emu_options &options)
+
+ float vector_vectrx2020_options::s_vector_scale=0.0f;
+ float vector_vectrx2020_options::s_vector_scale_x=0.0f;
+ float vector_vectrx2020_options::s_vector_scale_y=0.0f;
+ float vector_vectrx2020_options::s_vector_offset_x=0.0f;
+ float vector_vectrx2020_options::s_vector_offset_y =0.0f;
+ char * vector_vectrx2020_options::s_vector_port;
+ int vector_vectrx2020_options::s_vector_rotate=0;
+ int vector_vectrx2020_options::s_vector_bright=0;
+
+void vector_vectrx2020_options::init(emu_options &options)
 {
 	const float scale = options.vector_scale();
 	if (scale != 0.0)
-	{
-		// user specified a scale on the command line
-		vector_override_options::s_serial_scale_x = vector_override_options::s_serial_scale_y = scale;
+	{	// user specified a scale on the command line
+		vector_vectrx2020_options::s_vector_scale_x = vector_vectrx2020_options::s_vector_scale_y = scale;
 	}
 	else
-	{
-		// use the per-axis scales
-		vector_override_options::s_serial_scale_x = options.vector_scale_x();
-		vector_override_options::s_serial_scale_y = options.vector_scale_y();
+	{	// use the per-axis scales
+        vector_vectrx2020_options::s_vector_scale_x = options.vector_scale_x();
+        vector_vectrx2020_options::s_vector_scale_y = options.vector_scale_y();
 	}
-
-	vector_override_options::s_serial_segments = vector_override_options::s_serial_segments_tail = NULL;
-	vector_override_options::s_serial_offset_x = options.vector_offset_x();
-	vector_override_options::s_serial_offset_y = options.vector_offset_y();
-	vector_override_options::s_vector_port = const_cast<char *>(options.vector_port());
+    vector_vectrx2020_options::s_vector_offset_x = options.vector_offset_x();
+    vector_vectrx2020_options::s_vector_offset_y = options.vector_offset_y();
+    vector_vectrx2020_options::s_vector_port = const_cast<char *>(options.vector_port());
+    vector_vectrx2020_options::s_vector_bright = options.vector_bright();
+    vector_vectrx2020_options::s_vector_rotate = options.vector_rotate();
 };
 
-vector_override_device::vector_override_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) : vector_device(mconfig, tag, owner, clock){};
+vector_vectrx2020_device::vector_vectrx2020_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) : vector_device(mconfig, tag, owner, clock){};
 
-void vector_override_device::serial_reset()
+void vector_vectrx2020_device::serial_reset()
 {
 	m_serial_offset = 0;
 	m_serial_buf[m_serial_offset++] = 0;
@@ -50,28 +59,28 @@ void vector_override_device::serial_reset()
 // we keep a linked list of the vectors and sort them with
 // a greedy insertion sort.
 
-void vector_override_device::serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity)
+void vector_vectrx2020_device::serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity)
 {
 	if (m_serial == nullptr)
 		return;
 
 	// scale and shift each of the axes.
-	const int x0 = (xf0 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_override_options::s_serial_scale_x + vector_override_options::s_serial_offset_x;
-	const int y0 = (yf0 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_override_options::s_serial_scale_y + vector_override_options::s_serial_offset_y;
-	const int x1 = (xf1 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_override_options::s_serial_scale_x + vector_override_options::s_serial_offset_x;
-	const int y1 = (yf1 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_override_options::s_serial_scale_y + vector_override_options::s_serial_offset_y;
+	const int x0 = (xf0 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_vectrx2020_options::s_vector_scale_x + vector_vectrx2020_options::s_vector_offset_x;
+	const int y0 = (yf0 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_vectrx2020_options::s_vector_scale_y + vector_vectrx2020_options::s_vector_offset_y;
+	const int x1 = (xf1 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_vectrx2020_options::s_vector_scale_x + vector_vectrx2020_options::s_vector_offset_x;
+	const int y1 = (yf1 * VECTOR_SERIAL_MAX - VECTOR_SERIAL_MAX / 2) * vector_vectrx2020_options::s_vector_scale_y + vector_vectrx2020_options::s_vector_offset_y;
 
 	serial_segment_t *const new_segment = new serial_segment_t(x0, y0, x1, y1, intensity);
 
-	if (vector_override_options::s_serial_segments_tail)
-		vector_override_options::s_serial_segments_tail->next = new_segment;
+	if (this->m_serial_segments_tail)
+        this->m_serial_segments_tail->next = new_segment;
 	else
-		vector_override_options::s_serial_segments = new_segment;
+        this->m_serial_segments = new_segment;
 
-	vector_override_options::s_serial_segments_tail = new_segment;
-}
+    this->m_serial_segments_tail = new_segment;
+};
 
-std::error_condition vector_override_device::serial_write(uint8_t *buf, int size)
+std::error_condition vector_vectrx2020_device::serial_write(uint8_t *buf, int size)
 {
 	std::error_condition result;
 	uint32_t written = 0, chunk;
@@ -90,8 +99,8 @@ std::error_condition vector_override_device::serial_write(uint8_t *buf, int size
 
 END:
 	return result;
-}
-int vector_override_device::serial_send()
+};
+int vector_vectrx2020_device::serial_send()
 {
 
 	if (m_serial == nullptr)
@@ -105,11 +114,11 @@ int vector_override_device::serial_send()
 	// fairly significantly. doesn't matter for the
 	// vectorscope, but makes a big difference for Vectrex
 	// and other slower displays.
-	while (vector_override_options::s_serial_segments)
+	while (m_serial_segments)
 	{
 		int reverse = 0;
 		int min = 1e6;
-		serial_segment_t **min_seg = &vector_override_options::s_serial_segments;
+		serial_segment_t **min_seg = &m_serial_segments;
 
 		if (m_serial_sort)
 			for (serial_segment_t **s = min_seg; *s; s = &(*s)->next)
@@ -134,7 +143,6 @@ int vector_override_device::serial_send()
 					min = d1;
 					reverse = 1;
 				}
-
 				// if we have hit two identical points,
 				// then stop the search here.
 				if (min == 0)
@@ -169,7 +177,7 @@ int vector_override_device::serial_send()
 		last_x = x1;
 		last_y = y1;
 
-		if (s->intensity > m_serial_bright)
+		if (s->intensity > vector_vectrx2020_options::s_vector_bright)
 			m_vector_transit[2] += dist;
 		else
 			m_vector_transit[1] += dist;
@@ -180,10 +188,10 @@ int vector_override_device::serial_send()
 	}
 
 	// ensure that we erase our tracks
-	if (vector_override_options::s_serial_segments != NULL)
+	if (m_serial_segments != NULL)
 		fprintf(stderr, "errr?\n");
-	vector_override_options::s_serial_segments = NULL;
-	vector_override_options::s_serial_segments_tail = NULL;
+	m_serial_segments = NULL;
+	m_serial_segments_tail = NULL;
 
 	// add the "done" command to the message
 	m_serial_buf[m_serial_offset++] = 1;
@@ -191,7 +199,6 @@ int vector_override_device::serial_send()
 	m_serial_buf[m_serial_offset++] = 1;
 	m_serial_buf[m_serial_offset++] = 1;
 
-	size_t offset = 0;
 
 	if (1)
 		printf("%zu vectors: off=%u on=%u bright=%u%s\n",
@@ -217,20 +224,18 @@ int vector_override_device::serial_send()
 
 	return err.value();
 };
-void vector_override_device::device_add_mconfig(machine_config &config){
 
-};
-uint32_t vector_override_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
+uint32_t vector_vectrx2020_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	vector_device::screen_update(screen, bitmap, cliprect);
 	serial_send();
 	return 0;
 };
-void vector_override_device::clear_list()
+void vector_vectrx2020_device::clear_list()
 {
 	vector_device::clear_list();
 };
-void vector_override_device::add_point(int x, int y, rgb_t color, int intensity)
+void vector_vectrx2020_device::add_point(int x, int y, rgb_t color, int intensity)
 {
 	// printf("%d %d: %d,%d,%d @ %d\n", x, y, color.r(), color.b(), color.g(), intensity);
 
@@ -245,7 +250,7 @@ void vector_override_device::add_point(int x, int y, rgb_t color, int intensity)
 	vector_device::add_point(x, y, color, intensity);
 };
 
-void vector_override_device::serial_draw_point(unsigned x, unsigned y, int intensity)
+void vector_vectrx2020_device::serial_draw_point(unsigned x, unsigned y, int intensity)
 {
 	// make sure that we are in range; should always be
 	// due to clipping on the window, but just in case
@@ -265,7 +270,7 @@ void vector_override_device::serial_draw_point(unsigned x, unsigned y, int inten
 	y = VECTOR_SERIAL_MAX - y;
 
 	unsigned bright;
-	if (intensity > m_serial_bright)
+	if (intensity > vector_vectrx2020_options::s_vector_bright)
 		bright = 63;
 	else if (intensity <= 0)
 		bright = 0;
@@ -275,20 +280,20 @@ void vector_override_device::serial_draw_point(unsigned x, unsigned y, int inten
 	if (bright > 63)
 		bright = 63;
 
-	if (m_serial_rotate == 1)
+	if (vector_vectrx2020_options::s_vector_rotate == 1)
 	{
 		// +90
 		unsigned tmp = x;
 		x = VECTOR_SERIAL_MAX - y;
 		y = tmp;
 	}
-	else if (m_serial_rotate == 2)
+	else if (vector_vectrx2020_options::s_vector_rotate == 2)
 	{
 		// +180
 		x = VECTOR_SERIAL_MAX - x;
 		y = VECTOR_SERIAL_MAX - y;
 	}
-	else if (m_serial_rotate == 3)
+	else if (vector_vectrx2020_options::s_vector_rotate == 3)
 	{
 		// -90
 		unsigned t = x;
@@ -307,18 +312,18 @@ void vector_override_device::serial_draw_point(unsigned x, unsigned y, int inten
 
 	// todo: check for overflow;
 	// should always have enough points
-}
+};
 // device-level overrides
-void vector_override_device::device_start()
+void vector_vectrx2020_device::device_start()
 {
 	vector_device::device_start();
 	uint64_t size = 0;
-	vector_override_options::init(machine().options());
-	std::error_condition filerr = osd_file::open(vector_override_options::s_vector_port, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_serial, size);
+    vector_vectrx2020_options::init(machine().options());
+	std::error_condition filerr = osd_file::open(vector_vectrx2020_options::s_vector_port, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_serial, size);
 
 	if (filerr)
 	{
-		fprintf(stderr, "vector_device_st_v: error: osd_file::open failed: %s on port %s\n", const_cast<char *>(filerr.message().c_str()), machine().config().options().vector_port());
+		fprintf(stderr, "vector_device_st_v: error: osd_file::open failed: %s on port %s\n", const_cast<char *>(filerr.message().c_str()), vector_vectrx2020_options::s_vector_port);
 		::exit(1);
 	}
 };

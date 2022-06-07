@@ -6,18 +6,16 @@
 
 #include "osdcore.h"
 #include "screen.h"
-#include "vector_base.h"
+#include "vector_device_t.h"
 
-class vector_device_v_st : public vector_device_base
+class vector_device_v_st : public vector_device_t
 {
 public:
 	vector_device_v_st(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_stop() override;
-	virtual int add_point(int x, int y, rgb_t color, int intensity) override;
-	virtual int update(screen_device &screen, const rectangle &cliprect) override;
+
+	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
+  virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) override;
 
 private:
     void serial_draw_point(unsigned x,unsigned y,int intensity);
@@ -41,6 +39,10 @@ private:
 	unsigned m_vector_transit[3];
     std::unique_ptr<unsigned char[]> m_serial_buf;
 	size_t m_serial_offset;
+protected:
+    virtual void device_start() override;
+    virtual void device_reset() override;
+    virtual void device_stop() override;
 };
 
 

@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include "video/vector_base.h"
+#include "video/vector.h"
 #include "video/vector_usb_dvg.h"
 #include "video/vector_v_st.h"
+#include "vector_device_t.h"
 
 class vector_device;
 
@@ -15,7 +16,7 @@ class vector_options
 {
 public:
 	friend class vector_device;
- 
+
 	static float s_flicker;
 	static float s_beam_width_min;
 	static float s_beam_width_max;
@@ -26,7 +27,7 @@ protected:
 	static void init(emu_options &options);
 };
 
-class vector_device : public device_t, public device_video_interface
+class vector_device :  public vector_device_t
 {
 public:
 	template <typename T>
@@ -39,13 +40,11 @@ public:
 	// construction/destruction
 	vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 	virtual void serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity);
-	virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+	virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) override;
 	virtual void clear_list();
 
-	virtual void add_point(int x, int y, rgb_t color, int intensity);
-	virtual void device_add_mconfig(machine_config &config) override;
-	// device-level overrides
-	virtual void device_start() override;
+	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
+
 
 private:
 	/* The vertices are buffered here */
@@ -59,7 +58,7 @@ private:
 		int intensity;
 	};
 
-	optional_device<vector_device_base> m_vector_base;
+	optional_device<vector_device_t> m_alt_vector;
 
 	std::unique_ptr<point[]> m_vector_list;
 	int m_vector_index;
@@ -67,6 +66,13 @@ private:
 	int m_max_intensity;
 
 	float normalized_sigmoid(float n, float k);
+
+protected:
+    virtual void device_add_mconfig(machine_config &config) override;
+    // device-level overrides
+    virtual void device_start() override;
+    virtual void device_stop() override;
+    virtual void device_reset() override;
 };
 
 // device type definition

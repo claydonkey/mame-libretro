@@ -3,7 +3,7 @@
 #include "emu.h"
 #include "emuopts.h"
 #include "rendutil.h"
-#include "video/vector_base.h"
+#include "video/vector.h"
 #include "video/vector_usb_dvg.h"
 #include <rapidjson/document.h>
 
@@ -81,6 +81,7 @@ const vector_device_usb_dvg::game_info_t vector_device_usb_dvg::s_games[] ={
 };
 
 using namespace rapidjson;
+
 
 //
 // Function to compute region code for a point(x, y) 
@@ -539,7 +540,7 @@ int vector_device_usb_dvg::serial_send()
     return result;
 }
 vector_device_usb_dvg::vector_device_usb_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-: vector_device_base(mconfig, VECTOR_USB_DVG, tag, owner, clock),
+: vector_device_t(mconfig, VECTOR_USB_DVG, tag, owner, clock),
 m_exclude_blank_vectors(false),
 m_xmin(0),
 m_xmax(0),
@@ -618,7 +619,7 @@ void vector_device_usb_dvg::device_stop()
 void vector_device_usb_dvg::device_reset()
 {
 }
-int vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
+void vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
 {
     intensity = std::clamp(intensity, 0, 255);
     if (intensity == 0)
@@ -634,7 +635,7 @@ int vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
         color.set_b(cscale * color.b());
     }
     cmd_add_vec(x, y, color, true);
-    return m_mirror ? 0 : 1;
+ //   return m_mirror ? 0 : 1;
 }
 void vector_device_usb_dvg::get_dvg_info()
 {
@@ -666,7 +667,7 @@ void vector_device_usb_dvg::get_dvg_info()
 END:
     ;
 }
-int vector_device_usb_dvg::update(screen_device &screen, const rectangle &cliprect)
+uint32_t vector_device_usb_dvg::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
     rgb_t color = rgb_t(108, 108, 108);
     rgb_t black = rgb_t(0, 0, 0);

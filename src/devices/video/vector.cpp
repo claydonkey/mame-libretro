@@ -43,7 +43,8 @@
 
 #include "emu.h"
 #include "video/vector.h"
-
+#include "vector_device_t.h"
+#include "vector.h"
 #include "emuopts.h"
 #include "render.h"
 #include "screen.h"
@@ -72,9 +73,8 @@ void vector_options::init(emu_options &options)
 DEFINE_DEVICE_TYPE(VECTOR, vector_device, "vector_device", "VECTOR")
 
 vector_device::vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, VECTOR, tag, owner, clock),
-	  device_video_interface(mconfig, *this),
-	  m_vector_base(*this, "vector_base"),
+	: vector_device_t(mconfig, VECTOR, tag, owner, clock),
+	  m_alt_vector(*this, "vector_usb_dvg"),
 	  m_vector_list(nullptr),
 	  m_min_intensity(255),
 	  m_max_intensity(0)
@@ -82,7 +82,7 @@ vector_device::vector_device(const machine_config &mconfig, const char *tag, dev
 }
 void vector_device::device_add_mconfig(machine_config &config)
 {
-	VECTOR_DRIVER_INSTANTIATE(config.options().vector_driver(), config, m_vector_base);
+	VECTOR_DRIVER_INSTANTIATE(config.options().vector_driver(), config, m_alt_vector);
 }
 
 void vector_device::device_start()
@@ -94,7 +94,14 @@ void vector_device::device_start()
 	/* allocate memory for tables */
 	m_vector_list = std::make_unique<point[]>(MAX_POINTS);
 }
+void vector_device::device_stop()
+{
 
+}
+void vector_device::device_reset()
+{
+
+}
 /*
  * www.dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/
  */
@@ -110,12 +117,11 @@ float vector_device::normalized_sigmoid(float n, float k)
  */
 void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 {
-	if (m_vector_base.found())
+	if (m_alt_vector.found())
 	{
-		if (m_vector_base->add_point(x, y, color, intensity))
-		{
-			return;
-		}
+        m_alt_vector->add_point(x, y, color, intensity);
+
+		return;
 	}
 
 	point *newpoint;
@@ -159,9 +165,9 @@ void vector_device::clear_list(void)
 
 uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
-	if (m_vector_base.found())
+	if (m_alt_vector.found())
 	{
-		m_vector_base->update(screen, cliprect);
+        m_alt_vector->screen_update(screen, bitmap, cliprect);
 		if (m_vector_index == 0)
 		{
 			return 0;
