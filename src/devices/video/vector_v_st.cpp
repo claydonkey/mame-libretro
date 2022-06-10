@@ -60,7 +60,7 @@ void vector_device_v_st::device_reset()
 {
 
 }
- 
+
 
 uint32_t vector_device_v_st::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {

@@ -4,7 +4,7 @@
 #include "emuopts.h"
 
 #define VECTOR_SERIAL_MAX 4095
-
+#define MAX_POINTS 20000
 DEFINE_DEVICE_TYPE(VECTOR_VECTRX2020, vector_vectrx2020_device, "vector_vectrx2020_device", "VECTOR_VECTRX2020")
 
 
@@ -323,7 +323,13 @@ void vector_vectrx2020_device::device_start()
 
 	if (filerr)
 	{
-		fprintf(stderr, "vector_device_st_v: error: osd_file::open failed: %s on port %s\n", const_cast<char *>(filerr.message().c_str()), vector_vectrx2020_options::s_vector_port);
+		fprintf(stderr, "vector_device_vectrx2020: error: osd_file::open failed: %s on port %s\n", const_cast<char *>(filerr.message().c_str()), vector_vectrx2020_options::s_vector_port);
 		::exit(1);
 	}
+	m_serial_segments = m_serial_segments_tail = NULL;
+	m_serial_drop_frame = 0;
+	m_serial_sort = 1;
+	m_serial_buf = make_unique_clear<unsigned char[]>((MAX_POINTS + 2) * 4);
+
+	serial_reset();
 };

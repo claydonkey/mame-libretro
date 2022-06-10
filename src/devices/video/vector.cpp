@@ -59,7 +59,7 @@ float vector_options::s_beam_width_min = 0.0f;
 float vector_options::s_beam_width_max = 0.0f;
 float vector_options::s_beam_dot_size = 0.0f;
 float vector_options::s_beam_intensity_weight = 0.0f;
-char *vector_options::s_vector_driver;
+//char *vector_options::s_vector_driver;
 
 void vector_options::init(emu_options &options)
 {
@@ -68,7 +68,7 @@ void vector_options::init(emu_options &options)
 	s_beam_dot_size = options.beam_dot_size();
 	s_beam_intensity_weight = options.beam_intensity_weight();
 	s_flicker = options.flicker();
-	s_vector_driver = const_cast<char *>(options.vector_driver());
+//	s_vector_driver = const_cast<char *>(options.vector_driver());
 	
 }
 
@@ -87,11 +87,11 @@ vector_device::vector_device(const machine_config &mconfig, const char *tag, dev
 }
 void vector_device::device_add_mconfig(machine_config &config)
 {
-    if (!strcmp(vector_options::s_vector_driver, "usb_dvg"))
+    if (!strcmp(config.options().vector_driver(), "usb_dvg"))
 	{
 		VECTOR_USB_DVG(config, "vector_device_usb_dvg");
 	}
-	else if (!strcmp(vector_options::s_vector_driver, "v_st"))
+	else if (!strcmp(config.options().vector_driver(), "v_st"))
 	{
 		VECTOR_V_ST(config, "vector_device_v_st");
 	}

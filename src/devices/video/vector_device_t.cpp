@@ -11,7 +11,8 @@
 
 
 vector_device_t::vector_device_t(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock) 
-   : device_t(mconfig, type, tag, owner, clock) , device_video_interface(mconfig, *this){}
+   : device_t(mconfig, type, tag, owner, clock) , device_video_interface(mconfig, *this){
+}
 
 void vector_device_t::add_point(int x, int y, rgb_t color, int intensity){};
 
