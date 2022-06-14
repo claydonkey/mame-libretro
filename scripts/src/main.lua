@@ -379,6 +379,11 @@ end
   		includedirs {
   			MAME_DIR .. "3rdparty/winpcap/Include",
                         ext_includedir("rapidjson"),
+                        ext_includedir("termiWin"),
+		}
+
+		links {
+		    "termiWin",
 		}
 	end
 

@@ -68,6 +68,8 @@ sqlite3 - Custom public domain license
 
 tap-windows6.h - Dual-licensed [The GNU General Public License, version 2](https://opensource.org/licenses/GPL-2.0) and [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
+termiWin - [The BSD 2-Clause License](http://opensource.org/licenses/BSD-2-Clause)
+
 utf8proc - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
 wdlfft - [zlib license](http://opensource.org/licenses/Zlib)

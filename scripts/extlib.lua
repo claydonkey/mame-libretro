@@ -19,6 +19,7 @@ local extlibs = {
 	glm        = { "glm",       "3rdparty/glm" },
 	rapidjson  = { "rapidjson", "3rdparty/rapidjson/include" },
 	pugixml    = { "pugixml",   "3rdparty/pugixml/src" },
+	termiWin   = { "termiWin",  "3rdparty/termiWin/include" },
 }
 
 -- system lib options
@@ -85,6 +86,11 @@ newoption {
 newoption {
 	trigger = "with-system-pugixml",
 	description = "Use system pugixml library",
+}
+
+newoption {
+	trigger = "with-system-termios",
+	description = "Use system termios library",
 }
 
 -- build helpers

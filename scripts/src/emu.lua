@@ -37,6 +37,7 @@ includedirs {
 	ext_includedir("jpeg"),
 	ext_includedir("rapidjson"),
 	ext_includedir("pugixml"),
+	ext_includedir("termiWin"),
 }
 
 files {
@@ -102,6 +103,8 @@ files {
 	MAME_DIR .. "src/emu/distate.h",
 	MAME_DIR .. "src/emu/divideo.cpp",
 	MAME_DIR .. "src/emu/divideo.h",
+	MAME_DIR .. "src/emu/divector.cpp",
+    MAME_DIR .. "src/emu/divector.h",
 	MAME_DIR .. "src/emu/divtlb.cpp",
 	MAME_DIR .. "src/emu/divtlb.h",
 	MAME_DIR .. "src/emu/drawgfx.cpp",

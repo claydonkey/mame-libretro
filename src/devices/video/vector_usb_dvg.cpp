@@ -45,39 +45,39 @@ DEFINE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg, "vector_usb_dvg", "VEC
 #define GAME_WARRIOR             2
 
 const vector_device_usb_dvg::game_info_t vector_device_usb_dvg::s_games[] ={
-    {"armora",   false, GAME_ARMORA,  true},
-    {"armorap",  false, GAME_ARMORA,  true},
-    {"armorar",  false, GAME_ARMORA,  true},
-    {"asteroid", false, GAME_NONE,    true},
-    {"asteroi1", false, GAME_NONE,    true},
-    {"astdelux", false, GAME_NONE,    true},
-    {"astdelu1", false, GAME_NONE,    true},
-    {"llander",  false, GAME_NONE,    true},
-    {"llander1", false, GAME_NONE,    true},
-    {"demon",    false, GAME_NONE,    true},
-    {"barrier",  false, GAME_NONE,    true},
-    {"bzone",    false, GAME_NONE,    true},
-    {"bzone2",   false, GAME_NONE,    true},
-    {"bzonec",   false, GAME_NONE,    true},
-    {"redbaron", false, GAME_NONE,    true},
-    {"omegrace", false, GAME_NONE,    true},
-    {"ripoff",   false, GAME_NONE,    true},
-    {"solarq",   false, GAME_NONE,    true},
-    {"speedfrk", false, GAME_NONE,    true},
-    {"starhawk", false, GAME_NONE,    true},
-    {"sundance", false, GAME_NONE,    true},
-    {"tailg",    false, GAME_NONE,    true},
-    {"warrior",  false, GAME_WARRIOR, true},
-    {"wotw",     false, GAME_NONE,    true},
-    {"spacewar", false, GAME_NONE,    true},
-    {"starcas",  false, GAME_NONE,    true},
-    {"starcas1", false, GAME_NONE,    true},
-    {"starcasp", false, GAME_NONE,    true},
-    {"starcase", false, GAME_NONE,    true},
-    {"starwars", true, GAME_NONE,     false},
-    {"starwar1", true, GAME_NONE,     false},
-    {"esb",      true, GAME_NONE,     false},
-    { 0 }
+        {"armora",   false, GAME_ARMORA,  true},
+        {"armorap",  false, GAME_ARMORA,  true},
+        {"armorar",  false, GAME_ARMORA,  true},
+        {"asteroid", false, GAME_NONE,    true},
+        {"asteroi1", false, GAME_NONE,    true},
+        {"astdelux", false, GAME_NONE,    true},
+        {"astdelu1", false, GAME_NONE,    true},
+        {"llander",  false, GAME_NONE,    true},
+        {"llander1", false, GAME_NONE,    true},
+        {"demon",    false, GAME_NONE,    true},
+        {"barrier",  false, GAME_NONE,    true},
+        {"bzone",    false, GAME_NONE,    true},
+        {"bzone2",   false, GAME_NONE,    true},
+        {"bzonec",   false, GAME_NONE,    true},
+        {"redbaron", false, GAME_NONE,    true},
+        {"omegrace", false, GAME_NONE,    true},
+        {"ripoff",   false, GAME_NONE,    true},
+        {"solarq",   false, GAME_NONE,    true},
+        {"speedfrk", false, GAME_NONE,    true},
+        {"starhawk", false, GAME_NONE,    true},
+        {"sundance", false, GAME_NONE,    true},
+        {"tailg",    false, GAME_NONE,    true},
+        {"warrior",  false, GAME_WARRIOR, true},
+        {"wotw",     false, GAME_NONE,    true},
+        {"spacewar", false, GAME_NONE,    true},
+        {"starcas",  false, GAME_NONE,    true},
+        {"starcas1", false, GAME_NONE,    true},
+        {"starcasp", false, GAME_NONE,    true},
+        {"starcase", false, GAME_NONE,    true},
+        {"starwars", true, GAME_NONE,     false},
+        {"starwar1", true, GAME_NONE,     false},
+        {"esb",      true, GAME_NONE,     false},
+        { 0 }
 };
 
 using namespace rapidjson;
@@ -504,7 +504,7 @@ int vector_device_usb_dvg::serial_write(uint8_t *buf, int size)
         size -= chunk;
     }
     result = total;
-END:
+    END:
     return result;
 }
 
@@ -540,47 +540,44 @@ int vector_device_usb_dvg::serial_send()
     return result;
 }
 vector_device_usb_dvg::vector_device_usb_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-: vector_device_t(mconfig, VECTOR_USB_DVG, tag, owner, clock),
-m_exclude_blank_vectors(false),
-m_xmin(0),
-m_xmax(0),
-m_ymin(0),
-m_ymax(0),
-m_xscale(1.0),
-m_yscale(1.0),
-m_cmd_offs(0),
-m_swap_xy(false),
-m_flip_x(false),
-m_flip_y(true),
-m_clipx_min(DVG_RES_MIN),
-m_clipx_max(DVG_RES_MAX),
-m_clipy_min(DVG_RES_MIN),
-m_clipy_max(DVG_RES_MAX),
-m_last_r(-1),
-m_last_g(-1),
-m_last_b(-1),
-m_artwork(0),
-m_bw_game(false),
-m_in_vec_cnt(0),
-m_in_vec_last_x(0),
-m_in_vec_last_y(0),
-m_out_vec_cnt(0),
-m_vertical_display(0),
-m_mirror(false),
-m_json_length(0)
+        : vector_device_t(mconfig, VECTOR_USB_DVG, tag, owner, clock),
+          m_exclude_blank_vectors(false),
+          m_xmin(0),
+          m_xmax(0),
+          m_ymin(0),
+          m_ymax(0),
+          m_xscale(1.0),
+          m_yscale(1.0),
+          m_cmd_offs(0),
+          m_swap_xy(false),
+          m_flip_x(false),
+          m_flip_y(true),
+          m_clipx_min(DVG_RES_MIN),
+          m_clipx_max(DVG_RES_MAX),
+          m_clipy_min(DVG_RES_MIN),
+          m_clipy_max(DVG_RES_MAX),
+          m_last_r(-1),
+          m_last_g(-1),
+          m_last_b(-1),
+          m_artwork(0),
+          m_bw_game(false),
+          m_in_vec_cnt(0),
+          m_in_vec_last_x(0),
+          m_in_vec_last_y(0),
+          m_out_vec_cnt(0),
+          m_vertical_display(0),
+          m_json_length(0)
 {
+
 }
 void vector_device_usb_dvg::device_start()
 {
-
-    m_mirror = machine().config().options().vector_screen_mirror();
-
     int i;
     uint64_t size = 0;
-     
+
     std::error_condition filerr = osd_file::open(machine().config().options().vector_port(), OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_serial, size);
 
-    if (filerr)
+    if (filerr.value())
     {
         fprintf(stderr, "vector_device_usb_dvg: error: osd_file::open failed: %s on port %s\n" , const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_port());
         ::exit(1);
@@ -635,7 +632,7 @@ void vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
         color.set_b(cscale * color.b());
     }
     cmd_add_vec(x, y, color, true);
- //   return m_mirror ? 0 : 1;
+
 }
 void vector_device_usb_dvg::get_dvg_info()
 {
@@ -664,7 +661,7 @@ void vector_device_usb_dvg::get_dvg_info()
     m_json_length = std::min(m_json_length, MAX_JSON_SIZE - 1);
     result = serial_read(&m_json_buf[0], m_json_length);
     if (result < 0) goto END;
-END:
+    END:
     ;
 }
 uint32_t vector_device_usb_dvg::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
@@ -708,171 +705,171 @@ uint32_t vector_device_usb_dvg::screen_update(screen_device &screen, bitmap_rgb3
     if (m_in_vec_cnt)
     {
         switch (m_artwork) {
-        case GAME_ARMORA:
-            // Upper Right Quadrant
-            // Outer structure
-            cmd_add_vec(3446, 2048, black, false);
-            cmd_add_vec(3958, 2224, color, false);
-            cmd_add_vec(3958, 3059, color, false);
-            cmd_add_vec(3323, 3059, color, false);
-            cmd_add_vec(3323, 3225, color, false);
-            cmd_add_vec(3194, 3225, color, false);
-            cmd_add_vec(3194, 3393, color, false);
-            cmd_add_vec(3067, 3393, color, false);
-            cmd_add_vec(3067, 3901, color, false);
-            cmd_add_vec(2304, 3901, color, false);
-            cmd_add_vec(2304, 3225, color, false);
-            cmd_add_vec(2048, 3225, color, false);
-            // Center structure
-            cmd_add_vec(2048, 2373, black, false);
-            cmd_add_vec(2562, 2738, color, false);
-            cmd_add_vec(2430, 2738, color, false);
-            cmd_add_vec(2430, 2893, color, false);
-            cmd_add_vec(2306, 2893, color, false);
-            cmd_add_vec(2306, 3065, color, false);
-            cmd_add_vec(2048, 3065, color, false);
-            // Big structure
-            cmd_add_vec(2938, 2209, black, false);
-            cmd_add_vec(3198, 2383, color, false);
-            cmd_add_vec(3706, 2383, color, false);
-            cmd_add_vec(3706, 2738, color, false);
-            cmd_add_vec(2938, 2738, color, false);
-            cmd_add_vec(2938, 2209, color, false);
-            // Small structure
-            cmd_add_vec(2551, 3055, black, false);
-            cmd_add_vec(2816, 3590, color, false);
-            cmd_add_vec(2422, 3590, color, false);
-            cmd_add_vec(2422, 3231, color, false);
-            cmd_add_vec(2555, 3231, color, false);
-            cmd_add_vec(2555, 3055, color, false);
-            // Upper Left Quadrant
-            // Outer structure
-            cmd_add_vec(649, 2048, black, false);
-            cmd_add_vec(137, 2224, color, false);
-            cmd_add_vec(137, 3059, color, false);
-            cmd_add_vec(772, 3059, color, false);
-            cmd_add_vec(772, 3225, color, false);
-            cmd_add_vec(901, 3225, color, false);
-            cmd_add_vec(901, 3393, color, false);
-            cmd_add_vec(1028, 3393, color, false);
-            cmd_add_vec(1028, 3901, color, false);
-            cmd_add_vec(1792, 3901, color, false);
-            cmd_add_vec(1792, 3225, color, false);
-            cmd_add_vec(2048, 3225, color, false);
-            // Center structure
-            cmd_add_vec(2048, 2373, black, false);
-            cmd_add_vec(1533, 2738, color, false);
-            cmd_add_vec(1665, 2738, color, false);
-            cmd_add_vec(1665, 2893, color, false);
-            cmd_add_vec(1789, 2893, color, false);
-            cmd_add_vec(1789, 3065, color, false);
-            cmd_add_vec(2048, 3065, color, false);
-            // Big structure
-            cmd_add_vec(1157, 2209, black, false);
-            cmd_add_vec(897, 2383, color, false);
-            cmd_add_vec(389, 2383, color, false);
-            cmd_add_vec(389, 2738, color, false);
-            cmd_add_vec(1157, 2738, color, false);
-            cmd_add_vec(1157, 2209, color, false);
-            // Small structure
-            cmd_add_vec(1544, 3055, black, false);
-            cmd_add_vec(1280, 3590, color, false);
-            cmd_add_vec(1673, 3590, color, false);
-            cmd_add_vec(1673, 3231, color, false);
-            cmd_add_vec(1540, 3231, color, false);
-            cmd_add_vec(1540, 3055, color, false);
-            // Lower Right Quadrant
-            // Outer structure
-            cmd_add_vec(3446, 2048, black, false);
-            cmd_add_vec(3958, 1871, color, false);
-            cmd_add_vec(3958, 1036, color, false);
-            cmd_add_vec(3323, 1036, color, false);
-            cmd_add_vec(3323, 870, color, false);
-            cmd_add_vec(3194, 870, color, false);
-            cmd_add_vec(3194, 702, color, false);
-            cmd_add_vec(3067, 702, color, false);
-            cmd_add_vec(3067, 194, color, false);
-            cmd_add_vec(2304, 194, color, false);
-            cmd_add_vec(2304, 870, color, false);
-            cmd_add_vec(2048, 870, color, false);
-            // Center structure
-            cmd_add_vec(2048, 1722, black, false);
-            cmd_add_vec(2562, 1357, color, false);
-            cmd_add_vec(2430, 1357, color, false);
-            cmd_add_vec(2430, 1202, color, false);
-            cmd_add_vec(2306, 1202, color, false);
-            cmd_add_vec(2306, 1030, color, false);
-            cmd_add_vec(2048, 1030, color, false);
-            // Big structure
-            cmd_add_vec(2938, 1886, black, false);
-            cmd_add_vec(3198, 1712, color, false);
-            cmd_add_vec(3706, 1712, color, false);
-            cmd_add_vec(3706, 1357, color, false);
-            cmd_add_vec(2938, 1357, color, false);
-            cmd_add_vec(2938, 1886, color, false);
-            // Small structure
-            cmd_add_vec(2551, 1040, black, false);
-            cmd_add_vec(2816, 505, color, false);
-            cmd_add_vec(2422, 505, color, false);
-            cmd_add_vec(2422, 864, color, false);
-            cmd_add_vec(2555, 864, color, false);
-            cmd_add_vec(2555, 1040, color, false);
-            // Lower Left Quadrant
-            // Outer structure
-            cmd_add_vec(649, 2048, black, false);
-            cmd_add_vec(137, 1871, color, false);
-            cmd_add_vec(137, 1036, color, false);
-            cmd_add_vec(772, 1036, color, false);
-            cmd_add_vec(772, 870, color, false);
-            cmd_add_vec(901, 870, color, false);
-            cmd_add_vec(901, 702, color, false);
-            cmd_add_vec(1028, 702, color, false);
-            cmd_add_vec(1028, 194, color, false);
-            cmd_add_vec(1792, 194, color, false);
-            cmd_add_vec(1792, 870, color, false);
-            cmd_add_vec(2048, 870, color, false);
-            // Center structure
-            cmd_add_vec(2048, 1722, black, false);
-            cmd_add_vec(1533, 1357, color, false);
-            cmd_add_vec(1665, 1357, color, false);
-            cmd_add_vec(1665, 1202, color, false);
-            cmd_add_vec(1789, 1202, color, false);
-            cmd_add_vec(1789, 1030, color, false);
-            cmd_add_vec(2048, 1030, color, false);
-            // Big structure
-            cmd_add_vec(1157, 1886, black, false);
-            cmd_add_vec(897, 1712, color, false);
-            cmd_add_vec(389, 1712, color, false);
-            cmd_add_vec(389, 1357, color, false);
-            cmd_add_vec(1157, 1357, color, false);
-            cmd_add_vec(1157, 1886, color, false);
-            // Small structure
-            cmd_add_vec(1544, 1040, black, false);
-            cmd_add_vec(1280, 505, color, false);
-            cmd_add_vec(1673, 505, color, false);
-            cmd_add_vec(1673, 864, color, false);
-            cmd_add_vec(1540, 864, color, false);
-            cmd_add_vec(1540, 1040, color, false);
-            break;
+            case GAME_ARMORA:
+                // Upper Right Quadrant
+                // Outer structure
+                cmd_add_vec(3446, 2048, black, false);
+                cmd_add_vec(3958, 2224, color, false);
+                cmd_add_vec(3958, 3059, color, false);
+                cmd_add_vec(3323, 3059, color, false);
+                cmd_add_vec(3323, 3225, color, false);
+                cmd_add_vec(3194, 3225, color, false);
+                cmd_add_vec(3194, 3393, color, false);
+                cmd_add_vec(3067, 3393, color, false);
+                cmd_add_vec(3067, 3901, color, false);
+                cmd_add_vec(2304, 3901, color, false);
+                cmd_add_vec(2304, 3225, color, false);
+                cmd_add_vec(2048, 3225, color, false);
+                // Center structure
+                cmd_add_vec(2048, 2373, black, false);
+                cmd_add_vec(2562, 2738, color, false);
+                cmd_add_vec(2430, 2738, color, false);
+                cmd_add_vec(2430, 2893, color, false);
+                cmd_add_vec(2306, 2893, color, false);
+                cmd_add_vec(2306, 3065, color, false);
+                cmd_add_vec(2048, 3065, color, false);
+                // Big structure
+                cmd_add_vec(2938, 2209, black, false);
+                cmd_add_vec(3198, 2383, color, false);
+                cmd_add_vec(3706, 2383, color, false);
+                cmd_add_vec(3706, 2738, color, false);
+                cmd_add_vec(2938, 2738, color, false);
+                cmd_add_vec(2938, 2209, color, false);
+                // Small structure
+                cmd_add_vec(2551, 3055, black, false);
+                cmd_add_vec(2816, 3590, color, false);
+                cmd_add_vec(2422, 3590, color, false);
+                cmd_add_vec(2422, 3231, color, false);
+                cmd_add_vec(2555, 3231, color, false);
+                cmd_add_vec(2555, 3055, color, false);
+                // Upper Left Quadrant
+                // Outer structure
+                cmd_add_vec(649, 2048, black, false);
+                cmd_add_vec(137, 2224, color, false);
+                cmd_add_vec(137, 3059, color, false);
+                cmd_add_vec(772, 3059, color, false);
+                cmd_add_vec(772, 3225, color, false);
+                cmd_add_vec(901, 3225, color, false);
+                cmd_add_vec(901, 3393, color, false);
+                cmd_add_vec(1028, 3393, color, false);
+                cmd_add_vec(1028, 3901, color, false);
+                cmd_add_vec(1792, 3901, color, false);
+                cmd_add_vec(1792, 3225, color, false);
+                cmd_add_vec(2048, 3225, color, false);
+                // Center structure
+                cmd_add_vec(2048, 2373, black, false);
+                cmd_add_vec(1533, 2738, color, false);
+                cmd_add_vec(1665, 2738, color, false);
+                cmd_add_vec(1665, 2893, color, false);
+                cmd_add_vec(1789, 2893, color, false);
+                cmd_add_vec(1789, 3065, color, false);
+                cmd_add_vec(2048, 3065, color, false);
+                // Big structure
+                cmd_add_vec(1157, 2209, black, false);
+                cmd_add_vec(897, 2383, color, false);
+                cmd_add_vec(389, 2383, color, false);
+                cmd_add_vec(389, 2738, color, false);
+                cmd_add_vec(1157, 2738, color, false);
+                cmd_add_vec(1157, 2209, color, false);
+                // Small structure
+                cmd_add_vec(1544, 3055, black, false);
+                cmd_add_vec(1280, 3590, color, false);
+                cmd_add_vec(1673, 3590, color, false);
+                cmd_add_vec(1673, 3231, color, false);
+                cmd_add_vec(1540, 3231, color, false);
+                cmd_add_vec(1540, 3055, color, false);
+                // Lower Right Quadrant
+                // Outer structure
+                cmd_add_vec(3446, 2048, black, false);
+                cmd_add_vec(3958, 1871, color, false);
+                cmd_add_vec(3958, 1036, color, false);
+                cmd_add_vec(3323, 1036, color, false);
+                cmd_add_vec(3323, 870, color, false);
+                cmd_add_vec(3194, 870, color, false);
+                cmd_add_vec(3194, 702, color, false);
+                cmd_add_vec(3067, 702, color, false);
+                cmd_add_vec(3067, 194, color, false);
+                cmd_add_vec(2304, 194, color, false);
+                cmd_add_vec(2304, 870, color, false);
+                cmd_add_vec(2048, 870, color, false);
+                // Center structure
+                cmd_add_vec(2048, 1722, black, false);
+                cmd_add_vec(2562, 1357, color, false);
+                cmd_add_vec(2430, 1357, color, false);
+                cmd_add_vec(2430, 1202, color, false);
+                cmd_add_vec(2306, 1202, color, false);
+                cmd_add_vec(2306, 1030, color, false);
+                cmd_add_vec(2048, 1030, color, false);
+                // Big structure
+                cmd_add_vec(2938, 1886, black, false);
+                cmd_add_vec(3198, 1712, color, false);
+                cmd_add_vec(3706, 1712, color, false);
+                cmd_add_vec(3706, 1357, color, false);
+                cmd_add_vec(2938, 1357, color, false);
+                cmd_add_vec(2938, 1886, color, false);
+                // Small structure
+                cmd_add_vec(2551, 1040, black, false);
+                cmd_add_vec(2816, 505, color, false);
+                cmd_add_vec(2422, 505, color, false);
+                cmd_add_vec(2422, 864, color, false);
+                cmd_add_vec(2555, 864, color, false);
+                cmd_add_vec(2555, 1040, color, false);
+                // Lower Left Quadrant
+                // Outer structure
+                cmd_add_vec(649, 2048, black, false);
+                cmd_add_vec(137, 1871, color, false);
+                cmd_add_vec(137, 1036, color, false);
+                cmd_add_vec(772, 1036, color, false);
+                cmd_add_vec(772, 870, color, false);
+                cmd_add_vec(901, 870, color, false);
+                cmd_add_vec(901, 702, color, false);
+                cmd_add_vec(1028, 702, color, false);
+                cmd_add_vec(1028, 194, color, false);
+                cmd_add_vec(1792, 194, color, false);
+                cmd_add_vec(1792, 870, color, false);
+                cmd_add_vec(2048, 870, color, false);
+                // Center structure
+                cmd_add_vec(2048, 1722, black, false);
+                cmd_add_vec(1533, 1357, color, false);
+                cmd_add_vec(1665, 1357, color, false);
+                cmd_add_vec(1665, 1202, color, false);
+                cmd_add_vec(1789, 1202, color, false);
+                cmd_add_vec(1789, 1030, color, false);
+                cmd_add_vec(2048, 1030, color, false);
+                // Big structure
+                cmd_add_vec(1157, 1886, black, false);
+                cmd_add_vec(897, 1712, color, false);
+                cmd_add_vec(389, 1712, color, false);
+                cmd_add_vec(389, 1357, color, false);
+                cmd_add_vec(1157, 1357, color, false);
+                cmd_add_vec(1157, 1886, color, false);
+                // Small structure
+                cmd_add_vec(1544, 1040, black, false);
+                cmd_add_vec(1280, 505, color, false);
+                cmd_add_vec(1673, 505, color, false);
+                cmd_add_vec(1673, 864, color, false);
+                cmd_add_vec(1540, 864, color, false);
+                cmd_add_vec(1540, 1040, color, false);
+                break;
 
-        case GAME_WARRIOR:
-            cmd_add_vec(1187, 2232, black, false);
-            cmd_add_vec(1863, 2232, color, false);
-            cmd_add_vec(1187, 1372, black, false);
-            cmd_add_vec(1863, 1372, color, false);
-            cmd_add_vec(1187, 2232, black, false);
-            cmd_add_vec(1187, 1372, color, false);
-            cmd_add_vec(1863, 2232, black, false);
-            cmd_add_vec(1863, 1372, color, false);
-            cmd_add_vec(2273, 2498, black, false);
-            cmd_add_vec(2949, 2498, color, false);
-            cmd_add_vec(2273, 1658, black, false);
-            cmd_add_vec(2949, 1658, color, false);
-            cmd_add_vec(2273, 2498, black, false);
-            cmd_add_vec(2273, 1658, color, false);
-            cmd_add_vec(2949, 2498, black, false);
-            cmd_add_vec(2949, 1658, color, false);
-            break;
+            case GAME_WARRIOR:
+                cmd_add_vec(1187, 2232, black, false);
+                cmd_add_vec(1863, 2232, color, false);
+                cmd_add_vec(1187, 1372, black, false);
+                cmd_add_vec(1863, 1372, color, false);
+                cmd_add_vec(1187, 2232, black, false);
+                cmd_add_vec(1187, 1372, color, false);
+                cmd_add_vec(1863, 2232, black, false);
+                cmd_add_vec(1863, 1372, color, false);
+                cmd_add_vec(2273, 2498, black, false);
+                cmd_add_vec(2949, 2498, color, false);
+                cmd_add_vec(2273, 1658, black, false);
+                cmd_add_vec(2949, 1658, color, false);
+                cmd_add_vec(2273, 2498, black, false);
+                cmd_add_vec(2273, 1658, color, false);
+                cmd_add_vec(2949, 2498, black, false);
+                cmd_add_vec(2949, 1658, color, false);
+                break;
         }
         serial_send();
     }

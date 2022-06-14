@@ -5,34 +5,12 @@
 #pragma once
 
 #include "video/vector.h"
-#include "video/vector_device_t.h"
+#include "divector.h"
 #include "emuopts.h"
 
 class vector_vectrx2020_device;
 
-struct serial_segment_t
-{
-    struct serial_segment_t *next;
-    int intensity;
-    int x0;
-    int y0;
-    int x1;
-    int y1;
 
-    serial_segment_t(
-        int x0,
-        int y0,
-        int x1,
-        int y1,
-        int intensity) : next(NULL),
-                         intensity(intensity),
-                         x0(x0),
-                         y0(y0),
-                         x1(x1),
-                         y1(y1)
-    {
-    }
-};
 
 class vector_vectrx2020_options
 {
@@ -60,9 +38,7 @@ public:
     virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) override;
     virtual void clear_list() override;
     virtual void add_point(int x, int y, rgb_t color, int intensity) override;
-    // device-level overrides
-
-    virtual void serial_draw_line(float xf0, float yf0, float xf1, float yf1, int intensity) override;
+    virtual void add_line(float xf0, float yf0, float xf1, float yf1, int intensity) override;
 
 private:
     // Serial output option for driving vector display hardware
@@ -70,7 +46,6 @@ private:
     size_t m_serial_offset;
     std::unique_ptr<uint8_t[]> m_serial_buf;
     unsigned m_vector_transit[3];
-
     int m_serial_drop_frame;
     int m_serial_sort;
     serial_segment_t *m_serial_segments;
@@ -79,7 +54,6 @@ private:
     void serial_reset();
     int serial_read(uint8_t *buf, int size);
     std::error_condition serial_write(uint8_t *buf, int size);
-
     void serial_draw_point(unsigned x, unsigned y, int intensity);
 
 protected:

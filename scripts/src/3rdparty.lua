@@ -2393,4 +2393,41 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86rapass.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86rapass_p.h",
 	}
+
 end
+
+--------------------------------------------------
+-- termiWin library objects
+--------------------------------------------------
+
+project "termiWin"
+	uuid "58722da6-3274-4a65-86a2-f13ea315bb98"
+	kind "StaticLib"
+
+	configuration { "gmake or ninja" }
+		buildoptions_c {
+			"-Wno-strict-prototypes",
+		}
+
+	configuration { "vs*" }
+		buildoptions {
+
+		}
+if _OPTIONS["vs"]=="intel-15" then
+		buildoptions {
+
+		}
+end
+	configuration { }
+	if _OPTIONS["targetos"]=="windows" then
+		files {
+		MAME_DIR .. "3rdparty/termiWin/src/termiWin.c",
+		MAME_DIR .. "3rdparty/termiWin/include/termiWin.h",
+		MAME_DIR .. "3rdparty/termiWin/include/termios.h"
+		}
+		includedirs {
+     	MAME_DIR .. "3rdparty/termiWin/include",
+        }
+	end
+
+

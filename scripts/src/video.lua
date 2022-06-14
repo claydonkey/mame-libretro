@@ -17,15 +17,17 @@ files {
 	MAME_DIR .. "src/devices/video/vector.h",
 	MAME_DIR .. "src/devices/video/vector_vectrx2020.cpp",
 	MAME_DIR .. "src/devices/video/vector_vectrx2020.h",
-	MAME_DIR .. "src/devices/video/vector_device_t.cpp",
-	MAME_DIR .. "src/devices/video/vector_device_t.h",
 	MAME_DIR .. "src/devices/video/vector_usb_dvg.cpp",
 	MAME_DIR .. "src/devices/video/vector_usb_dvg.h",
 	MAME_DIR .. "src/devices/video/vector_v_st.cpp",
 	MAME_DIR .. "src/devices/video/vector_v_st.h",
 }
 includedirs {
-    ext_includedir("rapidjson")
+    ext_includedir("rapidjson"),
+    ext_includedir("termiWin"),
+}
+links {
+    "termiWin",
 }
 
 --------------------------------------------------
