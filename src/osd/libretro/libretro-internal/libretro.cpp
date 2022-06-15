@@ -291,7 +291,7 @@ retro_variable retro_get_online_dvg()
       uint64_t size = 0;
       std::error_condition errcond = osd_file::open((char *)port, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_serial, size);
 
-      if (errcond.value() == 2)
+      if (errcond.value())
       {
          if (log_cb)
             log_cb(RETRO_LOG_INFO, "[DVG] Device not present on Port: %s Error: %d\n", &port, errcond.value());

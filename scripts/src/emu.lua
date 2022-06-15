@@ -18,6 +18,10 @@ precompiledheaders()
 options {
 	"ArchiveSplit",
 }
+
+buildoptions {
+		 "-Wa,-mbig-obj"}
+
 includedirs {
 	MAME_DIR .. "src/osd",
 	MAME_DIR .. "src/emu",

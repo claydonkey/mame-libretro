@@ -49,7 +49,7 @@
 # BIGENDIAN = 1
 # NOASM = 1
 
-# OPTIMIZE = 3
+OPTIMIZE = 2
 # SYMBOLS = 1
 # SYMLEVEL = 2
 # MAP = 1

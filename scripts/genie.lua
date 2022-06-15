@@ -1312,6 +1312,11 @@ configuration { "mingw*" }
 			"shell32",
 			"userenv",
 		}
+		
+configuration { "mingw*", "x64" }
+buildoptions {
+"-Wa,-mbig-obj"
+}
 
 configuration { "vs20*" }
 		defines {

@@ -7,14 +7,14 @@
 #include "video/vector_v_st.h"
 #include <stdint.h>
 #include <termios.h>
-
-#define  TERMIOS
-#include <termiWin.h>
 #include <fcntl.h>
 
+#if defined(__MINGW32__) || defined(_WIN32)
+#include <termiWin.h>
+#endif
 
 #define VERBOSE 0
-#define MAX_POINTS 10000
+#define MAX_POINTS 20000
 #define VECTOR_SERIAL_MAX 4095
 
 #include "logmacro.h"
@@ -97,6 +97,28 @@ int vector_device_v_st::serial_read(uint8_t *buf, int size)
     return 0;
 }
 #ifdef TERMIOS
+
+int vector_device_v_st::serial_open(const char* const dev)
+{
+#if defined(__MINGW32__) || defined(_WIN32)
+	const int fd = open_serial(dev, O_RDWR);
+#else
+    const int fd = open(dev, O_RDWR);
+#endif
+
+	if (fd < 0)
+		return -1;
+
+	// Disable modem control signals
+	struct termios attr;
+	tcgetattr(fd, &attr);
+	attr.c_cflag |= CLOCAL | CREAD;
+	attr.c_oflag &= ~OPOST;
+	tcsetattr(fd, TCSANOW, &attr);
+
+	return fd;
+}
+
 void vector_device_v_st::device_start() {
 	/* Grab the settings for this session */
 	vector_device_v_st_options::init(machine().options());
@@ -247,8 +269,11 @@ int vector_device_v_st::serial_send() {
 			size_t wlen = this->m_serial_offset - offset;
 			if (wlen > 64)
 				wlen = 64;
-
+#if defined(__MINGW32__) || defined(_WIN32)
 			ssize_t rc = write_serial(this->m_serial_fd, this->m_serial_buf.get() + offset, this->m_serial_offset - offset);
+#else
+            ssize_t rc = write(this->m_serial_fd, this->m_serial_buf.get() + offset, this->m_serial_offset - offset);
+#endif
 			if (rc <= 0)
 			{
 				eagain++;
@@ -520,23 +545,7 @@ void vector_device_v_st::serial_draw_point(unsigned x, unsigned y, int intensity
 
 
 
-#ifdef TERMIOS
-int vector_device_v_st::serial_open(const char* const dev)
-{
-	const int fd = open_serial(dev, O_RDWR);
-	if (fd < 0)
-		return -1;
 
-	// Disable modem control signals
-	struct termios attr;
-	tcgetattr(fd, &attr);
-	attr.c_cflag |= CLOCAL | CREAD;
-	attr.c_oflag &= ~OPOST;
-	tcsetattr(fd, TCSANOW, &attr);
-
-	return fd;
-}
-#endif
 
 void vector_device_v_st::device_stop()
 {

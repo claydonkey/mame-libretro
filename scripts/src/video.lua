@@ -24,12 +24,15 @@ files {
 }
 includedirs {
     ext_includedir("rapidjson"),
-    ext_includedir("termiWin"),
 }
+if _OPTIONS["targetos"]=="windows" then
 links {
     "termiWin",
 }
-
+includedirs {
+    ext_includedir("termiWin"),
+}
+end
 --------------------------------------------------
 --
 --@src/devices/video/315_5124.h,VIDEOS["SEGA315_5124"] = true

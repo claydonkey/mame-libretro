@@ -83,7 +83,12 @@ end
 		if _OPTIONS["PROFILE"] then
 			targetsuffix "dp"
 		end
-
+  
+   configuration { "mingw*", "x64" }
+   buildoptions {
+   "-Wa,-mbig-obj"
+   }
+   
 	configuration { "mingw*" or "vs20*" }
 		targetextension ".exe"
 

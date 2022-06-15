@@ -1,5 +1,5 @@
 
-VERBOSE ?= 1
+VERBOSE = 1
 RETRO ?= 1
 NOWERROR ?= 1
 CONFIG ?= libretro"
@@ -13,7 +13,8 @@ SUBTARGET = arcade
 PYTHON_EXECUTABLE ?= python3
 REGENIE ?= 1
 GITHUB_REPO ?= https://github.com/claydonkey/mame-libretro/
-DEBUG ?= 0
+DEBUG = 1
+OPTIMIZE=2
 
 ###########################################################################
 #
@@ -242,8 +243,8 @@ all: build
 build:
 	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS)
 
-vs2015:
-	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS) vs2015
+vs2019:
+	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS) vs2019
 
 clean:
 	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS) clean

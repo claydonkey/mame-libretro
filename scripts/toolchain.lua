@@ -294,7 +294,8 @@ function toolchain(_buildDir, _subDir)
 
 	configuration { "x64", "mingw64-gcc" }
 		objdir (_buildDir .. "mingw-gcc" .. "/obj")
-		buildoptions { "-m64" }
+		buildoptions { "-m64",
+		 "-Wa,-mbig-obj"}
 
 	configuration { "x64", "mingw64-gcc", "Release" }
 		targetdir (_buildDir .. "mingw-gcc" .. "/bin/x64/Release")

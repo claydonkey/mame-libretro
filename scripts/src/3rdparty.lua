@@ -2411,23 +2411,25 @@ project "termiWin"
 
 	configuration { "vs*" }
 		buildoptions {
-
+			"/wd4067", -- unexpected tokens following preprocessor directive - expected a newline
+            "/wd4090", -- unexpected tokens following preprocessor directive - expected a newline
 		}
+
 if _OPTIONS["vs"]=="intel-15" then
 		buildoptions {
 
 		}
 end
 	configuration { }
-	if _OPTIONS["targetos"]=="windows" then
-		files {
-		MAME_DIR .. "3rdparty/termiWin/src/termiWin.c",
-		MAME_DIR .. "3rdparty/termiWin/include/termiWin.h",
-		MAME_DIR .. "3rdparty/termiWin/include/termios.h"
-		}
-		includedirs {
-     	MAME_DIR .. "3rdparty/termiWin/include",
-        }
-	end
+if _OPTIONS["targetos"]=="windows" then
+	files {
+	MAME_DIR .. "3rdparty/termiWin/src/termiWin.c",
+	MAME_DIR .. "3rdparty/termiWin/include/termiWin.h",
+	MAME_DIR .. "3rdparty/termiWin/include/termios.h"
+	}
+	includedirs {
+     MAME_DIR .. "3rdparty/termiWin/include",
+    }
+end
 
 

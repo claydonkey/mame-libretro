@@ -74,12 +74,7 @@ if #disasm_files > 0 then
 		GEN_DIR  .. "emu",
 		ext_includedir("asio"),
 		ext_includedir("expat"),
-		ext_includedir("termiWin"),
 	}
-
-    links {
-    "termiWin",
-    }
 
 	files {
 		disasm_files
