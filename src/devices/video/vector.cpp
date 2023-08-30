@@ -81,6 +81,7 @@ vector_device::vector_device(const machine_config& mconfig, const char* tag, dev
 	  now(false),
 	  m_v_st_device(*this, "vector_device_v_st"),
 	  m_usb_dvg_device(*this, "vector_usb_dvg"),
+	  m_udp_dvg_device(*this, "vector_udp_dvg"),
 	  m_vector_list(nullptr),
 	  m_min_intensity(255),
 	  m_max_intensity(0)
@@ -95,6 +96,10 @@ void vector_device::device_add_mconfig(machine_config &config)
 	else if (!strcmp(config.options().vector_driver(), "v_st"))
 	{
 		VECTOR_V_ST(config, "vector_device_v_st");
+	}
+	else if (!strcmp(config.options().vector_driver(), "udp_dvg"))
+	{
+		VECTOR_UDP_DVG(config, "vector_udp_dvg");
 	}
 }
 void vector_device::add_line(float xf0, float yf0, float xf1, float yf1, int intensity) {};
@@ -136,15 +141,20 @@ void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 		if (!vector_options::s_mirror)
 			return;
 	}
-
-	
+	if (m_udp_dvg_device.found())
+	{
+		m_udp_dvg_device->add_point(x, y, color, intensity);
+		if (!vector_options::s_mirror)
+			return;
+	}
+ 
 
 	point *newpoint;
 
 	intensity = std::clamp(intensity, 0, 255);
 
-	m_min_intensity = intensity > 0 ? std::min(m_min_intensity, intensity) : m_min_intensity;
-	m_max_intensity = intensity > 0 ? std::max(m_max_intensity, intensity) : m_max_intensity;
+	m_min_intensity = intensity > 0 ? (std::min)(m_min_intensity, intensity) : m_min_intensity;
+	m_max_intensity = intensity > 0 ? (std::max)(m_max_intensity, intensity) : m_max_intensity;
 
 	if (vector_options::s_flicker && (intensity > 0))
 	{
@@ -167,11 +177,12 @@ void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 		m_vector_index--;
 		logerror("*** Warning! Vector list overflow!\n");
 	}
-	if (m_v_st_device.found() && (color | 0xff0000) != 0xff0000)
+	if (m_v_st_device.found()) // && (color | 0xff0000) != 0xff0000)
 	{
 		m_v_st_device->add_point(x, y, color, intensity);
 
 	}
+
 }
 
 /*
@@ -195,7 +206,15 @@ uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 			return 0;
 		}
 	}
+	if (m_udp_dvg_device.found())
+	{
+		m_udp_dvg_device->screen_update(screen, bitmap, cliprect);
 
+		if (m_vector_index == 0)
+		{
+			return 0;
+		}
+	}
 	if (m_v_st_device.found())
 	{
 		

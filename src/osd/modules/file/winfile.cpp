@@ -173,7 +173,8 @@ std::error_condition osd_file::open(std::string const &orig_path, uint32_t openf
 		return win_open_ptty(path, openflags, file, filesize);
 	else if (win_check_tty_path(path))
 		return win_open_tty(path, openflags, file, filesize);
-
+	else if (win_check_udp_socket_path(path))
+		return win_open_udp_socket(path, openflags, file, filesize);
 	// convert path to TCHAR
 	osd::text::tstring t_path;
 	try { t_path = osd::text::to_tstring(path); }

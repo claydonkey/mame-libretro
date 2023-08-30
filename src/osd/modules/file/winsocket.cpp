@@ -29,7 +29,7 @@
 namespace {
 
 char const *const winfile_socket_identifier  = "socket.";
-
+char const* const winfile_udp_socket_identifier = "udp_socket.";
 
 class win_osd_socket : public osd_file
 {
@@ -220,7 +220,86 @@ bool win_check_socket_path(std::string const &path) noexcept
 		strchr(path.c_str(), ':') != nullptr) return true;
 	return false;
 }
+bool win_check_udp_socket_path(std::string const& path) noexcept
+{
+	if (strncmp(path.c_str(), winfile_udp_socket_identifier, strlen(winfile_udp_socket_identifier)) == 0 &&
+		strchr(path.c_str(), ':') != nullptr) return true;
+	return false;
+}
+std::error_condition win_open_udp_socket(std::string const& path, std::uint32_t openflags, osd_file::ptr& file, std::uint64_t& filesize) noexcept
+{
+	char hostname[256];
+	int port;
+	std::sscanf(&path[strlen(winfile_udp_socket_identifier)], "%255[^:]:%d", hostname, &port);
 
+	struct hostent const* const localhost = gethostbyname(hostname);
+	if (!localhost)
+		return std::errc::no_such_file_or_directory;
+
+	struct sockaddr_in sai;
+	memset(&sai, 0, sizeof(sai));
+	sai.sin_family = AF_INET;
+
+	sai.sin_port = htons(port);
+	sai.sin_addr = *reinterpret_cast<struct in_addr*>(localhost->h_addr);
+
+	SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (INVALID_SOCKET == sock)
+		return win_osd_socket::wsa_error_to_file_error(WSAGetLastError());
+
+	int const flag = 1;
+	if (setsockopt(sock, IPPROTO_UDP, TCP_NODELAY, reinterpret_cast<const char*>(&flag), sizeof(flag)) == SOCKET_ERROR)
+	{
+		int const err = WSAGetLastError();
+		closesocket(sock);
+		return win_osd_socket::wsa_error_to_file_error(err);
+	}
+
+	// listening socket support
+	osd_file::ptr result;
+	if (openflags & OPEN_FLAG_CREATE)
+	{
+		//printf("Listening for client at '%s' on port '%d'\n", hostname, port);
+		// bind socket...
+		if (bind(sock, reinterpret_cast<struct sockaddr const*>(&sai), sizeof(sai)) == SOCKET_ERROR)
+		{
+			int const err = WSAGetLastError();
+			closesocket(sock);
+			return win_osd_socket::wsa_error_to_file_error(err);
+		}
+
+		// start to listen...
+		if (listen(sock, 1) == SOCKET_ERROR)
+		{
+			int const err = WSAGetLastError();
+			closesocket(sock);
+			return win_osd_socket::wsa_error_to_file_error(err);
+		}
+
+		// mark socket as "listening"
+		result.reset(new (std::nothrow) win_osd_socket(sock, true));
+	}
+	else
+	{
+		printf("Connecting to server '%s' on port '%d'\n", hostname, port);
+		if (connect(sock, reinterpret_cast<struct sockaddr const*>(&sai), sizeof(sai)) == SOCKET_ERROR)
+		{
+			int const err = WSAGetLastError();
+			closesocket(sock);
+			return win_osd_socket::wsa_error_to_file_error(err);
+		}
+		result.reset(new (std::nothrow) win_osd_socket(sock, false));
+	}
+
+	if (!result)
+	{
+		closesocket(sock);
+		return std::errc::not_enough_memory;
+	}
+	file = std::move(result);
+	filesize = 0;
+	return std::error_condition();
+}
 
 std::error_condition win_open_socket(std::string const &path, std::uint32_t openflags, osd_file::ptr &file, std::uint64_t &filesize) noexcept
 {

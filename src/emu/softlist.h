@@ -22,7 +22,7 @@
 #include <set>
 #include <string>
 #include <string_view>
-
+#undef interface
 
 //**************************************************************************
 //  FORWARD DECLARATIONS

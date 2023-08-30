@@ -14,11 +14,11 @@
 
 # REGENIE = 1
 # VERBOSE = 1
-# NOWERROR = 1
+NOWERROR = 1
 # IGNORE_GIT = 1
 
 # TARGET = mame
-# SUBTARGET = arcade
+SUBTARGET = arcade
 # TOOLS = 1
 # TESTS = 1
 # BENCHMARKS = 1
@@ -31,8 +31,8 @@
 # SDL_INI_PATH = .;$HOME/.mame/;ini;
 # SDL2_MULTIAPI = 1
 # NO_USE_MIDI = 1
-# NO_USE_PORTAUDIO = 1
-# NO_USE_PULSEAUDIO = 1
+ NO_USE_PORTAUDIO = 1
+#NO_USE_PULSEAUDIO = 1
 # USE_TAPTUN = 1
 # USE_PCAP = 1
 # USE_QTDEBUG = 1
@@ -221,7 +221,7 @@ OS := macosx
 GENIEOS := darwin
 endif
 ifeq ($(firstword $(filter Haiku,$(UNAME))),Haiku)
-OS := haiku
+	OS := haiku:
 endif
 ifndef OS
 $(error Unable to detect OS from uname -a: $(UNAME))

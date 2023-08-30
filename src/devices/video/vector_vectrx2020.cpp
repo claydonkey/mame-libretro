@@ -6,7 +6,7 @@
 #define VECTOR_SERIAL_MAX 4095
 #define MAX_POINTS 20000
 DEFINE_DEVICE_TYPE(VECTOR_VECTRX2020, vector_vectrx2020_device, "vector_vectrx2020_device", "VECTOR_VECTRX2020")
-
+#define NOMINMAX
 
  float vector_vectrx2020_options::s_vector_scale=0.0f;
  float vector_vectrx2020_options::s_vector_scale_x=0.0f;
@@ -87,7 +87,7 @@ std::error_condition vector_vectrx2020_device::serial_write(uint8_t *buf, int si
 
 	while (size)
 	{
-		chunk = std::min(size, 64);
+		chunk = min(size, 64);
 		result = this->m_serial->write(buf, 0, chunk, written);
 		if (written != chunk)
 		{

@@ -45,6 +45,9 @@
 #include <string>
 #include <vector>
 
+#undef interface
+#undef max
+#undef min
 namespace ymfm
 {
 

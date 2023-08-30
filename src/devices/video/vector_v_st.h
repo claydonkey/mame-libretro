@@ -62,9 +62,10 @@ public:
 	virtual void add_line(float xf0, float yf0, float xf1, float yf1, int intensity) override;
 	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
     virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) override;
+
 private:
 #ifdef TERMIOS
-	
+	const char* m_serial;
 	int serial_open(const char* const dev);
 	int m_serial_fd;
 #else

@@ -4,10 +4,9 @@
 #include "emuopts.h"
 #include "rendutil.h"
 #include "video/vector.h"
-#include "video/vector_usb_dvg.h"
+#include "video/vector_udp_dvg.h"
 #include <rapidjson/document.h>
 #include "rapidjson/prettywriter.h" // for stringify JSON
-#define VERBOSE 0
 #include "logmacro.h"
 #include <language.h>
 #include <drivenum.h>
@@ -16,7 +15,7 @@ using namespace util;
 
 
 
-DEFINE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg, "vector_usb_dvg", "VECTOR_USB_DVG")
+DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VECTOR_UDP_DVG")
 
 // 0-15
 #define DVG_RELEASE             0
@@ -52,8 +51,8 @@ DEFINE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg, "vector_usb_dvg", "VEC
 #define GAME_ARMORA              1
 #define GAME_WARRIOR             2
 
-
-const vector_device_usb_dvg::game_info_t vector_device_usb_dvg::s_games[] = {
+#define BUFLEN                  1200 
+const vector_device_udp_dvg::game_info_t vector_device_udp_dvg::s_games[] = {
 	{"armora",   false, GAME_ARMORA,  true},
 	{"armorap",  false, GAME_ARMORA,  true},
 	{"armorar",  false, GAME_ARMORA,  true},
@@ -91,205 +90,118 @@ const vector_device_usb_dvg::game_info_t vector_device_usb_dvg::s_games[] = {
 
 using namespace rapidjson;
 
- 
-	GameDetails::GameDetails(running_machine& machine) : machine_(machine) {
-		std::unordered_set<std::string> exectags;
-		execute_interface_enumerator execiter(machine.root_device());
-		std::ostringstream cpu_str_buf;
-		std::ostringstream driver_buf;
-		std::ostringstream sound_buf;
-		std::ostringstream video_buf;
-		// print description, manufacturer, and CPU:
-		std::string_view src(machine.system().type.source());
-		auto prefix(src.find("src/mame/"));
-		if (std::string_view::npos == prefix)
-			prefix = src.find("src\\mame\\");
-		if (std::string_view::npos != prefix)
-			src.remove_prefix(prefix + 9);
-		util::stream_format(driver_buf, _("\n%1$s %2$s\nDriver: %3$s\n"),
-			//ui::system_list::instance().systems()[driver_list::find(machine().system().name)].description,
-			machine.system().year,
-			machine.system().manufacturer,
-			src);
 
 
-		for (device_execute_interface& exec : execiter)
-		{
-			if (!exectags.insert(exec.device().tag()).second)
-				continue;
-			// get cpu specific clock that takes internal multiplier/dividers in to account
-			u32 clock = exec.device().clock();
+vector_device_udp_dvg::vector_device_udp_dvg(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock)
+	: vector_interface(mconfig, VECTOR_UDP_DVG, tag, owner, clock),
+	m_exclude_blank_vectors(false),
+	m_xmin(0),
+	m_xmax(0),
+	m_ymin(0),
+	m_ymax(0),
+	m_xscale(1.0),
+	m_yscale(1.0),
+	m_cmd_offs(0),
+	m_swap_xy(false),
+	m_flip_x(false),
+	m_flip_y(true),
+	m_clipx_min(DVG_RES_MIN),
+	m_clipx_max(DVG_RES_MAX),
+	m_clipy_min(DVG_RES_MIN),
+	m_clipy_max(DVG_RES_MAX),
+	m_last_r(-1),
+	m_last_g(-1),
+	m_last_b(-1),
+	m_artwork(0),
+	m_bw_game(false),
+	m_in_vec_cnt(0),
+	m_in_vec_last_x(0),
+	m_in_vec_last_y(0),
+	m_out_vec_cnt(0),
+	m_vertical_display(0),
+	m_json_length(0)
+{
 
-			// count how many identical CPUs we have
-			int count = 1;
-			const char* name = exec.device().name();
-			for (device_execute_interface& scan : execiter)
-			{
-				if (exec.device().type() == scan.device().type() && strcmp(name, scan.device().name()) == 0 && exec.device().clock() == scan.device().clock())
-					if (exectags.insert(scan.device().tag()).second)
-						count++;
-			}
+}
+void vector_device_udp_dvg::device_sethost(std::string _host) {
+	m_host = _host;
+}
+std::error_condition vector_device_udp_dvg::device_start_client() {
+	uint64_t size = 0;
+	std::error_condition filerr = osd_file::open(m_host, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_port, size);
+	//cout << host + " >> " + filerr.message() << std::endl;
 
-			std::string hz(std::to_string(clock));
-			int d = (clock >= 1'000'000'000) ? 9 : (clock >= 1'000'000) ? 6 : (clock >= 1000) ? 3 : 0;
-			if (d > 0)
-			{
-				size_t dpos = hz.length() - d;
-				hz.insert(dpos, ".");
-				size_t last = hz.find_last_not_of('0');
-				hz = hz.substr(0, last + (last != dpos ? 1 : 0));
-			}
+	m_cmd_buf = std::make_unique < uint8_t[]>(CMD_BUF_SIZE);
+	m_json_length = 0;
+	//	m_run = true;
+	return filerr;
 
-			// if more than one, prepend a #x in front of the CPU name and display clock
-			util::stream_format(cpu_str_buf,
-				(count > 1) ? ((clock != 0) ? "%1$dx" "%2$s %3$s" "%4$s\n" : "%1$dx"  "%2$s\n") : ((clock != 0) ? "%2$s %3$s"  "%4$s\n" : "%2$s\n"), count, name, hz, (d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz"));
+}
+void vector_device_udp_dvg::device_stop_client() {
+	std::error_condition filerr = osd_file::remove(m_host);
 
-		}
-
-		// loop over all sound chips
-		sound_interface_enumerator snditer(machine.root_device());
-		std::unordered_set<std::string> soundtags;
-		bool found_sound = false;
-		for (device_sound_interface& sound : snditer)
-		{
-			if (!sound.issound() || !soundtags.insert(sound.device().tag()).second)
-				continue;
-
-			// append the Sound: string
-			if (!found_sound)
-				sound_buf << _("\nSound:\n");
-			found_sound = true;
-
-			// count how many identical sound chips we have
-			int count = 1;
-			for (device_sound_interface& scan : snditer)
-			{
-				if (sound.device().type() == scan.device().type() && sound.device().clock() == scan.device().clock())
-					if (soundtags.insert(scan.device().tag()).second)
-						count++;
-			}
-
-			const u32 clock = sound.device().clock();
-			std::string hz(std::to_string(clock));
-			int d = (clock >= 1'000'000'000) ? 9 : (clock >= 1'000'000) ? 6 : (clock >= 1000) ? 3 : 0;
-			if (d > 0)
-			{
-				size_t dpos = hz.length() - d;
-				hz.insert(dpos, ".");
-				size_t last = hz.find_last_not_of('0');
-				hz = hz.substr(0, last + (last != dpos ? 1 : 0));
-			}
-
-			// if more than one, prepend a #x in front of the soundchip name and display clock
-			util::stream_format(sound_buf,
-				(count > 1)
-				? ((clock != 0) ? "%1$dx"  "%2$s %3$s" UTF8_NBSP "%4$s\n" : "%1$dx"  "%2$s\n")
-				: ((clock != 0) ? "%2$s %3$s "   "%4$s\n" : "%2$s\n"),
-				count, sound.device().name(), hz,
-				(d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz"));
-		}
-
-		// display screen information
-		video_buf << _("\nVideo:\n");
-		screen_device_enumerator scriter(machine.root_device());
-		int scrcount = scriter.count();
-		if (scrcount == 0)
-			video_buf << _("None\n");
-		else
-		{
-			for (screen_device& screen : scriter)
-			{
-				std::string detail;
-				if (screen.screen_type() == SCREEN_TYPE_VECTOR)
-					detail = _("Vector");
-				else
-				{
-					const u32 rate = u32(screen.frame_period().as_hz() * 1'000'000 + 0.5);
-					const bool valid = rate >= 1'000'000;
-					std::string hz(valid ? std::to_string(rate) : "?");
-					if (valid)
-					{
-						size_t dpos = hz.length() - 6;
-						hz.insert(dpos, ".");
-						size_t last = hz.find_last_not_of('0');
-						hz = hz.substr(0, last + (last != dpos ? 1 : 0));
-					}
-
-					const rectangle& visarea = screen.visible_area();
-					detail = string_format("%d " UTF8_MULTIPLY " %d (%s) %s" UTF8_NBSP "Hz",
-						visarea.width(), visarea.height(),
-						(screen.orientation() & ORIENTATION_SWAP_XY) ? "V" : "H",
-						hz);
-				}
-
-				util::stream_format(video_buf,
-					(scrcount > 1) ? _("%1$s: %2$s\n") : _("%2$s\n"),
-					get_screen_desc(screen),detail);
-			}
-		}
-		fullname_ = machine.config().gamedrv().type.fullname();
-		name_ = machine.config().gamedrv().name;
-		manufacturer_ = machine.config().gamedrv().manufacturer;
-		year_ = machine.config().gamedrv().year;
-		rom_ = machine.config().gamedrv().rom->name;
-
-		m_cpu_ = "CPU:\n" + cpu_str_buf.str();
-		driver_ = driver_buf.str() +"\n";
-		sound_ = sound_buf.str();
-		video_ = video_buf.str();
-	}
-
-	GameDetails::GameDetails(const GameDetails& rhs) : machine_(rhs.machine_) {}
-	 
-
-
-
-	template <typename Writer>
-	void GameDetails::Serialize(Writer& writer) const {
-		// This base class just write out name-value pairs, without wrapping within an object.
-		writer.StartObject();
-		writer.String("fullname");
-		writer.String(fullname_.c_str(), static_cast<SizeType>(fullname_.length()));
-		writer.String("name");
-		writer.String(name_.c_str(), static_cast<SizeType>(name_.length())); 
-		writer.String("manufacturer");
-		writer.String(manufacturer_.c_str(), static_cast<SizeType>(manufacturer_.length())); 
-		writer.String("driver");
-		writer.String(driver_.c_str(), static_cast<SizeType>(driver_.length()));
-		writer.String("year");
-		writer.String(year_.c_str(), static_cast<SizeType>(year_.length()));
-		writer.String("rom");
-		writer.String(rom_.c_str(), static_cast<SizeType>(rom_.length()));
-		writer.String("m_cpu");
-		writer.String(m_cpu_.c_str(), static_cast<SizeType>(m_cpu_.length()));
-		writer.String("sound");
-		writer.String(sound_.c_str(), static_cast<SizeType>(sound_.length()));
-		writer.String("video");
-		writer.String(video_.c_str(), static_cast<SizeType>(video_.length()));
-		writer.EndObject();
-	}
-
-
-	//-------------------------------------------------
-//  get_screen_desc - returns the description for
-//  a given screen
-//-------------------------------------------------
-	std::string GameDetails::get_screen_desc(screen_device& screen) const
+}
+void vector_device_udp_dvg::device_start()
+{
+	int i;
+	uint64_t size = 0;
+	 std::string host(machine().config().options().vector_udp_host());
+	device_sethost("socket." + host + ":80");
+	std::error_condition filerr = device_start_client();
+	
+	if (filerr.value())
 	{
-		if (screen_device_enumerator(machine_.root_device()).count() > 1)
-			return string_format(_("Screen '%1$s'"), screen.tag());
-		else
-			return _("Screen");
+		fprintf(stderr, "vector_device_udp_dvg: error: osd_file::open failed: %s tcp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
+	}
+	else
+	{
+		fprintf(stdout, "vector_device_udp_dvg: error: osd_file::opened: %s tcp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
+		serial_read((uint8_t*)m_message, BUFLEN);
+		device_stop_client();
 	}
 
+	device_sethost("udp_socket." + host + ":1234");
 
+	filerr = device_start_client();
+	if (filerr.value())
+	{
+		fprintf(stderr, "vector_device_udp_dvg: error: osd_file::open failed: %s udp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
+		::exit(1);
+	}
+	m_cmd_buf = std::make_unique<uint8_t[]>(CMD_BUF_SIZE);
+	m_in_vec_list = std::make_unique<vector_t[]>(MAX_VECTORS);
+	m_out_vec_list = std::make_unique<vector_t[]>(MAX_VECTORS);
+	m_json_buf = std::make_unique<uint8_t[]>(MAX_JSON_SIZE);
+	m_json_length = 0;
+	m_gamma_table = std::make_unique<float[]>(256);
 
-GameDetails::~GameDetails() {
+	for (i = 0; i < 256; i++)
+	{
+		m_gamma_table[i] = apply_brightness_contrast_gamma_fp(i, machine().options().brightness(), machine().options().contrast(), machine().options().gamma());
+	}
+
+	determine_game_settings();
+	m_clipx_min = DVG_RES_MIN;
+	m_clipy_min = DVG_RES_MIN;
+	m_clipx_max = DVG_RES_MAX;
+	m_clipy_max = DVG_RES_MAX;
+}
+void vector_device_udp_dvg::device_stop()
+{
+	uint32_t cmd;
+
+	cmd = (FLAG_EXIT << 29);
+	m_cmd_offs = 0;
+	m_cmd_buf[m_cmd_offs++] = cmd >> 24;
+	m_cmd_buf[m_cmd_offs++] = cmd >> 16;
+	m_cmd_buf[m_cmd_offs++] = cmd >> 8;
+	m_cmd_buf[m_cmd_offs++] = cmd >> 0;
+	serial_write(&m_cmd_buf[0], m_cmd_offs);
 }
 //
 // Function to compute region code for a point(x, y) 
 //
-uint32_t vector_device_usb_dvg::compute_code(int32_t x, int32_t y)
+uint32_t vector_device_udp_dvg::compute_code(int32_t x, int32_t y)
 {
 	// initialized as being inside 
 	uint32_t code = 0;
@@ -310,7 +222,7 @@ uint32_t vector_device_usb_dvg::compute_code(int32_t x, int32_t y)
 // Cohen-Sutherland line-clipping algorithm.  Some games (such as starwars)
 // generate coordinates outside the view window, so we need to clip them here.
 //
-uint32_t vector_device_usb_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2)
+uint32_t vector_device_udp_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2)
 {
 	int32_t x = 0, y = 0, x1, y1, x2, y2;
 	uint32_t accept, code1, code2, code_out;
@@ -405,7 +317,7 @@ uint32_t vector_device_usb_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* p
 	*pY2 = y2;
 	return accept;
 }
-void vector_device_usb_dvg::cmd_vec_postproc()
+void vector_device_udp_dvg::cmd_vec_postproc()
 {
 	int32_t  last_x = 0;
 	int32_t  last_y = 0;
@@ -457,7 +369,7 @@ void vector_device_usb_dvg::cmd_vec_postproc()
 //
 // Reset the indexes to the vector list and command buffer.
 //
-void vector_device_usb_dvg::cmd_reset(uint32_t initial)
+void vector_device_udp_dvg::cmd_reset(uint32_t initial)
 {
 	m_in_vec_last_x = 0;
 	m_in_vec_last_y = 0;
@@ -472,7 +384,7 @@ void vector_device_usb_dvg::cmd_reset(uint32_t initial)
 // Add a vector to the input vector list.  We don't keep
 // blank vectors.  They will be added later.
 //
-void vector_device_usb_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
+void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
 {
 	uint32_t   blank, add;
 	int32_t    x0, y0, x1, y1;
@@ -523,7 +435,7 @@ void vector_device_usb_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_c
 // As an optimization there is a blank flag in the XY coord which
 // allows USB-DVG to blank the beam without updating the RGB color DACs.
 //
-void vector_device_usb_dvg::cmd_add_point(int x, int y, rgb_t color)
+void vector_device_udp_dvg::cmd_add_point(int x, int y, rgb_t color)
 {
 	uint32_t   cmd;
 	uint32_t   color_change;
@@ -563,7 +475,7 @@ void vector_device_usb_dvg::cmd_add_point(int x, int y, rgb_t color)
 //
 //  Convert the MAME-supplied coordinates to USB-DVG-compatible coordinates.
 // 
-void  vector_device_usb_dvg::transform_and_scale_coords(int* px, int* py)
+void  vector_device_udp_dvg::transform_and_scale_coords(int* px, int* py)
 {
 	float x, y;
 
@@ -579,7 +491,7 @@ void  vector_device_usb_dvg::transform_and_scale_coords(int* px, int* py)
 //
 // Determine game type, orientation
 //
-int vector_device_usb_dvg::determine_game_settings()
+int vector_device_udp_dvg::determine_game_settings()
 {
 	uint32_t i;
 	Document d;
@@ -629,7 +541,7 @@ int vector_device_usb_dvg::determine_game_settings()
 //
 //  Compute a final transformation to coordinates (flip and swap).
 //
-void vector_device_usb_dvg::transform_final(int* px, int* py)
+void vector_device_udp_dvg::transform_final(int* px, int* py)
 {
 	int x, y, tmp;
 	x = *px;
@@ -684,12 +596,12 @@ void vector_device_usb_dvg::transform_final(int* px, int* py)
 //
 //  Read responses from USB-DVG via the virtual serial port over USB.
 // 
-int vector_device_usb_dvg::serial_read(uint8_t* buf, int size)
+int vector_device_udp_dvg::serial_read(uint8_t* buf, int size)
 {
 	int result = size;
 	uint32_t read = 0;
 
-	m_serial->read(buf, 0, size, read);
+	m_port->read(buf, 0, size, read);
 	if (read != size)
 	{
 		result = -1;
@@ -700,7 +612,7 @@ int vector_device_usb_dvg::serial_read(uint8_t* buf, int size)
 //
 //  Send commands to USB-DVG via the virtual serial port over USB.
 // 
-int vector_device_usb_dvg::serial_write(uint8_t* buf, int size)
+int vector_device_udp_dvg::serial_write(uint8_t* buf, int size)
 {
 	int result = -1;
 	uint32_t written = 0, chunk, total;
@@ -708,8 +620,8 @@ int vector_device_usb_dvg::serial_write(uint8_t* buf, int size)
 	total = size;
 	while (size)
 	{
-		chunk = min(size, 512);
-		m_serial->write(buf, 0, chunk, written);
+		chunk = (std::min)(size, 512);
+		m_port->write(buf, 0, chunk, written);
 		if (written != chunk)
 		{
 			goto END;
@@ -726,7 +638,7 @@ END:
 //
 // Preprocess and send commands to USB-DVG over the virtual serial port.
 //
-int vector_device_usb_dvg::serial_send()
+int vector_device_udp_dvg::serial_send()
 {
 	int      result = -1;
 	uint32_t cmd;
@@ -753,84 +665,11 @@ int vector_device_usb_dvg::serial_send()
 	m_last_r = m_last_g = m_last_b = -1;
 	return result;
 }
-vector_device_usb_dvg::vector_device_usb_dvg(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock)
-	: vector_interface(mconfig, VECTOR_USB_DVG, tag, owner, clock),
-	m_exclude_blank_vectors(false),
-	m_xmin(0),
-	m_xmax(0),
-	m_ymin(0),
-	m_ymax(0),
-	m_xscale(1.0),
-	m_yscale(1.0),
-	m_cmd_offs(0),
-	m_swap_xy(false),
-	m_flip_x(false),
-	m_flip_y(true),
-	m_clipx_min(DVG_RES_MIN),
-	m_clipx_max(DVG_RES_MAX),
-	m_clipy_min(DVG_RES_MIN),
-	m_clipy_max(DVG_RES_MAX),
-	m_last_r(-1),
-	m_last_g(-1),
-	m_last_b(-1),
-	m_artwork(0),
-	m_bw_game(false),
-	m_in_vec_cnt(0),
-	m_in_vec_last_x(0),
-	m_in_vec_last_y(0),
-	m_out_vec_cnt(0),
-	m_vertical_display(0),
-	m_json_length(0)
-{
 
-}
-void vector_device_usb_dvg::device_start()
-{
-	int i;
-	uint64_t size = 0;
-
-	std::error_condition filerr = osd_file::open(machine().config().options().vector_port(), OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_serial, size);
-
-	if (filerr.value())
-	{
-		fprintf(stderr, "vector_device_usb_dvg: error: osd_file::open failed: %s on port %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_port());
-		::exit(1);
-	}
-
-	m_cmd_buf = std::make_unique<uint8_t[]>(CMD_BUF_SIZE);
-	m_in_vec_list = std::make_unique<vector_t[]>(MAX_VECTORS);
-	m_out_vec_list = std::make_unique<vector_t[]>(MAX_VECTORS);
-	m_json_buf = std::make_unique<uint8_t[]>(MAX_JSON_SIZE);
-	m_json_length = 0;
-	m_gamma_table = std::make_unique<float[]>(256);
-
-	for (i = 0; i < 256; i++)
-	{
-		m_gamma_table[i] = apply_brightness_contrast_gamma_fp(i, machine().options().brightness(), machine().options().contrast(), machine().options().gamma());
-	}
-
-	determine_game_settings();
-	m_clipx_min = DVG_RES_MIN;
-	m_clipy_min = DVG_RES_MIN;
-	m_clipx_max = DVG_RES_MAX;
-	m_clipy_max = DVG_RES_MAX;
-}
-void vector_device_usb_dvg::device_stop()
-{
-	uint32_t cmd;
-
-	cmd = (FLAG_EXIT << 29);
-	m_cmd_offs = 0;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 0;
-	serial_write(&m_cmd_buf[0], m_cmd_offs);
-}
-void vector_device_usb_dvg::device_reset()
+void vector_device_udp_dvg::device_reset()
 {
 }
-void vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
+void vector_device_udp_dvg::add_point(int x, int y, rgb_t color, int intensity)
 {
 	intensity = std::clamp(intensity, 0, 255);
 	if (intensity == 0)
@@ -850,7 +689,7 @@ void vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
 
 }
 
-void vector_device_usb_dvg::get_dvg_info()
+void vector_device_udp_dvg::get_dvg_info()
 {
 	uint32_t cmd = 0;
 
@@ -882,6 +721,8 @@ void vector_device_usb_dvg::get_dvg_info()
 	result = serial_read(&m_json_buf[0], m_json_length);
 	if (result < 0) goto END;
 END:
+
+
 
 	StringBuffer sb;
 	PrettyWriter writer(sb);
@@ -916,7 +757,7 @@ END:
 
 
 }
-uint32_t vector_device_usb_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
+uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
 {
 	rgb_t color = rgb_t(108, 108, 108);
 	rgb_t black = rgb_t(0, 0, 0);

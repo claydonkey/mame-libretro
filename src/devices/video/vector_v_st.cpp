@@ -18,9 +18,13 @@
 #include <unistd.h>
 #endif
 #define VERBOSE 0
-#define MAX_POINTS 30000
+#define MAX_POINTS 0x100000
 #define VECTOR_SERIAL_MAX 4095
+#ifdef TERMIOS
 #define CHUNK_SIZE 512
+#else
+#define CHUNK_SIZE 512 //HS USB
+#endif  
 #include "logmacro.h"
 
 DEFINE_DEVICE_TYPE(VECTOR_V_ST, vector_device_v_st, "vector_v_st", "VECTOR_V_ST")
@@ -56,7 +60,14 @@ void vector_device_v_st_options::init(emu_options& options)
 class vector_device_v_st;
 
 
-vector_device_v_st::vector_device_v_st(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock): vector_interface(mconfig, VECTOR_V_ST, tag, owner, clock)  {}
+vector_device_v_st::vector_device_v_st(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock) : vector_interface(mconfig, VECTOR_V_ST, tag, owner, clock),
+m_serial_offset(0),
+m_serial_drop_frame(0),
+m_serial_sort(0),
+m_vector_transit{ 0,0,0 } ,
+m_serial_segments(0),
+m_serial_segments_tail(0)
+{}
 
 void vector_device_v_st::serial_reset()
 {
@@ -317,7 +328,7 @@ std::error_condition vector_device_v_st::serial_write(uint8_t* buf, int size)
 
 	while (size)
 	{
-		chunk = std::min(size, CHUNK_SIZE);
+		chunk = min(size, CHUNK_SIZE);
 		result = m_serial->write(buf, 0, chunk, written);
 		if (written != chunk)
 		{
@@ -551,11 +562,9 @@ void vector_device_v_st::device_reset()
 
 uint32_t vector_device_v_st::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
-	//if (vector_device_t::m_vector_index)
-	//{
+	 
 		serial_send();
-	//	
-	//}
+ 
 	return 0;
 }
 

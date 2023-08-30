@@ -7,6 +7,7 @@
 
 #include "video/vector.h"
 #include "video/vector_usb_dvg.h"
+#include "video/vector_udp_dvg.h"
 #include "video/vector_v_st.h"
 #include "divector.h"
 
@@ -68,6 +69,7 @@ private:
 	 bool now;
 	optional_device<vector_interface> m_v_st_device;
 	optional_device<vector_interface> m_usb_dvg_device;
+	optional_device<vector_interface> m_udp_dvg_device;
 
 	
 	 

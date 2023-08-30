@@ -1,45 +1,18 @@
 // license:BSD-3-Clause
 // copyright-holders:Mario Montminy, Anthony Campbell
-#ifndef VECTOR_USB_DVG_H
-#define VECTOR_USB_DVG_H
+#ifndef VECTOR_UDP_DVG_H
+#define VECTOR_UDP_DVG_H
 #pragma once
 
 #include "osdcore.h"
 #include "screen.h"
 #include "divector.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-class GameDetails
-{
-public:
-	GameDetails(running_machine& machine) ;
-	GameDetails(const GameDetails& rhs);
-	~GameDetails();
-	template <typename Writer>
-	void Serialize(Writer& writer) const;
-
-private:
-
-	//-------------------------------------------------
-//  get_screen_desc - returns the description for
-//  a given screen
-//-------------------------------------------------
-	std::string get_screen_desc(screen_device& screen) const;
-	running_machine& machine_;
-	std::string fullname_;
-	std::string name_;
-	std::string manufacturer_;
-	std::string rom_;
-	std::string year_;
-	std::string video_;
-	std::string m_cpu_;
-	std::string driver_;
-	std::string sound_;
-
-
-};
-
-
-class vector_device_usb_dvg : public vector_interface
+#define MAX_JSON_SIZE           512
+#define BUFLEN                  1200 
+class vector_device_udp_dvg : public vector_interface
 {
 
 public:
@@ -62,7 +35,7 @@ public:
 		bool bw_game;
 	} game_info_t;
 
-	vector_device_usb_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
+	vector_device_udp_dvg(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
 	// device-level overrides
 
@@ -113,11 +86,18 @@ private:
 	std::unique_ptr<vector_t[]> m_out_vec_list;
 	uint32_t m_out_vec_cnt;
 	uint32_t m_vertical_display;
-	osd_file::ptr m_serial;
+	osd_file::ptr m_port;
+ 
+	std::string m_host;
+	WSADATA m_wsa;
+	char m_message[BUFLEN];
+	//uint8_t  m_json_buf[MAX_JSON_SIZE];
 	int m_json_length;
 	std::unique_ptr<uint8_t[]> m_json_buf;
 	std::unique_ptr<float[]> m_gamma_table;
-
+	void device_sethost(std::string _host);
+	std::error_condition  device_start_client();
+	void device_stop_client();
 protected:
     virtual void device_start() override;
     virtual void device_reset() override;
@@ -126,5 +106,5 @@ protected:
 };
 
 // device type definition
-DECLARE_DEVICE_TYPE(VECTOR_USB_DVG, vector_device_usb_dvg)
+DECLARE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg)
 #endif // VECTOR_USB_DVG_H

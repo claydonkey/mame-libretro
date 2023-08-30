@@ -212,7 +212,7 @@ public:
 	void set_value(std::string_view name, float value, int priority);
 
 	// misc
-	static const char *unadorned(int x = 0) noexcept { return s_option_unadorned[std::min(x, MAX_UNADORNED_OPTIONS - 1)]; }
+	static const char *unadorned(int x = 0) noexcept { return s_option_unadorned[(std::min)(x, MAX_UNADORNED_OPTIONS - 1)]; }
 
 protected:
 	virtual void command_argument_processed() { }

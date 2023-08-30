@@ -14,7 +14,10 @@
 
 #ifndef MAME_CPU_M68000_M68KCPU_H
 #define MAME_CPU_M68000_M68KCPU_H
-
+#undef min
+#undef max
+#undef interface
+#undef EXCEPTION_ILLEGAL_INSTRUCTION
 #pragma once
 
 #if defined(__sun__) && defined(__svr4__)

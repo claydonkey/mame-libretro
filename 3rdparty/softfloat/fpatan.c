@@ -24,7 +24,7 @@ these four paragraphs for those parts of this code that are retained.
  * Adapted for 3rdparty/softfloat in MAME by Calvin Buckley (05/2021)
  * ==========================================================================*/
 
-#define FLOAT128
+ 
 
 #include "mamesf.h"
 #include "softfloat.h"

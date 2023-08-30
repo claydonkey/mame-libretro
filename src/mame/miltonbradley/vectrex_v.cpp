@@ -96,7 +96,7 @@ void vectrex_base_state::via_w(offs_t offset, uint8_t data)
 		if (m_reset_refresh)
 			m_refresh->adjust(period, 0, period);
 		else
-			m_refresh->adjust(std::min(period, m_refresh->remaining()), 0, period);
+			m_refresh->adjust((std::min)(period, m_refresh->remaining()), 0, period);
 		break;
 	}
 	m_via6522_0->write(offset, data);

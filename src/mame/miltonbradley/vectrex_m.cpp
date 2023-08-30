@@ -282,7 +282,7 @@ void vectrex_base_state::psg_port_w(uint8_t data)
 
 			if (m_imager_freq > 1)
 			{
-				attotime eye_time = attotime::from_double(std::min(1.0 / m_imager_freq, m_imager_eye_timer->remaining().as_double()));
+				attotime eye_time = attotime::from_double((std::min)(1.0 / m_imager_freq, m_imager_eye_timer->remaining().as_double()));
 				attotime eye_period = attotime::from_double(1.0 / m_imager_freq);
 				m_imager_eye_timer->adjust(eye_time, 2, eye_period);
 			}

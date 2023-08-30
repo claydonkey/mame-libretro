@@ -3477,7 +3477,7 @@
  *  see also: emu\machine\rescap.h
  *
  *************************************/
-
+#undef interface
 /* calculate charge exponent using discrete sample time */
 #define RC_CHARGE_EXP(rc)                       (1.0 - exp(-this->sample_time() / (rc)))
 /* calculate charge exponent using given sample time */
