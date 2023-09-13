@@ -23,7 +23,7 @@ these four paragraphs for those parts of this code that are retained.
  *            Stanislav Shwartsman [sshwarts at sourceforge net]
  * ==========================================================================*/
 
-#define FLOAT128
+#define SFLOAT128
 
 #define USE_estimateDiv128To64
 #include "mamesf.h"

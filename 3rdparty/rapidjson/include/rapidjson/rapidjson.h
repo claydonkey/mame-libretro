@@ -399,6 +399,8 @@ RAPIDJSON_NAMESPACE_END
 */
 #ifndef RAPIDJSON_ASSERT
 #include <cassert>
+#define assert(expression) ((void)0)
+
 #define RAPIDJSON_ASSERT(x) assert(x)
 #endif // RAPIDJSON_ASSERT
 

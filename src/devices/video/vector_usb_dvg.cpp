@@ -11,7 +11,7 @@
 #include "logmacro.h"
 #include <language.h>
 #include <drivenum.h>
-
+ 
 using namespace util;
 
 
@@ -708,7 +708,7 @@ int vector_device_usb_dvg::serial_write(uint8_t* buf, int size)
 	total = size;
 	while (size)
 	{
-		chunk = min(size, 512);
+		chunk = std::min(size, 512);
 		m_serial->write(buf, 0, chunk, written);
 		if (written != chunk)
 		{

@@ -328,7 +328,7 @@ std::error_condition vector_device_v_st::serial_write(uint8_t* buf, int size)
 
 	while (size)
 	{
-		chunk = min(size, CHUNK_SIZE);
+		chunk = std::min(size, CHUNK_SIZE);
 		result = m_serial->write(buf, 0, chunk, written);
 		if (written != chunk)
 		{

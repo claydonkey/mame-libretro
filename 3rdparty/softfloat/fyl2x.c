@@ -24,7 +24,7 @@ these four paragraphs for those parts of this code that are retained.
  * Adapted for lib/softfloat in MESS by Hans Ostermeyer (03/2012)
  * ==========================================================================*/
 
-#define FLOAT128
+#define SFLOAT128
 
 #define USE_estimateDiv128To64
 #include "mamesf.h"

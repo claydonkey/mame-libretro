@@ -38,7 +38,7 @@ these four paragraphs for those parts of this code that are retained.
 | the `FLOAT128' macro and the quadruple-precision format `float128'.
 *----------------------------------------------------------------------------*/
 #define FLOATX80
-#define FLOAT128
+#define SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point types.
@@ -51,7 +51,7 @@ typedef struct {
 	bits64 low;
 } floatx80;
 #endif
-#ifdef FLOAT128
+#ifdef SFLOAT128
 typedef struct {
 	bits64 high, low;
 } float128;
@@ -115,7 +115,7 @@ float64 int64_to_float64( int64 );
 #ifdef FLOATX80
 floatx80 int64_to_floatx80( int64 );
 #endif
-#ifdef FLOAT128
+#ifdef SFLOAT128
 float128 int64_to_float128( int64 );
 #endif
 
@@ -130,7 +130,7 @@ float64 float32_to_float64( float32 );
 #ifdef FLOATX80
 floatx80 float32_to_floatx80( float32 );
 #endif
-#ifdef FLOAT128
+#ifdef SFLOAT128
 float128 float32_to_float128( float32 );
 #endif
 
@@ -163,7 +163,7 @@ float32 float64_to_float32( float64 );
 #ifdef FLOATX80
 floatx80 float64_to_floatx80( float64 );
 #endif
-#ifdef FLOAT128
+#ifdef SFLOAT128
 float128 float64_to_float128( float64 );
 #endif
 
@@ -196,7 +196,7 @@ int64 floatx80_to_int64( floatx80 );
 int64 floatx80_to_int64_round_to_zero( floatx80 );
 float32 floatx80_to_float32( floatx80 );
 float64 floatx80_to_float64( floatx80 );
-#ifdef FLOAT128
+#ifdef SFLOAT128
 float128 floatx80_to_float128( floatx80 );
 #endif
 floatx80 floatx80_scale(floatx80 a, floatx80 b);
@@ -257,7 +257,7 @@ floatx80 roundAndPackFloatx80(int8 roundingPrecision, flag zSign, int32 zExp, bi
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE quadruple-precision conversion routines.

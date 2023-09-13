@@ -10,6 +10,15 @@
 #include "logmacro.h"
 #include <language.h>
 #include <drivenum.h>
+#include <cassert>
+#include <ranges>
+#include <chrono>
+#include <thread>
+#include "msgpack/msgpack.hpp"
+using namespace std::chrono;
+using namespace std::this_thread; // sleep_for, sleep_until
+using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
+
 
 using namespace util;
 
@@ -21,17 +30,6 @@ DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VEC
 #define DVG_RELEASE             0
 #define DVG_BUILD               1
 #define CMD_BUF_SIZE            0x20000
-#define FLAG_COMPLETE           0x0
-#define FLAG_RGB                0x1
-#define FLAG_XY                 0x2
-#define FLAG_GAME               0x3
-#define FLAG_CMD_END            0x6
-#define FLAG_EXIT               0x7
-#define FLAG_CMD                0x5
-#define FLAG_CMD_GET_GAME_INFO  0x2
-#define FLAG_CMD_GET_DVG_INFO   0x1
-
-#define FLAG_COMPLETE_MONOCHROME (1 << 28)
 
 #define DVG_RES_MIN              0
 #define DVG_RES_MAX              4095
@@ -51,7 +49,23 @@ DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VEC
 #define GAME_ARMORA              1
 #define GAME_WARRIOR             2
 
-#define BUFLEN                  1200 
+#define CMD_LEN 6
+
+typedef enum _cmd_enum
+{
+	FLAG_COMPLETE = 0x0,
+	FLAG_RGB = 0x1,
+	FLAG_XY = 0x2,
+	FLAG_GAME = 0x3,
+	FLAG_CMD_END = 0x6,
+	FLAG_EXIT = 0x7,
+	FLAG_CMD = 0x5,
+	FLAG_GET_DVG_INFO = 0x8,
+	FLAG_GET_GAME_INFO = 0x9,
+	FLAG_COMPLETE_MONOCHROME = 0xA
+}cmd_enum;
+
+
 const vector_device_udp_dvg::game_info_t vector_device_udp_dvg::s_games[] = {
 	{"armora",   false, GAME_ARMORA,  true},
 	{"armorap",  false, GAME_ARMORA,  true},
@@ -101,7 +115,7 @@ vector_device_udp_dvg::vector_device_udp_dvg(const machine_config& mconfig, cons
 	m_ymax(0),
 	m_xscale(1.0),
 	m_yscale(1.0),
-	m_cmd_offs(0),
+
 	m_swap_xy(false),
 	m_flip_x(false),
 	m_flip_y(true),
@@ -114,10 +128,8 @@ vector_device_udp_dvg::vector_device_udp_dvg(const machine_config& mconfig, cons
 	m_last_b(-1),
 	m_artwork(0),
 	m_bw_game(false),
-	m_in_vec_cnt(0),
 	m_in_vec_last_x(0),
 	m_in_vec_last_y(0),
-	m_out_vec_cnt(0),
 	m_vertical_display(0),
 	m_json_length(0)
 {
@@ -129,53 +141,34 @@ void vector_device_udp_dvg::device_sethost(std::string _host) {
 std::error_condition vector_device_udp_dvg::device_start_client() {
 	uint64_t size = 0;
 	std::error_condition filerr = osd_file::open(m_host, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_port, size);
-	//cout << host + " >> " + filerr.message() << std::endl;
-
-	m_cmd_buf = std::make_unique < uint8_t[]>(CMD_BUF_SIZE);
 	m_json_length = 0;
 	//	m_run = true;
 	return filerr;
-
 }
+
 void vector_device_udp_dvg::device_stop_client() {
 	std::error_condition filerr = osd_file::remove(m_host);
 
 }
+
 void vector_device_udp_dvg::device_start()
 {
-	int i;
-	uint64_t size = 0;
-	 std::string host(machine().config().options().vector_udp_host());
-	device_sethost("socket." + host + ":80");
+
+	std::string host(machine().config().options().vector_udp_host());
+	device_sethost("udp_socket." + host + ":2390");
 	std::error_condition filerr = device_start_client();
-	
-	if (filerr.value())
-	{
-		fprintf(stderr, "vector_device_udp_dvg: error: osd_file::open failed: %s tcp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
-	}
-	else
-	{
-		fprintf(stdout, "vector_device_udp_dvg: error: osd_file::opened: %s tcp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
-		serial_read((uint8_t*)m_message, BUFLEN);
-		device_stop_client();
-	}
 
-	device_sethost("udp_socket." + host + ":1234");
-
-	filerr = device_start_client();
 	if (filerr.value())
 	{
 		fprintf(stderr, "vector_device_udp_dvg: error: osd_file::open failed: %s udp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
 		::exit(1);
 	}
-	m_cmd_buf = std::make_unique<uint8_t[]>(CMD_BUF_SIZE);
-	m_in_vec_list = std::make_unique<vector_t[]>(MAX_VECTORS);
-	m_out_vec_list = std::make_unique<vector_t[]>(MAX_VECTORS);
+
 	m_json_buf = std::make_unique<uint8_t[]>(MAX_JSON_SIZE);
 	m_json_length = 0;
 	m_gamma_table = std::make_unique<float[]>(256);
 
-	for (i = 0; i < 256; i++)
+	for (int i = 0; i < 256; i++)
 	{
 		m_gamma_table[i] = apply_brightness_contrast_gamma_fp(i, machine().options().brightness(), machine().options().contrast(), machine().options().gamma());
 	}
@@ -191,16 +184,10 @@ void vector_device_udp_dvg::device_stop()
 	uint32_t cmd;
 
 	cmd = (FLAG_EXIT << 29);
-	m_cmd_offs = 0;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 0;
-	serial_write(&m_cmd_buf[0], m_cmd_offs);
+
+	//packets_write(&m_cmd_buf[0], m_cmd_offs);
 }
-//
-// Function to compute region code for a point(x, y) 
-//
+
 uint32_t vector_device_udp_dvg::compute_code(int32_t x, int32_t y)
 {
 	// initialized as being inside 
@@ -219,8 +206,7 @@ uint32_t vector_device_udp_dvg::compute_code(int32_t x, int32_t y)
 }
 
 //
-// Cohen-Sutherland line-clipping algorithm.  Some games (such as starwars)
-// generate coordinates outside the view window, so we need to clip them here.
+// Cohen-Sutherland line-clipping algorithm.  
 //
 uint32_t vector_device_udp_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2)
 {
@@ -323,18 +309,18 @@ void vector_device_udp_dvg::cmd_vec_postproc()
 	int32_t  last_y = 0;
 	int32_t  x0, y0, x1, y1;
 	uint32_t add;
-	uint32_t i;
 
-	m_out_vec_cnt = 0;
 
-	for (i = 0; i < m_in_vec_cnt; i++)
+	m_out_vectors.clear();
+
+	for (auto& vec : m_in_vectors)
 	{
-		x0 = m_in_vec_list[i].x0;
-		y0 = m_in_vec_list[i].y0;
-		x1 = m_in_vec_list[i].x1;
-		y1 = m_in_vec_list[i].y1;
-
-		if (m_in_vec_list[i].screen_coords)
+		x0 = vec.x0;
+		y0 = vec.y0;
+		x1 = vec.x1;
+		y1 = vec.y1;
+		rgb_t color = vec.color;
+		if (vec.screen_coords)
 		{
 			transform_and_scale_coords(&x0, &y0);
 			transform_and_scale_coords(&x1, &y1);
@@ -344,20 +330,13 @@ void vector_device_udp_dvg::cmd_vec_postproc()
 		{
 			if (last_x != x0 || last_y != y0)
 			{
+				vector_t vec = { last_x, last_y, x0, y1, rgb_t(0, 0, 0) };
 				// Disconnect detected. Insert a blank vector.
-				m_out_vec_list[m_out_vec_cnt].x0 = last_x;
-				m_out_vec_list[m_out_vec_cnt].y0 = last_y;
-				m_out_vec_list[m_out_vec_cnt].x1 = x0;
-				m_out_vec_list[m_out_vec_cnt].y1 = y0;
-				m_out_vec_list[m_out_vec_cnt].color = rgb_t(0, 0, 0);
-				m_out_vec_cnt++;
+				m_out_vectors.push_back(vec);
 			}
-			m_out_vec_list[m_out_vec_cnt].x0 = last_x;
-			m_out_vec_list[m_out_vec_cnt].y0 = last_y;
-			m_out_vec_list[m_out_vec_cnt].x1 = x1;
-			m_out_vec_list[m_out_vec_cnt].y1 = y1;
-			m_out_vec_list[m_out_vec_cnt].color = m_in_vec_list[i].color;
-			m_out_vec_cnt++;
+			vector_t vec2 = { last_x, last_y, x0, y1,color };
+			m_out_vectors.push_back(vec2);
+
 		}
 		last_x = x1;
 		last_y = y1;
@@ -373,22 +352,16 @@ void vector_device_udp_dvg::cmd_reset(uint32_t initial)
 {
 	m_in_vec_last_x = 0;
 	m_in_vec_last_y = 0;
-	m_in_vec_cnt = 0;
-	m_out_vec_cnt = 0;
-	m_cmd_offs = 0;
+	m_in_vectors.clear();
+	m_out_vectors.clear();
+
 }
 
-
-
-//
-// Add a vector to the input vector list.  We don't keep
-// blank vectors.  They will be added later.
-//
 void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
 {
-	uint32_t   blank, add;
+	uint32_t    add;
 	int32_t    x0, y0, x1, y1;
-
+	bool blank;
 	x0 = m_in_vec_last_x;
 	y0 = m_in_vec_last_y;
 	x1 = x;
@@ -398,7 +371,7 @@ void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_c
 	blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
 	if ((x1 == x0) && (y1 == y0) && blank)
 	{
-		add = 0;
+		add = false;
 	}
 	if (m_exclude_blank_vectors)
 	{
@@ -409,19 +382,9 @@ void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_c
 	}
 	if (add)
 	{
-		if (m_in_vec_cnt < MAX_VECTORS)
+		if (m_in_vectors.size() < MAX_VECTORS)
 		{
-			if (m_in_vec_cnt)
-			{
-				m_in_vec_list[m_in_vec_cnt - 1].next = &m_in_vec_list[m_in_vec_cnt];
-			}
-			m_in_vec_list[m_in_vec_cnt].x0 = x0;
-			m_in_vec_list[m_in_vec_cnt].y0 = y0;
-			m_in_vec_list[m_in_vec_cnt].x1 = x1;
-			m_in_vec_list[m_in_vec_cnt].y1 = y1;
-			m_in_vec_list[m_in_vec_cnt].color = color;
-			m_in_vec_list[m_in_vec_cnt].screen_coords = screen_coords;
-			m_in_vec_cnt++;
+			m_in_vectors.push_back({ x0, y0, x1, y1, color, screen_coords });
 		}
 	}
 	m_in_vec_last_x = x;
@@ -429,52 +392,6 @@ void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_c
 }
 
 
-//
-// Add commands to the serial buffer to send.  When we detect
-// color changes, we add a command to update it.
-// As an optimization there is a blank flag in the XY coord which
-// allows USB-DVG to blank the beam without updating the RGB color DACs.
-//
-void vector_device_udp_dvg::cmd_add_point(int x, int y, rgb_t color)
-{
-	uint32_t   cmd;
-	uint32_t   color_change;
-	uint32_t   blank;
-
-	blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
-	if (!blank)
-	{
-		color_change = ((m_last_r != color.r()) || (m_last_g != color.g()) || (m_last_b != color.b()));
-		if (color_change)
-		{
-			m_last_r = color.r();
-			m_last_g = color.g();
-			m_last_b = color.b();
-			cmd = (FLAG_RGB << 29) | ((m_last_r & 0xff) << 16) | ((m_last_g & 0xff) << 8) | (m_last_b & 0xff);
-			if (m_cmd_offs <= (CMD_BUF_SIZE - 8))
-			{
-				m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-				m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-				m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-				m_cmd_buf[m_cmd_offs++] = cmd >> 0;
-			}
-		}
-	}
-	transform_final(&x, &y);
-	cmd = (FLAG_XY << 29) | ((blank & 0x1) << 28) | ((x & 0x3fff) << 14) | (y & 0x3fff);
-	if (m_cmd_offs <= (CMD_BUF_SIZE - 8))
-	{
-		m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 0;
-	}
-}
-
-
-//
-//  Convert the MAME-supplied coordinates to USB-DVG-compatible coordinates.
-// 
 void  vector_device_udp_dvg::transform_and_scale_coords(int* px, int* py)
 {
 	float x, y;
@@ -488,9 +405,6 @@ void  vector_device_udp_dvg::transform_and_scale_coords(int* px, int* py)
 }
 
 
-//
-// Determine game type, orientation
-//
 int vector_device_udp_dvg::determine_game_settings()
 {
 	uint32_t i;
@@ -538,9 +452,6 @@ int vector_device_udp_dvg::determine_game_settings()
 }
 
 
-//
-//  Compute a final transformation to coordinates (flip and swap).
-//
 void vector_device_udp_dvg::transform_final(int* px, int* py)
 {
 	int x, y, tmp;
@@ -566,13 +477,9 @@ void vector_device_udp_dvg::transform_final(int* px, int* py)
 
 	if (m_vertical_display)
 	{
-		if (m_swap_xy)
+		if (!m_swap_xy)
 		{
-			// Vertical on vertical display
-		}
-		else
-		{
-			// Horizontal on vertical display
+
 			y = 512 + (0.75 * y);
 		}
 	}
@@ -583,25 +490,23 @@ void vector_device_udp_dvg::transform_final(int* px, int* py)
 			// Vertical on horizontal display
 			x = 512 + (0.75 * x);
 		}
-		else
-		{
-			// Horizontal on horizontal display
-		}
+
 	}
 
 	*px = x;
 	*py = y;
 }
 
-//
-//  Read responses from USB-DVG via the virtual serial port over USB.
-// 
-int vector_device_udp_dvg::serial_read(uint8_t* buf, int size)
+
+int vector_device_udp_dvg::packet_read(uint8_t* buf, int size)
 {
 	int result = size;
 	uint32_t read = 0;
 
 	m_port->read(buf, 0, size, read);
+	while (!read)
+		m_port->read(buf, 0, size, read);
+
 	if (read != size)
 	{
 		result = -1;
@@ -609,58 +514,97 @@ int vector_device_udp_dvg::serial_read(uint8_t* buf, int size)
 	return result;
 }
 
-//
-//  Send commands to USB-DVG via the virtual serial port over USB.
-// 
-int vector_device_udp_dvg::serial_write(uint8_t* buf, int size)
-{
-	int result = -1;
-	uint32_t written = 0, chunk, total;
 
+int vector_device_udp_dvg::packets_write(uint8_t* buf, int size)
+{
+
+	uint32_t written = 0, total;
 	total = size;
-	while (size)
-	{
-		chunk = (std::min)(size, 512);
-		m_port->write(buf, 0, chunk, written);
-		if (written != chunk)
-		{
-			goto END;
-		}
-		buf += chunk;
-		size -= chunk;
-	}
-	result = total;
-END:
-	return result;
+	m_port->write(buf, 0, size, written);
+	return written;
 }
 
 
-//
-// Preprocess and send commands to USB-DVG over the virtual serial port.
-//
-int vector_device_udp_dvg::serial_send()
+uint32_t bytecnt = 0;
+
+int vector_device_udp_dvg::send_vectors()
 {
 	int      result = -1;
-	uint32_t cmd;
-	uint32_t i;
-
 	cmd_vec_postproc();
+ 
+	dvg_points_t points;
 
-	for (i = 0; i < m_out_vec_cnt; i++)
+	for (auto& vec : m_out_vectors)
 	{
-		cmd_add_point(m_out_vec_list[i].x1, m_out_vec_list[i].y1, m_out_vec_list[i].color);
-	}
-	cmd = (FLAG_COMPLETE << 29);
-	if (m_bw_game)
-	{
-		cmd |= FLAG_COMPLETE_MONOCHROME;
-	}
-	m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-	m_cmd_buf[m_cmd_offs++] = cmd >> 0;
 
-	result = serial_write(&m_cmd_buf[0], m_cmd_offs);
+		dvg_point_t vp;
+		uint32_t   blank;
+		rgb_t		color = vec.color;
+		int32_t y = vec.y1;
+		int32_t x = vec.x1;
+		uint8_t dvg_xh;
+		uint8_t dvg_xl;
+		uint8_t dvg_yh;
+		uint8_t dvg_yl;
+		blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
+
+		transform_final(&x, &y);
+		vp.x = (x & 0x3f00);
+		vp.y = (y & 0x3f00);
+
+		
+		if (!blank && (m_last_r != color.r()) || (m_last_g != color.g()) || (m_last_b != color.b()))
+		{
+			m_last_r = color.r();
+			m_last_g = color.g();
+			m_last_b = color.b();
+
+			vp.color.r = m_last_r;
+			vp.color.g = m_last_g;
+			vp.color.b = m_last_b;
+		}
+		points.pnt.push_back(vp);
+	}
+	int elms = points.pnt.size();
+	
+ 
+
+	if (elms) {
+		std::vector<uint8_t > outgoing = msgpack::pack(points);
+		uint8_t* outgoing_raw = outgoing.data();
+		int len = outgoing.size();
+		sprintf((char*)m_send_buffer, "$cmd%c ", FLAG_XY);
+		result = packets_write(m_send_buffer, len);
+
+		bytecnt += len;
+
+		fprintf(stdout, "bytes out %lu\r", bytecnt);
+
+		int full_buffers;
+		for (full_buffers = 0; full_buffers < (len - BUFLEN); full_buffers += BUFLEN) {
+			 
+			memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers,  BUFLEN);
+			result = packets_write(m_send_buffer, BUFLEN);
+		}
+	
+		if (len - full_buffers)
+		{
+		memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers, len % BUFLEN);
+			result = packets_write(m_send_buffer, BUFLEN);
+		}
+
+		if (m_bw_game)
+		{
+			//cmd = FLAG_COMPLETE_MONOCHROME;
+		}
+
+		sprintf((char*)m_send_buffer, "$cmd%c %lu", FLAG_COMPLETE, len);
+		result = packets_write(m_send_buffer, len);
+	}
+
+	
+	//sprintf((char*)m_send_buffer, "$cmd%c ", cmd);
+	//result = packets_write(m_send_buffer, CMD_LEN);
 	cmd_reset(0);
 	m_last_r = m_last_g = m_last_b = -1;
 	return result;
@@ -691,11 +635,7 @@ void vector_device_udp_dvg::add_point(int x, int y, rgb_t color, int intensity)
 
 void vector_device_udp_dvg::get_dvg_info()
 {
-	uint32_t cmd = 0;
-
-	uint8_t  cmd_buf[4] = {};
 	int      result;
-
 	uint32_t version, major, minor;
 
 	if (m_json_length)
@@ -703,26 +643,15 @@ void vector_device_udp_dvg::get_dvg_info()
 		return;
 	}
 
-	cmd = (FLAG_CMD << 29) | FLAG_CMD_GET_DVG_INFO;
+	 
 	sscanf(emulator_info::get_build_version(), "%u.%u", &major, &minor);
 	version = (((minor / 1000) % 10) << 12) | (((minor / 100) % 10) << 8) | (((minor / 10) % 10) << 4) | (minor % 10);
-	cmd |= version << 8;
-	cmd_buf[0] = cmd >> 24;
-	cmd_buf[1] = cmd >> 16;
-	cmd_buf[2] = cmd >> 8;
-	cmd_buf[3] = cmd >> 0;
-	serial_write(cmd_buf, 4);
+	sprintf((char*)m_send_buffer, "$cmd%c %lu", FLAG_GET_DVG_INFO, version);
+	packets_write(m_send_buffer, CMD_LEN + 4);
 
-	result = serial_read(reinterpret_cast<uint8_t*> (&cmd), sizeof(cmd));
-	if (result < 0) goto END;
-	result = serial_read(reinterpret_cast<uint8_t*> (&m_json_length), sizeof(m_json_length));
-	if (result < 0) goto END;
-	m_json_length = (std::min)(m_json_length, MAX_JSON_SIZE - 1);
-	result = serial_read(&m_json_buf[0], m_json_length);
-	if (result < 0) goto END;
-END:
-
-
+	result = packet_read(reinterpret_cast<uint8_t*> (&m_recv_buffer), 2);
+	uint16_t len = (m_recv_buffer[0] << 8) + m_recv_buffer[1];
+	result = packet_read(reinterpret_cast<uint8_t*> (&m_recv_buffer), len);
 
 	StringBuffer sb;
 	PrettyWriter writer(sb);
@@ -730,30 +659,10 @@ END:
 
 	const char* json = sb.GetString();
 	uint16_t json_len = (uint16_t)sb.GetSize();
-	m_cmd_offs = 0;
-	for (uint16_t len = 0; len < (json_len / 3) + 1; len++)
-	{
-		cmd = (FLAG_GAME << 29);
-		if (((len * 3) + 0) < json_len) cmd |= (json[(len * 3) + 0] << 0);
-		if (((len * 3) + 1) < json_len)	cmd |= (json[(len * 3) + 1] << 8);
-		if (((len * 3) + 2) < json_len)	cmd |= (json[(len * 3) + 2] << 16);
+	 
 
-		m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 0;
-
-	}
-	serial_write(&m_cmd_buf[0], m_cmd_offs);
-	m_cmd_offs = 0;
-
-	cmd = (FLAG_CMD_END << 29) | json_len;
-
-	cmd_buf[0] = cmd >> 24;
-	cmd_buf[1] = cmd >> 16;
-	cmd_buf[2] = cmd >> 8;
-	cmd_buf[3] = cmd >> 0;
-	serial_write(cmd_buf, 4);
+	sprintf((char*)m_send_buffer, "$cmd%c %s", FLAG_GET_GAME_INFO, json);
+	packets_write(m_send_buffer, CMD_LEN + json_len);
 
 
 }
@@ -795,7 +704,7 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 	m_clipx_max = x1;
 	m_clipy_max = y1;
 
-	if (m_in_vec_cnt)
+	if (m_in_vectors.size())
 	{
 		switch (m_artwork) {
 		case GAME_ARMORA:
@@ -964,7 +873,7 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 			cmd_add_vec(2949, 1658, color, false);
 			break;
 		}
-		serial_send();
+		send_vectors();
 	}
 	return 0;
 }

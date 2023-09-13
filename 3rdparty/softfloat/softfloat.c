@@ -708,7 +708,7 @@ static floatx80
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the least-significant 64 fraction bits of the quadruple-precision
@@ -862,7 +862,7 @@ floatx80 int32_to_floatx80( int32 a )
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the result of converting the 32-bit two's complement integer `a' to
@@ -965,7 +965,7 @@ floatx80 int64_to_floatx80( int64 a )
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the result of converting the 64-bit two's complement integer `a' to
@@ -1218,7 +1218,7 @@ floatx80 float32_to_floatx80( float32 a )
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the result of converting the single-precision floating-point value
@@ -2145,7 +2145,7 @@ floatx80 float64_to_floatx80( float64 a )
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the result of converting the double-precision floating-point value
@@ -3045,7 +3045,7 @@ float64 floatx80_to_float64( floatx80 a )
 
 }
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the result of converting the extended double-precision floating-
@@ -3823,7 +3823,7 @@ flag floatx80_lt_quiet( floatx80 a, floatx80 b )
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | Returns the result of converting the quadruple-precision floating-point

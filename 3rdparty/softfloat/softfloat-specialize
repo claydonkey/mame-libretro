@@ -371,7 +371,7 @@ INLINE flag extractFloatx80Sign( floatx80 a )
 
 #endif
 
-#ifdef FLOAT128
+#ifdef SFLOAT128
 
 /*----------------------------------------------------------------------------
 | The pattern for a default generated quadruple-precision NaN.  The `high' and
