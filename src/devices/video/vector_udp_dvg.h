@@ -12,7 +12,7 @@
 #include <vector>
 #include "msgpack/msgpack.hpp"
 #define MAX_JSON_SIZE           512
-#define BUFLEN                  1024
+#define BUFF_SIZE                  1024
 
 #ifdef __GNUC__
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
@@ -47,10 +47,10 @@ struct  dvg_point_t
 
 struct dvg_points_t {
 	std::vector< dvg_point_t> pnt;
-
+	uint16_t point_count;
 	template<class T>
 	void pack(T& pack) {
-		pack(pnt);
+		pack(pnt, point_count);
 	}
 };
  
@@ -111,8 +111,8 @@ private:
 	int32_t m_ymax;
 	float m_xscale;
 	float m_yscale;
-	uint8_t m_send_buffer[BUFLEN];
-	uint8_t m_recv_buffer[BUFLEN];
+	uint8_t m_send_buffer[BUFF_SIZE];
+	uint8_t m_recv_buffer[BUFF_SIZE];
 	bool m_swap_xy;
 	bool m_flip_x;
 	bool m_flip_y;
@@ -136,7 +136,7 @@ private:
 
 	std::string m_host;
 	WSADATA m_wsa;
-	char m_message[BUFLEN];
+	char m_message[BUFF_SIZE];
 	//uint8_t  m_json_buf[MAX_JSON_SIZE];
 	int m_json_length;
 	std::unique_ptr<uint8_t[]> m_json_buf;

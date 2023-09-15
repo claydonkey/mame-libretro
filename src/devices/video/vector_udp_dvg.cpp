@@ -18,7 +18,7 @@
 using namespace std::chrono;
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
-
+ // ns, us, ms, s, h, etc.
 
 using namespace util;
 
@@ -53,13 +53,14 @@ DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VEC
 
 typedef enum _cmd_enum
 {
-	FLAG_COMPLETE = 0x0,
+	
 	FLAG_RGB = 0x1,
 	FLAG_XY = 0x2,
 	FLAG_GAME = 0x3,
+	FLAG_COMPLETE = 0x4,
+	FLAG_CMD = 0x5,
 	FLAG_CMD_END = 0x6,
 	FLAG_EXIT = 0x7,
-	FLAG_CMD = 0x5,
 	FLAG_GET_DVG_INFO = 0x8,
 	FLAG_GET_GAME_INFO = 0x9,
 	FLAG_COMPLETE_MONOCHROME = 0xA
@@ -524,8 +525,11 @@ int vector_device_udp_dvg::packets_write(uint8_t* buf, int size)
 	return written;
 }
 
-
-uint32_t bytecnt = 0;
+typedef union _ser_float {
+	float f;
+	uint32_t u;
+} ser_float;
+uint32_t byte_ctr = 0;
 
 int vector_device_udp_dvg::send_vectors()
 {
@@ -542,10 +546,7 @@ int vector_device_udp_dvg::send_vectors()
 		rgb_t		color = vec.color;
 		int32_t y = vec.y1;
 		int32_t x = vec.x1;
-		uint8_t dvg_xh;
-		uint8_t dvg_xl;
-		uint8_t dvg_yh;
-		uint8_t dvg_yl;
+ 
 		blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
 
 		transform_final(&x, &y);
@@ -567,39 +568,56 @@ int vector_device_udp_dvg::send_vectors()
 	}
 	int elms = points.pnt.size();
 	
- 
-
 	if (elms) {
+		points.point_count = elms;
 		std::vector<uint8_t > outgoing = msgpack::pack(points);
 		uint8_t* outgoing_raw = outgoing.data();
 		int len = outgoing.size();
 		sprintf((char*)m_send_buffer, "$cmd%c ", FLAG_XY);
-		result = packets_write(m_send_buffer, len);
+		result = packets_write(m_send_buffer, 7);
 
-		bytecnt += len;
+		byte_ctr += len+7+13;
 
-		fprintf(stdout, "bytes out %lu\r", bytecnt);
-
-		int full_buffers;
-		for (full_buffers = 0; full_buffers < (len - BUFLEN); full_buffers += BUFLEN) {
-			 
-			memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers,  BUFLEN);
-			result = packets_write(m_send_buffer, BUFLEN);
+		int full_buffers=0;
+		for (full_buffers = 0; full_buffers < (len - BUFF_SIZE); full_buffers += BUFF_SIZE) {
+			memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers, BUFF_SIZE);
+		//	for (int i = 0; i < BUFF_SIZE; i++)
+		//		printf("%x ", m_send_buffer[i]);
+			result = packets_write(m_send_buffer, BUFF_SIZE);
 		}
-	
-		if (len - full_buffers)
+		
+		 
+			if (len - full_buffers)
 		{
-		memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers, len % BUFLEN);
-			result = packets_write(m_send_buffer, BUFLEN);
+			memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers, len % BUFF_SIZE);
+		//	for (int i = 0; i < len % BUFF_SIZE; i++)
+		//		printf("%x ", m_send_buffer[i]);
+		//	printf("\n\rREMAINDER %i\n\r", len % BUFF_SIZE);
+			result = packets_write(m_send_buffer, len % BUFF_SIZE);
 		}
 
 		if (m_bw_game)
 		{
 			//cmd = FLAG_COMPLETE_MONOCHROME;
 		}
+		
+	//	fprintf(stdout, "bytes out %lu\r", bytecnt);
+	//	printf("point count: %i x %i y %i r %x g %x b %x\n\r",  points.point_count , points.pnt[0].x, points.pnt[0].y, points.pnt[0].color.r, points.pnt[0].color.g, points.pnt[0].color.b);
+		float pkt_ratio = 1024.0F / (float)BUFF_SIZE;
 
+			static std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<__int64, std::ratio<1, 1000000000>>>	timer_start ;
+		if (byte_ctr >= ((pkt_ratio * 1000 * BUFF_SIZE))) {
+			auto timer_elapsed = high_resolution_clock::now() - timer_start;
+			long long ms = std::chrono::duration_cast<microseconds>(timer_elapsed).count();
+			float rcvMBps = 1000000.0f / (float)ms;
+			ser_float f;
+			f.f = rcvMBps;
+			printf("upstream (to esp32) %09.4f MBps (0x%08lx)\n\r", rcvMBps, f.u);
+			timer_start = high_resolution_clock::now();
+			byte_ctr = 0;
+		}
 		sprintf((char*)m_send_buffer, "$cmd%c %lu", FLAG_COMPLETE, len);
-		result = packets_write(m_send_buffer, len);
+		result = packets_write(m_send_buffer, 13);
 	}
 
 	
