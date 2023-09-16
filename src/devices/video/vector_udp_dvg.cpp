@@ -15,64 +15,24 @@
 #include <chrono>
 #include <thread>
 #include "msgpack/msgpack.hpp"
+#include <algorithm>
+#include <iostream>
+#include <string> 
+
+#include <stdio.h>
+#include <string.h>
+
 using namespace std::chrono;
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
- // ns, us, ms, s, h, etc.
+// ns, us, ms, s, h, etc.
 
 using namespace util;
+using namespace std;
 
-struct dvg_vec {
-	union vals{
-	struct b {
-		uint16_t v : 12;
-		uint16_t _no_vals : 4;
-	};
-	uint16_t u_int;
-	};
-};
 
 DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VECTOR_UDP_DVG")
 
-// 0-15
-#define DVG_RELEASE             0
-#define DVG_BUILD               1
-#define CMD_BUF_SIZE            0x20000
-
-#define DVG_RES_MIN              0
-#define DVG_RES_MAX              4095
-
-#define SAVE_TO_FILE             0
-#define SORT_VECTORS             0
-#define MAX_VECTORS              0x10000
-#define MAX_JSON_SIZE            512
-
-// Defining region codes 
-#define LEFT                     0x1
-#define RIGHT                    0x2
-#define BOTTOM                   0x4
-#define TOP                      0x8
-
-#define GAME_NONE                0
-#define GAME_ARMORA              1
-#define GAME_WARRIOR             2
-
-#define CMD_LEN 6
-
-typedef enum _cmd_enum
-{
-	
-	FLAG_RGB = 0x1,
-	FLAG_XY = 0x2,
-	FLAG_GAME = 0x3,
-	FLAG_COMPLETE = 0x4,
-	FLAG_CMD = 0x5,
-	FLAG_CMD_END = 0x6,
-	FLAG_EXIT = 0x7,
-	FLAG_GET_DVG_INFO = 0x8,
-	FLAG_GET_GAME_INFO = 0x9,
-	FLAG_COMPLETE_MONOCHROME = 0xA
-}cmd_enum;
 
 
 const vector_device_udp_dvg::game_info_t vector_device_udp_dvg::s_games[] = {
@@ -539,100 +499,144 @@ typedef union _ser_float {
 } ser_float;
 uint32_t byte_ctr = 0;
 
+uint64_t ByteToint64(uint8_t a[], uint64_t* n) {
+	memcpy((uint64_t*)n, a, 8);
+	return *n;
+
+}
+uint32_t ByteToint32(uint8_t a[], uint32_t* n) {
+	memcpy((uint32_t*)n, a, 4);
+	return *n;
+
+}
+void int64ToByte(uint8_t a[], uint64_t n) {
+	memcpy(a, &n, 8);
+
+}
+void int32ToByte(uint8_t a[], uint32_t n) {
+	memcpy(a, &n, 4);
+
+}
+
 int vector_device_udp_dvg::send_vectors()
 {
 	int      result = -1;
 	cmd_vec_postproc();
- 
-	dvg_points_t points;
+
+	vector<uint8_t> out_meta_points;
+	vector<uint8_t> out_m_packed_pnts;
+	uint32_t out_bit_iter = 0;
+	uint8_t meta_byte = 0;
+
+	int cmd = FLAG_COMPLETE;
+	string meta_header = "$cmd" + to_string(cmd) + " ";
+	std::move(std::begin(meta_header), std::end(meta_header), std::back_inserter(out_meta_points));
 
 	for (auto& vec : m_out_vectors)
 	{
 
-		dvg_point_t vp;
+		dvg_vec vp;
 		uint32_t   blank;
 		rgb_t		color = vec.color;
 		int32_t y = vec.y1;
 		int32_t x = vec.x1;
- 
+
 		blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
 
 		transform_final(&x, &y);
-		vp.x = (x & 0x3f00);
-		vp.y = (y & 0x3f00);
+		vp.pnt.x = (x & 0x3f00);
+		vp.pnt.y = (y & 0x3f00);
 
-		
+
 		if (!blank && (m_last_r != color.r()) || (m_last_g != color.g()) || (m_last_b != color.b()))
 		{
 			m_last_r = color.r();
 			m_last_g = color.g();
 			m_last_b = color.b();
 
-			vp.color.r = m_last_r;
-			vp.color.g = m_last_g;
-			vp.color.b = m_last_b;
+			vp.pnt.r = m_last_r;
+			vp.pnt.g = m_last_g;
+			vp.pnt.b = m_last_b;
 		}
-		points.pnt.push_back(vp);
+
+		uint8_t m_ar[8];
+
+		int64ToByte(m_ar, vp.val);
+		if (vp.colors.color) {
+			out_m_packed_pnts.push_back(m_ar[2]); //r
+			out_m_packed_pnts.push_back(m_ar[1]);  // g
+			out_m_packed_pnts.push_back(m_ar[0]); // b
+
+		}
+		if (!(out_bit_iter % 8) && out_bit_iter) {
+			out_meta_points.push_back(meta_byte);
+			meta_byte = 0;
+		}
+		meta_byte |= vp.colors.color << (out_bit_iter % 8);
+		out_m_packed_pnts.push_back(m_ar[4]); //xy (backwards)
+		out_m_packed_pnts.push_back(((m_ar[5] & 0x0F) << 4) | ((m_ar[6] & 0xF0) >> 4));
+		out_m_packed_pnts.push_back(((m_ar[6] & 0x0F) << 4) | (m_ar[7] & 0x0F));
+		out_bit_iter++;
 	}
-	int elms = points.pnt.size();
-	
-	if (elms) {
-		points.point_count = elms;
-		std::vector<uint8_t > outgoing = msgpack::pack(points);
-		uint8_t* outgoing_raw = outgoing.data();
-		int len = outgoing.size();
-		sprintf((char*)m_send_buffer, "$cmd%c ", FLAG_XY);
-		result = packets_write(m_send_buffer, 7);
+uint32_t out_points_size = m_out_vectors.size();
 
-		byte_ctr += len+7+13;
+	out_meta_points.push_back(meta_byte);
+	uint8_t meta_out_points_size[4];
+	int32ToByte(meta_out_points_size, out_points_size);
 
-		int full_buffers=0;
-		for (full_buffers = 0; full_buffers < (len - BUFF_SIZE); full_buffers += BUFF_SIZE) {
-			memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers, BUFF_SIZE);
+	for (int i = 3; i >= 0; i--)
+		out_meta_points.insert(out_meta_points.begin() + SIZEOF_HEADER, meta_out_points_size[i]);
+
+	uint8_t* out_meta_buff = out_meta_points.data();
+	uint8_t* out_points_buff = out_m_packed_pnts.data();
+	uint32_t full_buffers = 0;
+
+	int cmd = FLAG_XY;
+	string xy_header = "$cmd" + to_string(cmd) + " ";
+
+	result = packets_write((uint8_t*)xy_header.c_str(), xy_header.length());
+
+
+	for (full_buffers = 0; full_buffers < (out_points_size - BUFF_SIZE); full_buffers += BUFF_SIZE) {
+		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, BUFF_SIZE);
 		//	for (int i = 0; i < BUFF_SIZE; i++)
 		//		printf("%x ", m_send_buffer[i]);
-			result = packets_write(m_send_buffer, BUFF_SIZE);
-		}
-		
-		 
-			if (len - full_buffers)
-		{
-			memcpy((char*)m_send_buffer, (char*)outgoing_raw + full_buffers, len % BUFF_SIZE);
+		result = packets_write(m_send_buffer, BUFF_SIZE);
+	}
+
+	if (out_points_size - full_buffers)
+	{
+		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, out_points_size % BUFF_SIZE);
 		//	for (int i = 0; i < len % BUFF_SIZE; i++)
 		//		printf("%x ", m_send_buffer[i]);
 		//	printf("\n\rREMAINDER %i\n\r", len % BUFF_SIZE);
-			result = packets_write(m_send_buffer, len % BUFF_SIZE);
-		}
-
-		if (m_bw_game)
-		{
-			//cmd = FLAG_COMPLETE_MONOCHROME;
-		}
-		
-	//	fprintf(stdout, "bytes out %lu\r", bytecnt);
-	//	printf("point count: %i x %i y %i r %x g %x b %x\n\r",  points.point_count , points.pnt[0].x, points.pnt[0].y, points.pnt[0].color.r, points.pnt[0].color.g, points.pnt[0].color.b);
-		float pkt_ratio = 1024.0F / (float)BUFF_SIZE;
-
-			static std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<__int64, std::ratio<1, 1000000000>>>	timer_start ;
-		if (byte_ctr >= ((pkt_ratio * 1000 * BUFF_SIZE))) {
-			auto timer_elapsed = high_resolution_clock::now() - timer_start;
-			long long ms = std::chrono::duration_cast<microseconds>(timer_elapsed).count();
-			float rcvMBps = 1000000.0f / (float)ms;
-			ser_float f;
-			f.f = rcvMBps;
-			printf("upstream (to esp32) %09.4f MBps (0x%08lx)\n\r", rcvMBps, f.u);
-			timer_start = high_resolution_clock::now();
-			byte_ctr = 0;
-		}
-		sprintf((char*)m_send_buffer, "$cmd%c %lu", FLAG_COMPLETE, len);
-		result = packets_write(m_send_buffer, 13);
+		result = packets_write(m_send_buffer, out_points_size % BUFF_SIZE);
 	}
 
-	
+	byte_ctr += out_meta_points.size() + out_points_size + 6;
+
+	//	fprintf(stdout, "bytes out %lu\r", bytecnt);
+	//	printf("point count: %i x %i y %i r %x g %x b %x\n\r",  points.point_count , points.pnt[0].x, points.pnt[0].y, points.pnt[0].color.r, points.pnt[0].color.g, points.pnt[0].color.b);
+	float pkt_ratio = 1024.0F / (float)BUFF_SIZE;
+
+	static std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<__int64, std::ratio<1, 1000000000>>>	timer_start;
+	if (byte_ctr >= ((pkt_ratio * 1000 * BUFF_SIZE))) {
+		auto timer_elapsed = high_resolution_clock::now() - timer_start;
+		long long ms = std::chrono::duration_cast<microseconds>(timer_elapsed).count();
+		float rcvMBps = 1000000.0f / (float)ms;
+		ser_float f;
+		f.f = rcvMBps;
+		printf("upstream (to esp32) %09.4f MBps (0x%08lx)\n\r", rcvMBps, f.u);
+		timer_start = high_resolution_clock::now();
+		byte_ctr = 0;
+	}
+
+	result = packets_write(out_meta_buff, out_meta_points.size());
 	//sprintf((char*)m_send_buffer, "$cmd%c ", cmd);
 	//result = packets_write(m_send_buffer, CMD_LEN);
 	cmd_reset(0);
 	m_last_r = m_last_g = m_last_b = -1;
+
 	return result;
 }
 
@@ -669,7 +673,7 @@ void vector_device_udp_dvg::get_dvg_info()
 		return;
 	}
 
-	 
+
 	sscanf(emulator_info::get_build_version(), "%u.%u", &major, &minor);
 	version = (((minor / 1000) % 10) << 12) | (((minor / 100) % 10) << 8) | (((minor / 10) % 10) << 4) | (minor % 10);
 	sprintf((char*)m_send_buffer, "$cmd%c %lu", FLAG_GET_DVG_INFO, version);
@@ -685,7 +689,7 @@ void vector_device_udp_dvg::get_dvg_info()
 
 	const char* json = sb.GetString();
 	uint16_t json_len = (uint16_t)sb.GetSize();
-	 
+
 
 	sprintf((char*)m_send_buffer, "$cmd%c %s", FLAG_GET_GAME_INFO, json);
 	packets_write(m_send_buffer, CMD_LEN + json_len);

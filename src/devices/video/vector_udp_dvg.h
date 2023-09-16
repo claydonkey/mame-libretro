@@ -22,47 +22,95 @@
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
-struct dvg_rgb_t
+
+
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#endif
+#define SIZEOF_LEN 4
+#define SIZEOF_HEADER 6
+// 0-15
+#define DVG_RELEASE             0
+#define DVG_BUILD               1
+#define CMD_BUF_SIZE            0x20000
+
+#define DVG_RES_MIN              0
+#define DVG_RES_MAX              4095
+
+#define SAVE_TO_FILE             0
+#define SORT_VECTORS             0
+#define MAX_VECTORS              0x10000
+#define MAX_JSON_SIZE            512
+
+// Defining region codes 
+#define LEFT                     0x1
+#define RIGHT                    0x2
+#define BOTTOM                   0x4
+#define TOP                      0x8
+
+#define GAME_NONE                0
+#define GAME_ARMORA              1
+#define GAME_WARRIOR             2
+
+#define CMD_LEN 6
+
+typedef enum _cmd_enum
 {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	template<class T>
-	void pack(T& pack) {
-		pack( r, g, b);
-	}
-};
-struct  dvg_point_t
-{
 
-	uint16_t x;
-	uint16_t y;
-	dvg_rgb_t color;
+	FLAG_RGB = 0x1,
+	FLAG_XY = 0x2,
+	FLAG_GAME = 0x3,
+	FLAG_COMPLETE = 0x4,
+	FLAG_CMD = 0x5,
+	FLAG_CMD_END = 0x6,
+	FLAG_EXIT = 0x7,
+	FLAG_GET_DVG_INFO = 0x8,
+	FLAG_GET_GAME_INFO = 0x9,
+	FLAG_COMPLETE_MONOCHROME = 0xA
+}cmd_enum;
 
-	template<class T>
-	void pack(T& pack) {
-		pack(x, y, color);
-	}
-};
+using namespace std;
 
-struct dvg_points_t {
-	std::vector< dvg_point_t> pnt;
-	uint16_t point_count;
-	template<class T>
-	void pack(T& pack) {
-		pack(pnt, point_count);
-	}
+
+PACK(struct vec_t {
+	uint16_t vec : 12;
+});
+
+PACK(struct point_t {
+	uint16_t b : 8;
+	uint16_t g : 8;
+	uint16_t r : 8;
+	uint16_t y : 12;
+	uint16_t x : 12;
+});
+
+PACK(struct val_t {
+	uint64_t merged : 64;
+});
+
+PACK(struct v_colors_t {
+	uint32_t rgb : 32;
+	uint8_t _pack8 : 8;
+	uint8_t _pack4 : 4;
+	uint8_t color : 1;
+});
+
+union dvg_vec {
+	point_t pnt;
+	uint64_t val;
+	v_colors_t colors;
 };
- 
 class vector_device_udp_dvg : public vector_interface
 {
 
 public:
 
-
 	typedef struct vec_t
 	{
-
 		int32_t x0;
 		int32_t y0;
 		int32_t x1;
@@ -88,7 +136,6 @@ public:
 
 private:
 
-	 
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2);
 	void cmd_vec_postproc();
@@ -129,7 +176,7 @@ private:
 	std::vector<vector_t> m_out_vectors;
 	uint32_t m_in_vec_last_x;
 	uint32_t m_in_vec_last_y;
- 
+
 
 	uint32_t m_vertical_display;
 	osd_file::ptr m_port;
