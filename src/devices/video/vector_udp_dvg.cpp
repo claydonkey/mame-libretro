@@ -22,7 +22,15 @@ using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
 
 using namespace util;
 
-
+struct dvg_vec {
+	union vals{
+	struct b {
+		uint16_t v : 12;
+		uint16_t _no_vals : 4;
+	};
+	uint16_t u_int;
+	};
+};
 
 DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VECTOR_UDP_DVG")
 
