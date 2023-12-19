@@ -56,6 +56,7 @@ typedef enum _cmd_enum
 	FLAG_XY = 0x2,
 	FLAG_GAME = 0x3,
 	FLAG_COMPLETE = 0x4,
+	FLAG_POINT = 0xB,
 	FLAG_CMD = 0x5,
 	FLAG_CMD_END = 0x6,
 	FLAG_EXIT = 0x7,
@@ -67,9 +68,7 @@ typedef enum _cmd_enum
 using namespace std;
 
 
-PACK(struct vec_t {
-	uint16_t vec : 12;
-});
+ 
 
 PACK(struct point_t {
 	uint16_t b : 8;
@@ -79,21 +78,18 @@ PACK(struct point_t {
 	uint16_t x : 12;
 });
 
-PACK(struct val_t {
-	uint64_t merged : 64;
-});
+
 
 PACK(struct v_colors_t {
-	uint32_t rgb : 32;
-	uint8_t _pack8 : 8;
-	uint8_t _pack4 : 4;
-	uint8_t color_change : 1;
+	uint32_t rgb : 24;
+	uint32_t yx : 24;
+ 
 });
 
 union dvg_vec {
 	point_t pnt;
 	uint64_t val;
-	v_colors_t colors;
+	 
 };
 
 typedef union _ser_float {

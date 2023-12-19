@@ -331,18 +331,29 @@ void vector_device_udp_dvg::cmd_reset(uint32_t initial)
 
 void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
 {
-	 
+ 
 	int32_t    x0, y0, x1, y1;
 	bool blank;
 	x0 = m_in_vec_last_x;
 	y0 = m_in_vec_last_y;
 	x1 = x;
 	y1 = y;
-
- 
+	bool add=true;
 	blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
-	if (!(m_exclude_blank_vectors || ((x1 == x0) && (y1 == y0) && blank)))
+	if ((x1 == x0) && (y1 == y0) && blank)
 	{
+		add = false;
+	}
+	if (m_exclude_blank_vectors)
+	{
+		if (add)
+		{
+			add = !blank;
+		}
+	}
+	if (add)
+	{
+
 		if (m_in_vectors.size() < MAX_VECTORS)
 			m_in_vectors.push_back({ x0, y0, x1, y1, color, screen_coords });
 	}
@@ -503,7 +514,7 @@ void int32ToByte(uint8_t a[], uint32_t n) {
 	memcpy(a, &n, 4);
 
 }
-uint8_t c_header[] = { '$','c','m','d','_','$' };
+uint8_t c_header[] = { '$','c','m','d','_',' ' };
 uint64_t lineno = 0;
 #if MAME_DEBUG
 
@@ -537,7 +548,7 @@ int dctr = 0;
 	ds_v_colors_t colors;
 }ds_dvg_vec;
 
- int32_t vectrx2020_deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color) {
+ int32_t vectrx2020_deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change) {
 	in_packed_points_buff += cnt;
 	ds_dvg_vec point;
 	static ds_colors_t prev_colors;
@@ -546,7 +557,7 @@ int dctr = 0;
 	point.pnt.rgb.g = 0;
 	point.pnt.rgb.b = 0;
 
-	if (color) {
+	if (color_change) {
 
 		prev_colors.r = point.pnt.rgb.r = *(in_packed_points_buff);
 		prev_colors.g = point.pnt.rgb.g = *(in_packed_points_buff + 1);
@@ -566,7 +577,7 @@ int dctr = 0;
 	in_packed_points_buff += 3;
 
 	//if(dctr<3)
-	printf( "D line:%u color=%u x=%u y=%u r=%u g=%u b=%u\n", lineno++, color, point.pnt.x, point.pnt.y, point.pnt.rgb.r, point.pnt.rgb.g, point.pnt.rgb.b);
+	printf( "D line:%u color_change=%u x=%u y=%u r=%u g=%u b=%u\n", lineno++, color_change, point.pnt.x, point.pnt.y, point.pnt.rgb.r, point.pnt.rgb.g, point.pnt.rgb.b);
 	
 	return cnt;
 }
@@ -609,77 +620,79 @@ int dctr = 0;
 }
 
 
- int vector_device_udp_dvg::send_vectors()
- {
+int vector_device_udp_dvg::send_vectors()
+{
 
-	 int      result = -1;
+	int      result = -1;
 
-	 cmd_vec_postproc();
+	cmd_vec_postproc();
 
-	 static uint64_t total_byte_ctr = 0;
-	 static uint64_t chrono_byte_ctr = 0;
-	 static uint64_t previous_byte_ctr = 0;
+	static uint64_t total_byte_ctr = 0;
+	static uint64_t chrono_byte_ctr = 0;
+	static uint64_t previous_byte_ctr = 0;
 
-	 uint32_t out_bit_iter = 0;
-	 uint8_t meta_byte = 0;
-	 out_meta_points.clear();
-	 out_m_packed_pnts.clear();
-	 c_header[4] = FLAG_COMPLETE;
-	 out_meta_points.assign(c_header, c_header + SIZEOF_HEADER);
+	uint32_t out_bit_iter = 0;
+	uint8_t meta_byte = 0;
+	out_meta_points.clear();
+	out_m_packed_pnts.clear();
+	c_header[4] = FLAG_COMPLETE;
+	out_meta_points.assign(c_header, c_header + SIZEOF_HEADER);
+	int32_t m_last_r=0;
+	int32_t m_last_g=0;
+	int32_t m_last_b=0;
+	  dctr = 0;
+	int32_t m_last_r2 = 0;
+	int32_t m_last_g2 = 0;
+	int32_t m_last_b2 = 0;
+	bool first = true;
+	for (auto& vec : m_out_vectors)
+	{
+		dvg_vec point;
+	
+		bool color_change = ((m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()));
+		if (first)
+			color_change = true;
+
+		first = false;
+		int32_t y = vec.y1;
+		int32_t x = vec.x1;
+		transform_final(&x, &y);
+
+		point.pnt.x = (x );
+		point.pnt.y = (y );
+	
+		if ( color_change)
+		{
+			point.pnt.r = m_last_r = vec.color.r();
+			point.pnt.g = m_last_g = vec.color.g();
+			point.pnt.b = m_last_b = vec.color.b();
+		 
+		}
  
-	 dctr = 0;
- 
-	 bool first = true;
+		uint8_t m_ar[8];
 
-	 for (auto& vec : m_out_vectors)
-	 {
-		 dvg_vec point;
-		 bool   blank;
- 
-		 int32_t y = vec.y1;
-		 int32_t x = vec.x1;
+		int64ToByte(m_ar, point.val);
+		if ( color_change) {
+			out_m_packed_pnts.push_back(m_ar[2]); //r
+			out_m_packed_pnts.push_back(m_ar[1]); //g
+			out_m_packed_pnts.push_back(m_ar[0]); //b
+		}
 
-		blank = (vec.color.r() == 0) && (vec.color.g() == 0) && (vec.color.b() == 0);
+		if (!(out_bit_iter % 8) && out_bit_iter) {
+			out_meta_points.push_back(meta_byte);
+			meta_byte = 0;
+		}
 
+		meta_byte |= color_change << (out_bit_iter % 8);
+		out_m_packed_pnts.push_back(m_ar[4]); //xy (backwards) //skipping the byte in between color and coord (no m_ar[3])
+		out_m_packed_pnts.push_back(((m_ar[5] & 0x0F) << 4) | ((m_ar[6] & 0xF0) >> 4));
+		out_m_packed_pnts.push_back(((m_ar[6] & 0x0F) << 4) | (m_ar[7] & 0x0F));
+		out_bit_iter++;
 		
-		 uint8_t m_ar[8];
-		 transform_final(&vec.x1, &vec.y1);
-		 point.pnt.x = (vec.x1);
-		 point.pnt.y = (vec.y1);
-		 int64ToByte(m_ar, point.val);
-		 point.colors.color_change = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b());
-	//	 if (!blank)
-	//	 {
-			
-			 if (point.colors.color_change) {
-			
-				 m_last_r = point.pnt.r = vec.color.r();
-				 m_last_g = point.pnt.g = vec.color.g();
-				 m_last_b = point.pnt.b = vec.color.b();
-
-				 out_m_packed_pnts.push_back(m_ar[2]); //r
-				 out_m_packed_pnts.push_back(m_ar[1]); //g
-				 out_m_packed_pnts.push_back(m_ar[0]); //b
-			 }
-	//	 }
-		
-
-
-		 if (!(out_bit_iter % 8) && out_bit_iter) {
-			 out_meta_points.push_back(meta_byte);
-			 meta_byte = 0;
-		 }
-
-		 meta_byte |= point.colors.color_change << (out_bit_iter % 8);
-		 out_m_packed_pnts.push_back(m_ar[4]); //xy (backwards)
-		 out_m_packed_pnts.push_back(((m_ar[5] & 0x0F) << 4) | ((m_ar[6] & 0xF0) >> 4));
-		 out_m_packed_pnts.push_back(((m_ar[6] & 0x0F) << 4) | (m_ar[7] & 0x0F));
-		 out_bit_iter++;
-
 #if MAME_DEBUG2
-		 printf("W line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
+  printf("W line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
 #endif
-	 }
+	}
 uint32_t out_points_size = m_out_vectors.size();
 static uint32_t frame_counter;
 	out_meta_points.push_back(meta_byte);
@@ -736,37 +749,37 @@ static uint32_t frame_counter;
 	  dctr = 0;
 #if MAME_DEBUG
 
-	  for (auto& vec : m_out_vectors)
-	  {
-		  dvg_vec point;
-		  bool   blank;
-
-	 
-		  blank = (vec.color.r() == 0) && (vec.color.g() == 0) && (vec.color.b() == 0);
+	for (auto& vec : m_out_vectors)
+	{
+		dvg_vec point = { 0 };
+ 
+		bool 	color_change = ((m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()));
+		 
+		int32_t y = vec.y1;
+		int32_t x = vec.x1;
 
 		
-		  transform_final(&vec.x1, &vec.y1);
-		  point.pnt.x = (vec.x1);
-		  point.pnt.y = (vec.y1);
-		  uint8_t m_ar[8];
-		  point.colors.color_change = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b());
-		  if (!blank)
-		  {
-			
-			  if (point.colors.color_change) {
-				  m_last_r = vec.color.r();
-				  m_last_g = vec.color.g();
-				  m_last_b = vec.color.b();
-			  }
-			  point.pnt.r = m_last_r;
-			  point.pnt.g = m_last_g;
-			  point.pnt.b = m_last_b;
 
+		transform_final(&x, &y);
+		//point.pnt.x = (x & 0x3f00);
+		//point.pnt.y = (y & 0x3f00);
+		point.pnt.x = (x);
+		point.pnt.y = (y);
+	
+		if ( color_change)
+		{
+			m_last_r2 = vec.color.r();
+			m_last_g2 = vec.color.g();
+			m_last_b2 = vec.color.b();
+			 
+			point.pnt.r = m_last_r2;
+			point.pnt.g = m_last_g2;
+			point.pnt.b = m_last_b2;
+		}
 
-		  }
-		 
+	
 
-		printf("I line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno2++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
+		printf("I line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno2++, color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
 		dctr++;
 	}
 #endif
@@ -782,10 +795,7 @@ static uint32_t frame_counter;
 
 	frame_counter += 1;
 	if (!(frame_counter % 100)) {
-	//	printf("%lu frames @ %llu bytes per frame || ", frame_counter, (total_byte_ctr - previous_byte_ctr) / 100);
-	//	printf("total bytes: %lu upstream @ %09.4f MBps (0x%08lx)\n\r", point_bytes, rcvMBps.f, rcvMBps.u);
-		
-
+	 	printf("%lu frames @ %llu bytes per frame || total bytes: %lu upstream @ %09.4f MBps (0x%08lx)\n\r", frame_counter, (total_byte_ctr - previous_byte_ctr) / 100, point_bytes, rcvMBps.f, rcvMBps.u);
 		previous_byte_ctr = total_byte_ctr;
 	}
 
