@@ -639,29 +639,30 @@ int dctr = 0;
 		 int32_t y = vec.y1;
 		 int32_t x = vec.x1;
 
-		 blank = (vec.color.r() == 0) && (vec.color.g() == 0) && (vec.color.b() == 0);
+		blank = (vec.color.r() == 0) && (vec.color.g() == 0) && (vec.color.b() == 0);
 
+		
+		 uint8_t m_ar[8];
+		 transform_final(&vec.x1, &vec.y1);
 		 point.pnt.x = (vec.x1);
 		 point.pnt.y = (vec.y1);
-		 uint8_t m_ar[8];
-		 if (!blank)
-		 {
-			 point.colors.color_change = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()); = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b());
+		 int64ToByte(m_ar, point.val);
+		 point.colors.color_change = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b());
+	//	 if (!blank)
+	//	 {
+			
 			 if (point.colors.color_change) {
-			 
-
-				 point.pnt.r = vec.color.r();
-				 point.pnt.g = vec.color.g();
-				 point.pnt.b = vec.color.b();
+			
+				 m_last_r = point.pnt.r = vec.color.r();
+				 m_last_g = point.pnt.g = vec.color.g();
+				 m_last_b = point.pnt.b = vec.color.b();
 
 				 out_m_packed_pnts.push_back(m_ar[2]); //r
 				 out_m_packed_pnts.push_back(m_ar[1]); //g
 				 out_m_packed_pnts.push_back(m_ar[0]); //b
 			 }
-		 }
-		 transform_final(&x, &y);
-
-		 int64ToByte(m_ar, point.val);
+	//	 }
+		
 
 
 		 if (!(out_bit_iter % 8) && out_bit_iter) {
@@ -676,7 +677,7 @@ int dctr = 0;
 		 out_bit_iter++;
 
 #if MAME_DEBUG2
-		 printf("W line:%llu color=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
+		 printf("W line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
 #endif
 	 }
 uint32_t out_points_size = m_out_vectors.size();
@@ -740,17 +741,18 @@ static uint32_t frame_counter;
 		  dvg_vec point;
 		  bool   blank;
 
-		  int32_t y = vec.y1;
-		  int32_t x = vec.x1;
-
+	 
 		  blank = (vec.color.r() == 0) && (vec.color.g() == 0) && (vec.color.b() == 0);
 
+		
+		  transform_final(&vec.x1, &vec.y1);
 		  point.pnt.x = (vec.x1);
 		  point.pnt.y = (vec.y1);
 		  uint8_t m_ar[8];
+		  point.colors.color_change = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b());
 		  if (!blank)
 		  {
-			  point.colors.color_change = (m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b());
+			
 			  if (point.colors.color_change) {
 				  m_last_r = vec.color.r();
 				  m_last_g = vec.color.g();
@@ -762,9 +764,9 @@ static uint32_t frame_counter;
 
 
 		  }
-		  transform_final(&x, &y);
+		 
 
-		printf("I line:%llu color=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno2++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
+		printf("I line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno2++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
 		dctr++;
 	}
 #endif
