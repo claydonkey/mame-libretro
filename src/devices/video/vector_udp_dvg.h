@@ -11,51 +11,42 @@
 #include <ws2tcpip.h>
 #include <vector>
 #include "msgpack/msgpack.hpp"
+
+
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#endif
+
+
+
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#endif
+
 #define MAX_JSON_SIZE           512
-#define BUFF_SIZE                  1024
-
-#ifdef __GNUC__
-#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
-#endif
-
-#ifdef _MSC_VER
-#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
-#endif
-
-
-
-#ifdef __GNUC__
-#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
-#endif
-
-#ifdef _MSC_VER
-#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
-#endif
+#define BUFF_SIZE               1408
 #define SIZEOF_LEN 4
 #define SIZEOF_HEADER 6
-// 0-15
 #define DVG_RELEASE             0
 #define DVG_BUILD               1
 #define CMD_BUF_SIZE            0x20000
-
 #define DVG_RES_MIN              0
 #define DVG_RES_MAX              4095
-
 #define SAVE_TO_FILE             0
 #define SORT_VECTORS             0
 #define MAX_VECTORS              0x10000
 #define MAX_JSON_SIZE            512
-
-// Defining region codes 
-#define LEFT                     0x1
-#define RIGHT                    0x2
-#define BOTTOM                   0x4
-#define TOP                      0x8
-
 #define GAME_NONE                0
 #define GAME_ARMORA              1
 #define GAME_WARRIOR             2
-
 #define CMD_LEN 6
 
 typedef enum _cmd_enum
@@ -96,7 +87,7 @@ PACK(struct v_colors_t {
 	uint32_t rgb : 32;
 	uint8_t _pack8 : 8;
 	uint8_t _pack4 : 4;
-	uint8_t color : 1;
+	uint8_t color_change : 1;
 });
 
 union dvg_vec {
@@ -104,6 +95,13 @@ union dvg_vec {
 	uint64_t val;
 	v_colors_t colors;
 };
+
+typedef union _ser_float {
+	float f;
+	uint32_t u;
+} ser_float;
+
+
 class vector_device_udp_dvg : public vector_interface
 {
 
@@ -135,7 +133,14 @@ public:
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) override;
 
 private:
-
+	ser_float rcvMBps;
+	uint32_t out_bit_iter ;
+	uint8_t meta_byte ;
+	 uint64_t total_byte_ctr;
+	 uint64_t chrono_byte_ctr ;
+	 uint64_t previous_byte_ctr = 0;
+	std::vector<uint8_t> out_meta_points;
+	std::vector<uint8_t> out_m_packed_pnts;
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2);
 	void cmd_vec_postproc();
@@ -170,6 +175,10 @@ private:
 	int32_t m_last_r;
 	int32_t m_last_g;
 	int32_t m_last_b;
+	int32_t m_last_r2;
+	int32_t m_last_g2;
+	int32_t m_last_b2;
+
 	uint32_t m_artwork;
 	bool m_bw_game;
 	std::vector<vector_t> m_in_vectors;
