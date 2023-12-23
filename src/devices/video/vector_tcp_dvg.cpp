@@ -4,7 +4,7 @@
 #include "emuopts.h"
 #include "rendutil.h"
 #include "video/vector.h"
-#include "video/vector_udp_dvg.h"
+#include "video/vector_tcp_dvg.h"
 #include <rapidjson/document.h>
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include "logmacro.h"
@@ -33,12 +33,12 @@ using namespace std;// Defining region codes
 #define RIGHT                    0x2
 #define BOTTOM                   0x4
 #define TOP                      0x8
-#define POINTS_WITH_HEADER       1
-DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VECTOR_UDP_DVG")
+
+DEFINE_DEVICE_TYPE(VECTOR_TCP_DVG, vector_device_tcp_dvg, "vector_tcp_dvg", "VECTOR_TCP_DVG")
 
 
 
-const vector_device_udp_dvg::game_info_t vector_device_udp_dvg::s_games[] = {
+const vector_device_tcp_dvg::game_info_t vector_device_tcp_dvg::s_games[] = {
 	{"armora",   false, GAME_ARMORA,  true},
 	{"armorap",  false, GAME_ARMORA,  true},
 	{"armorar",  false, GAME_ARMORA,  true},
@@ -78,8 +78,8 @@ using namespace rapidjson;
 
 
 
-vector_device_udp_dvg::vector_device_udp_dvg(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock)
-	: vector_interface(mconfig, VECTOR_UDP_DVG, tag, owner, clock),
+vector_device_tcp_dvg::vector_device_tcp_dvg(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock)
+	: vector_interface(mconfig, VECTOR_TCP_DVG, tag, owner, clock),
 	m_exclude_blank_vectors(false),
 	m_xmin(0),
 	m_xmax(0),
@@ -107,10 +107,10 @@ vector_device_udp_dvg::vector_device_udp_dvg(const machine_config& mconfig, cons
 {
 
 }
-void vector_device_udp_dvg::device_sethost(std::string _host) {
+void vector_device_tcp_dvg::device_sethost(std::string _host) {
 	m_host = _host;
 }
-std::error_condition vector_device_udp_dvg::device_start_client() {
+std::error_condition vector_device_tcp_dvg::device_start_client() {
 	uint64_t size = 0;
 	std::error_condition filerr = osd_file::open(m_host, OPEN_FLAG_READ | OPEN_FLAG_WRITE, m_port, size);
 	m_json_length = 0;
@@ -118,21 +118,21 @@ std::error_condition vector_device_udp_dvg::device_start_client() {
 	return filerr;
 }
 
-void vector_device_udp_dvg::device_stop_client() {
+void vector_device_tcp_dvg::device_stop_client() {
 	std::error_condition filerr = osd_file::remove(m_host);
 
 }
 
-void vector_device_udp_dvg::device_start()
+void vector_device_tcp_dvg::device_start()
 {
 	rcvMBps = { 0 };
-	std::string host(machine().config().options().vector_udp_host());
-	device_sethost("udp_socket." + host + ":" + machine().config().options().vector_udp_port());
+	std::string host(machine().config().options().vector_tcp_host());
+	device_sethost("socket." + host + ":" + machine().config().options().vector_tcp_port());
 	std::error_condition filerr = device_start_client();
 
 	if (filerr.value())
 	{
-		fprintf(stderr, "vector_device_udp_dvg: error: osd_file::open failed: %s udp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
+		fprintf(stderr, "vector_device_tcp_dvg: error: osd_file::open failed: %s tcp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_tcp_host());
 		::exit(1);
 	}
 
@@ -151,7 +151,7 @@ void vector_device_udp_dvg::device_start()
 	m_clipx_max = DVG_RES_MAX;
 	m_clipy_max = DVG_RES_MAX;
 }
-void vector_device_udp_dvg::device_stop()
+void vector_device_tcp_dvg::device_stop()
 {
 	uint32_t cmd;
 
@@ -160,7 +160,7 @@ void vector_device_udp_dvg::device_stop()
 	//packets_write(&m_cmd_buf[0], m_cmd_offs);
 }
 
-uint32_t vector_device_udp_dvg::compute_code(int32_t x, int32_t y)
+uint32_t vector_device_tcp_dvg::compute_code(int32_t x, int32_t y)
 {
 	// initialized as being inside 
 	uint32_t code = 0;
@@ -180,7 +180,7 @@ uint32_t vector_device_udp_dvg::compute_code(int32_t x, int32_t y)
 //
 // Cohen-Sutherland line-clipping algorithm.  
 //
-uint32_t vector_device_udp_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2)
+uint32_t vector_device_tcp_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2)
 {
 	int32_t x = 0, y = 0, x1, y1, x2, y2;
 	uint32_t accept, code1, code2, code_out;
@@ -275,7 +275,7 @@ uint32_t vector_device_udp_dvg::line_clip(int32_t* pX1, int32_t* pY1, int32_t* p
 	*pY2 = y2;
 	return accept;
 }
-void vector_device_udp_dvg::cmd_vec_postproc()
+void vector_device_tcp_dvg::cmd_vec_postproc()
 {
 	int32_t  last_x = 0;
 	int32_t  last_y = 0;
@@ -320,7 +320,7 @@ void vector_device_udp_dvg::cmd_vec_postproc()
 //
 // Reset the indexes to the vector list and command buffer.
 //
-void vector_device_udp_dvg::cmd_reset(uint32_t initial)
+void vector_device_tcp_dvg::cmd_reset(uint32_t initial)
 {
 	m_in_vec_last_x = 0;
 	m_in_vec_last_y = 0;
@@ -329,16 +329,16 @@ void vector_device_udp_dvg::cmd_reset(uint32_t initial)
 
 }
 
-void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
+void vector_device_tcp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
 {
- 
+
 	int32_t    x0, y0, x1, y1;
 	bool blank;
 	x0 = m_in_vec_last_x;
 	y0 = m_in_vec_last_y;
 	x1 = x;
 	y1 = y;
-	bool add=true;
+	bool add = true;
 	blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
 	if ((x1 == x0) && (y1 == y0) && blank)
 	{
@@ -362,7 +362,7 @@ void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_c
 }
 
 
-void  vector_device_udp_dvg::transform_and_scale_coords(int* px, int* py)
+void  vector_device_tcp_dvg::transform_and_scale_coords(int* px, int* py)
 {
 	float x, y;
 
@@ -375,7 +375,7 @@ void  vector_device_udp_dvg::transform_and_scale_coords(int* px, int* py)
 }
 
 
-int vector_device_udp_dvg::determine_game_settings()
+int vector_device_tcp_dvg::determine_game_settings()
 {
 	uint32_t i;
 	Document d;
@@ -422,7 +422,7 @@ int vector_device_udp_dvg::determine_game_settings()
 }
 
 
-void vector_device_udp_dvg::transform_final(int* px, int* py)
+void vector_device_tcp_dvg::transform_final(int* px, int* py)
 {
 	int x, y, tmp;
 	x = *px;
@@ -468,7 +468,7 @@ void vector_device_udp_dvg::transform_final(int* px, int* py)
 }
 
 
-int vector_device_udp_dvg::packet_read(uint8_t* buf, int size)
+int vector_device_tcp_dvg::packet_read(uint8_t* buf, int size)
 {
 	int result = size;
 	uint32_t read = 0;
@@ -485,7 +485,7 @@ int vector_device_udp_dvg::packet_read(uint8_t* buf, int size)
 }
 
 
-int vector_device_udp_dvg::packets_write(uint8_t* buf, int size)
+int vector_device_tcp_dvg::packets_write(uint8_t* buf, int size)
 {
 
 	uint32_t written = 0, total;
@@ -496,41 +496,12 @@ int vector_device_udp_dvg::packets_write(uint8_t* buf, int size)
 
 
 
-uint64_t ByteToint64(uint8_t a[], uint64_t* n) {
-	memcpy((uint64_t*)n, a, 8);
-	return *n;
 
-}
-uint32_t ByteToint32(uint8_t a[], uint32_t* n) {
-	memcpy((uint32_t*)n, a, 4);
-	return *n;
+extern uint8_t c_header[];
 
-}
-
-uint16_t ByteToint16(uint8_t a[], uint16_t* n) {
-	memcpy((uint32_t*)n, a, 2);
-	return *n;
-
-}
-uint8_t* int64ToByte(uint8_t a[], uint64_t n) {
-	memcpy(a, &n, 8);
-	return a;
-}
-uint8_t * int32ToByte(uint8_t a[], uint32_t n) {
-	memcpy(a, &n, 4);
-	return a;
-}
-
-
-uint8_t* int16ToByte(uint8_t a[], uint16_t n) {
-		memcpy(a, &n, 2);
-		return a;
-	}
-uint8_t c_header[] = { '$','c','m','d','_',' ' };
-uint64_t lineno = 0;
 #if MAME_DEBUG
 
-uint64_t lineno2 = 0;
+
 #endif
 extern "C" {
 	typedef struct {
@@ -539,176 +510,30 @@ extern "C" {
 
 	}ds_v_colors_t;
 
-  typedef  struct _colors_t {
+	typedef  struct _colors_t {
 		uint8_t b : 8;
 		uint8_t g : 8;
 		uint8_t r : 8;
 	} ds_colors_t;
 
- typedef struct {
+	typedef struct {
 		ds_colors_t rgb;
 		uint16_t y : 12;
 		uint16_t x : 12;
 
 	}	ds_point_t;
 }
- 
 
-int dctr = 0;
- extern "C"  typedef   union {
+
+
+extern "C"  typedef   union {
 	ds_point_t pnt;
 	ds_v_colors_t colors;
 }ds_dvg_vec;
 
- int32_t vector_device_udp_dvg::deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change)
- {
-
-	 in_packed_points_buff += cnt;
-	 ds_dvg_vec point;
-	 static ds_colors_t prev_colors;
-
-	 point.pnt.rgb.r = 0;
-	 point.pnt.rgb.g = 0;
-	 point.pnt.rgb.b = 0;
-
-	 if (color_change) {
-
-		 prev_colors.r = point.pnt.rgb.r = *(in_packed_points_buff);
-		 prev_colors.g = point.pnt.rgb.g = *(in_packed_points_buff + 1);
-		 prev_colors.b = point.pnt.rgb.b = *(in_packed_points_buff + 2);
-		 cnt += 3;
-		 in_packed_points_buff += 3;
-	 }
-	 else {
-		 point.pnt.rgb.r = prev_colors.r;
-		 point.pnt.rgb.g = prev_colors.g;
-		 point.pnt.rgb.b = prev_colors.b;
-	 }
-
-	 point.pnt.y = ((*(in_packed_points_buff + 1) & 0xF0) << 4) + *(in_packed_points_buff);
-	 point.pnt.x = ((*(in_packed_points_buff + 2) & 0x0F) << 8) + ((*(in_packed_points_buff + 2) & 0xF0) >> 4) + ((*(in_packed_points_buff + 1) & 0x0F) << 4);
-	 cnt += 3;
-	 in_packed_points_buff += 3;
-
-	 //if(dctr<3)
-	 printf("D line:%u color_change=%u x=%u y=%u r=%u g=%u b=%u\n", lineno++, color_change, point.pnt.x, point.pnt.y, point.pnt.rgb.r, point.pnt.rgb.g, point.pnt.rgb.b);
-
-	 return cnt;
- }
 
 
- int32_t _deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change) {
-	in_packed_points_buff += cnt;
-	ds_dvg_vec point;
-	static ds_colors_t prev_colors;
-
-	point.pnt.rgb.r = 0;
-	point.pnt.rgb.g = 0;
-	point.pnt.rgb.b = 0;
-
-	if (color_change) {
-
-		prev_colors.r = point.pnt.rgb.r = *(in_packed_points_buff);
-		prev_colors.g = point.pnt.rgb.g = *(in_packed_points_buff + 1);
-		prev_colors.b = point.pnt.rgb.b = *(in_packed_points_buff + 2);
-		cnt += 3;
-		in_packed_points_buff += 3;
-	}
-	else {
-		point.pnt.rgb.r = prev_colors.r;
-		point.pnt.rgb.g = prev_colors.g;
-		point.pnt.rgb.b = prev_colors.b;
-	}
-
-	point.pnt.y = ((*(in_packed_points_buff + 1) & 0xF0) << 4) + *(in_packed_points_buff);
-	point.pnt.x = ((*(in_packed_points_buff + 2) & 0x0F) << 8) + ((*(in_packed_points_buff + 2) & 0xF0) >> 4) + ((*(in_packed_points_buff + 1) & 0x0F) << 4);
-	cnt += 3;
-	in_packed_points_buff += 3;
-
-	//if(dctr<3)
-	printf( "D line:%u color_change=%u x=%u y=%u r=%u g=%u b=%u\n", lineno++, color_change, point.pnt.x, point.pnt.y, point.pnt.rgb.r, point.pnt.rgb.g, point.pnt.rgb.b);
-	
-	return cnt;
-}
-
- int32_t _deserialize(uint8_t* in_meta_buff, uint8_t* in_packed_points_buff) {
-
-	uint8_t* start_points_buff = in_packed_points_buff;
-
-	uint8_t meta_byte = 0;
-	uint32_t int_bit_iter = 0, byte_iter = 0, in_p_size = 0;
-	int32_t cnt = 0;
-	printf("D FLAG_XY\n");
-	ByteToint32(in_meta_buff + SIZEOF_HEADER, &in_p_size);
-	if (in_p_size >= 8) {
-
-		for (byte_iter = 0; byte_iter <= (in_p_size - 8); byte_iter += 8) {
-			meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-			for (int_bit_iter = 0; int_bit_iter < 8; int_bit_iter++) {
-				uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-				cnt = _deserialize_points(in_packed_points_buff, cnt, colorbit);
-				if (cnt == -1)
-					return -1;
-			}
-		}
-	}
-	if (in_p_size % 8) {
-
-		meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-
-		for (int_bit_iter = 0; int_bit_iter < in_p_size % 8; int_bit_iter++) {
-			uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-			cnt = _deserialize_points(in_packed_points_buff, cnt, colorbit);
-			if (cnt == -1)
-				return -1;
-		}
-	}
-	in_packed_points_buff = start_points_buff;
-	printf("D FLAG_COMPLETE\n");
-	return cnt;
-}
-
- int32_t vector_device_udp_dvg::deserialize()
- {
-
-	 uint8_t* in_packed_points_buff = out_m_packed_pnts.data();
-	 uint8_t* in_meta_buff = out_meta_points.data();
-	 uint8_t* start_points_buff = in_packed_points_buff;
-
-	 uint8_t meta_byte = 0;
-	 uint32_t int_bit_iter = 0, byte_iter = 0, in_p_size = 0;
-	 int32_t cnt = 0;
-	 printf("D FLAG_XY\n");
-	 ByteToint32(in_meta_buff + SIZEOF_HEADER, &in_p_size);
-	 if (in_p_size >= 8) {
-
-		 for (byte_iter = 0; byte_iter <= (in_p_size - 8); byte_iter += 8) {
-			 meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-			 for (int_bit_iter = 0; int_bit_iter < 8; int_bit_iter++) {
-				 uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-				 cnt = _deserialize_points(in_packed_points_buff, cnt, colorbit);
-				 if (cnt == -1)
-					 return -1;
-			 }
-		 }
-	 }
-	 if (in_p_size % 8) {
-
-		 meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-
-		 for (int_bit_iter = 0; int_bit_iter < in_p_size % 8; int_bit_iter++) {
-			 uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-			 cnt = deserialize_points(in_packed_points_buff, cnt, colorbit);
-			 if (cnt == -1)
-				 return -1;
-		 }
-	 }
-	 in_packed_points_buff = start_points_buff;
-	 printf("D FLAG_COMPLETE\n");
-	 return cnt;
- }
-
-int vector_device_udp_dvg::send_vectors()
+int vector_device_tcp_dvg::send_vectors()
 {
 
 	int      result = -1;
@@ -725,14 +550,12 @@ int vector_device_udp_dvg::send_vectors()
 	out_m_packed_pnts.clear();
 	c_header[4] = FLAG_COMPLETE;
 	out_meta_points.assign(c_header, c_header + SIZEOF_HEADER);
-	int32_t m_last_r=0;
-	int32_t m_last_g=0;
-	int32_t m_last_b=0;
-	  dctr = 0;
+	int32_t m_last_r = 0;
+	int32_t m_last_g = 0;
+	int32_t m_last_b = 0;
+
 	int32_t m_last_r2 = 0;
 	int32_t m_last_g2 = 0;
-	int32_t m_last_y = 0;
-	int32_t m_last_x = 0;
 	int32_t m_last_b2 = 0;
 	bool first = true;
 	for (auto& vec : m_out_vectors)
@@ -740,33 +563,28 @@ int vector_device_udp_dvg::send_vectors()
 		dvg_vec point;
 
 		bool color_change = ((m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()));
-		bool point_change = ((m_last_y != vec.y1) || (m_last_x != vec.x1));
-		if (first)
-		{
-			point_change = true;
+		if (first) {
 			color_change = true;
+			first = false;
 		}
-		first = false;
 		int32_t y = vec.y1;
 		int32_t x = vec.x1;
-		m_last_y = y;
-		m_last_x = x;
 		transform_final(&x, &y);
-		
-		point.pnt.x = x;
-		point.pnt.y = y;
-	//	if (point_change){
-		
-			if (color_change)
-			{
-				point.pnt.r = m_last_r = vec.color.r();
-				point.pnt.g = m_last_g = vec.color.g();
-				point.pnt.b = m_last_b = vec.color.b();
-			}
+
+		point.pnt.x = (x);
+		point.pnt.y = (y);
+
+		if (color_change)
+		{
+			point.pnt.r = m_last_r = vec.color.r();
+			point.pnt.g = m_last_g = vec.color.g();
+			point.pnt.b = m_last_b = vec.color.b();
+
+		}
 
 		uint8_t m_ar[8];
-		int64ToByte(m_ar, point.val);
 
+		int64ToByte(m_ar, point.val);
 		if (color_change) {
 			out_m_packed_pnts.push_back(m_ar[2]); //r
 			out_m_packed_pnts.push_back(m_ar[1]); //g
@@ -783,14 +601,13 @@ int vector_device_udp_dvg::send_vectors()
 		out_m_packed_pnts.push_back(((m_ar[5] & 0x0F) << 4) | ((m_ar[6] & 0xF0) >> 4));
 		out_m_packed_pnts.push_back(((m_ar[6] & 0x0F) << 4) | (m_ar[7] & 0x0F));
 		out_bit_iter++;
-	//}
+
 #if MAME_DEBUG2
-  printf("W line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
+		printf("W line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
 #endif
 	}
-	
-    uint32_t out_points_size = m_out_vectors.size();
-    static uint32_t frame_counter;
+	uint32_t out_points_size = m_out_vectors.size();
+	static uint32_t frame_counter;
 	out_meta_points.push_back(meta_byte);
 	uint8_t meta_out_points_size[4];
 	int32ToByte(meta_out_points_size, out_points_size);
@@ -803,139 +620,62 @@ int vector_device_udp_dvg::send_vectors()
 	int32_t full_buffers = 0;
 	int32_t out_points_packed_size = out_m_packed_pnts.size();
 	static uint32_t point_bytes = 0;
-#if !POINTS_WITH_HEADER
 	c_header[4] = FLAG_XY;
-
-#if MAME_DEBUG
-		printf("I FLAG_XY\n");
-#endif
 
 	result = packets_write((uint8_t*)c_header, SIZEOF_HEADER);
 
 
 	for (full_buffers = 0; full_buffers < (out_points_packed_size - BUFF_SIZE); full_buffers += BUFF_SIZE) {
 		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, BUFF_SIZE);
-		result = packets_write(m_send_buffer, BUFF_SIZE );
 		point_bytes += BUFF_SIZE;
+
+		result = packets_write(m_send_buffer, BUFF_SIZE);
 	}
-	
-	if (out_points_packed_size % BUFF_SIZE) {
+
+	if (out_points_packed_size - full_buffers)
+	{
 		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, out_points_packed_size % BUFF_SIZE);
 		result = packets_write(m_send_buffer, out_points_packed_size % BUFF_SIZE);
 		point_bytes += out_points_packed_size % BUFF_SIZE;
 	}
-#elif POINTS_WITH_PKT_CTR
-	uint8_t point_cnt[2];
-	uint16_t pkt_cnt = 0;
-	c_header[4] = FLAG_XY;
-	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))); full_buffers += (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
-		int16ToByte(point_cnt, pkt_cnt);
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER), (char*)point_cnt, (SIZEOF_PKT_CTR));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER + SIZEOF_PKT_CTR), (char*)out_points_buff + full_buffers, (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		result = packets_write(m_send_buffer, BUFF_SIZE);
-		point_bytes += (BUFF_SIZE - SIZEOF_HEADER);
-		pkt_cnt++;
-	}
 
-	if (out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER) + SIZEOF_HEADER);
-		point_bytes += out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER);
+	//	total_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
+		//chrono_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
 
-	}
-#else
-
-	c_header[4] = FLAG_XY;
-	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - SIZEOF_HEADER)); full_buffers += (BUFF_SIZE - SIZEOF_HEADER)) {
-	 
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers , (BUFF_SIZE - SIZEOF_HEADER));
-		result = packets_write(m_send_buffer, BUFF_SIZE);
-		point_bytes += (BUFF_SIZE - SIZEOF_HEADER);
-	}
-
-	if (out_points_packed_size  % (BUFF_SIZE- SIZEOF_HEADER)) {
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER));
-		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER));
-		point_bytes += out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER) ;
-	}
-#endif
-//	total_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
-	//chrono_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
-	
-	total_byte_ctr +=  out_points_packed_size;
+	total_byte_ctr += out_points_packed_size;
 	chrono_byte_ctr += out_points_packed_size;
-
 	static std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<__int64, std::ratio<1, 1000000000>>>	timer_start;
-
 	if (chrono_byte_ctr >= (1000 * BUFF_SIZE)) {
 		auto timer_elapsed = high_resolution_clock::now() - timer_start;
 		long long ms = std::chrono::duration_cast<microseconds>(timer_elapsed).count();
 		rcvMBps.f = (float)chrono_byte_ctr / (float)ms;
+
 		timer_start = high_resolution_clock::now();
 		chrono_byte_ctr = 0;
-	}
 
+	}
 	int ci = 0;
-	dctr = 0;
-#if MAME_DEBUG
 
-	for (auto& vec : m_out_vectors)
-	{
-		dvg_vec point = { 0 };
-		bool color_change = ((m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()));
-		int32_t y = vec.y1;
-		int32_t x = vec.x1;
-		transform_final(&x, &y);
-		//point.pnt.x = (x & 0x3f00);
-		//point.pnt.y = (y & 0x3f00);
-		point.pnt.x = (x);
-		point.pnt.y = (y);
-	
-		if ( color_change)
-		{
-			m_last_r2 = vec.color.r();
-			m_last_g2 = vec.color.g();
-			m_last_b2 = vec.color.b();
-			 
-			point.pnt.r = m_last_r2;
-			point.pnt.g = m_last_g2;
-			point.pnt.b = m_last_b2;
-		}
 
-		printf("I line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno2++, color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
-		dctr++;
-	}
-#endif
-#if MAME_DEBUG
-	
-		printf("I FLAG_COMPLETE\n");
-	
-#endif
-		 
+
 	result = packets_write(out_meta_points.data(), out_meta_points.size());
 	cmd_reset(0);
 	m_last_r = m_last_g = m_last_b = -1;
 
 	frame_counter += 1;
 	if (!(frame_counter % 100)) {
-	 	printf("%lu frames @ %llu bytes per frame || total bytes: %lu upstream @ %09.4f MBps (0x%08lx)\n\r", frame_counter, (total_byte_ctr - previous_byte_ctr) / 100, point_bytes, rcvMBps.f, rcvMBps.u);
+		printf("%lu frames @ %llu bytes per frame || total bytes: %lu upstream @ %09.4f MBps (0x%08lx)\n\r", frame_counter, (total_byte_ctr - previous_byte_ctr) / 100, point_bytes, rcvMBps.f, rcvMBps.u);
 		previous_byte_ctr = total_byte_ctr;
 	}
 
-#if MAME_DEBUG
-	_deserialize(out_meta_points.data(), out_m_packed_pnts.data());
-#endif
+
 	return result;
 }
 
-void vector_device_udp_dvg::device_reset()
+void vector_device_tcp_dvg::device_reset()
 {
 }
-void vector_device_udp_dvg::add_point(int x, int y, rgb_t color, int intensity)
+void vector_device_tcp_dvg::add_point(int x, int y, rgb_t color, int intensity)
 {
 	intensity = std::clamp(intensity, 0, 255);
 	if (intensity == 0)
@@ -952,9 +692,10 @@ void vector_device_udp_dvg::add_point(int x, int y, rgb_t color, int intensity)
 		color.set_b(cscale * color.b());
 	}
 	cmd_add_vec(x, y, color, true);
+
 }
 
-void vector_device_udp_dvg::get_dvg_info()
+void vector_device_tcp_dvg::get_dvg_info()
 {
 	int      result;
 	uint32_t version, major, minor;
@@ -963,6 +704,7 @@ void vector_device_udp_dvg::get_dvg_info()
 	{
 		return;
 	}
+
 
 	sscanf(emulator_info::get_build_version(), "%u.%u", &major, &minor);
 	version = (((minor / 1000) % 10) << 12) | (((minor / 100) % 10) << 8) | (((minor / 10) % 10) << 4) | (minor % 10);
@@ -980,11 +722,13 @@ void vector_device_udp_dvg::get_dvg_info()
 	const char* json = sb.GetString();
 	uint16_t json_len = (uint16_t)sb.GetSize();
 
+
 	sprintf((char*)m_send_buffer, "$cmd%c %s", FLAG_GET_GAME_INFO, json);
 	packets_write(m_send_buffer, CMD_LEN + json_len);
-}
 
-uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
+
+}
+uint32_t vector_device_tcp_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
 {
 	rgb_t color = rgb_t(108, 108, 108);
 	rgb_t black = rgb_t(0, 0, 0);
@@ -1003,7 +747,6 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 	{
 		m_ymax = 1;
 	}
-
 	m_xscale = (DVG_RES_MAX + 1.0) / (m_xmax - m_xmin);
 	m_yscale = (DVG_RES_MAX + 1.0) / (m_ymax - m_ymin);
 

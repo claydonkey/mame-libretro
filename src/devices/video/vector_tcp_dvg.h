@@ -1,7 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Mario Montminy, Anthony Campbell
-#ifndef VECTOR_UDP_DVG_H
-#define VECTOR_UDP_DVG_H
+#ifndef VECTOR_TCP_DVG_H
+#define VECTOR_TCP_DVG_H
 #pragma once
 
 #include "osdcore.h"
@@ -11,6 +11,7 @@
 #include <ws2tcpip.h>
 #include <vector>
 #include "msgpack/msgpack.hpp"
+#include "vector_udp_dvg.h"
 
 
 #ifdef __GNUC__
@@ -35,6 +36,7 @@
 #define BUFF_SIZE               1408
 #define SIZEOF_LEN 4
 #define SIZEOF_HEADER 6
+#define SIZEOF_PKT_CTR 2
 #define DVG_RELEASE             0
 #define DVG_BUILD               1
 #define CMD_BUF_SIZE            0x20000
@@ -49,62 +51,13 @@
 #define GAME_WARRIOR             2
 #define CMD_LEN 6
 
-uint64_t ByteToint64(uint8_t a[], uint64_t* n);
-uint32_t ByteToint32(uint8_t a[], uint32_t* n);
-uint16_t ByteToint16(uint8_t a[], uint16_t* n);
-uint8_t* int64ToByte(uint8_t a[], uint64_t n);
-uint8_t * int32ToByte(uint8_t a[], uint32_t n);
-uint8_t* int16ToByte(uint8_t a[], uint16_t n);
-typedef enum _cmd_enum
-{
-
-	FLAG_RGB = 0x1,
-	FLAG_XY = 0x2,
-	FLAG_GAME = 0x3,
-	FLAG_COMPLETE = 0x4,
-	FLAG_POINT = 0xB,
-	FLAG_CMD = 0x5,
-	FLAG_CMD_END = 0x6,
-	FLAG_EXIT = 0x7,
-	FLAG_GET_DVG_INFO = 0x8,
-	FLAG_GET_GAME_INFO = 0x9,
-	FLAG_COMPLETE_MONOCHROME = 0xA
-}cmd_enum;
+ 
 
 using namespace std;
 
-
  
 
-PACK(struct point_t {
-	uint16_t b : 8;
-	uint16_t g : 8;
-	uint16_t r : 8;
-	uint16_t y : 12;
-	uint16_t x : 12;
-});
-
-
-
-PACK(struct v_colors_t {
-	uint32_t rgb : 24;
-	uint32_t yx : 24;
- 
-});
-
-union dvg_vec {
-	point_t pnt;
-	uint64_t val;
-	 
-};
-
-typedef union _ser_float {
-	float f;
-	uint32_t u;
-} ser_float;
-
-
-class vector_device_udp_dvg : public vector_interface
+class vector_device_tcp_dvg : public vector_interface
 {
 
 public:
@@ -127,10 +80,10 @@ public:
 		bool bw_game;
 	} game_info_t;
 
-	vector_device_udp_dvg(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock = 0);
+	vector_device_tcp_dvg(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock = 0);
 
 	// device-level overrides
-	int32_t deserialize();
+
 	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) override;
 
@@ -154,8 +107,6 @@ private:
 	int packets_write(uint8_t* buf, int size);
 	int send_vectors();
 	void transform_and_scale_coords(int* px, int* py);
-	
-	int32_t deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change);
 	int determine_game_settings();
 	void transform_final(int* px, int* py);
 
@@ -197,7 +148,7 @@ private:
 	std::string m_host;
 	WSADATA m_wsa;
 	char m_message[BUFF_SIZE];
- 
+	//uint8_t  m_json_buf[MAX_JSON_SIZE];
 	int m_json_length;
 	std::unique_ptr<uint8_t[]> m_json_buf;
 	std::unique_ptr<float[]> m_gamma_table;
@@ -212,5 +163,5 @@ protected:
 };
 
 // device type definition
-DECLARE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg)
+DECLARE_DEVICE_TYPE(VECTOR_TCP_DVG, vector_device_tcp_dvg)
 #endif // VECTOR_USB_DVG_H

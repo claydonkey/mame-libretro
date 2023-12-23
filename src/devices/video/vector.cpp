@@ -82,6 +82,7 @@ vector_device::vector_device(const machine_config& mconfig, const char* tag, dev
 	  m_v_st_device(*this, "vector_device_v_st"),
 	  m_usb_dvg_device(*this, "vector_usb_dvg"),
 	  m_udp_dvg_device(*this, "vector_udp_dvg"),
+	  m_tcp_dvg_device(*this, "vector_tcp_dvg"),
 	  m_vector_list(nullptr),
 	  m_min_intensity(255),
 	  m_max_intensity(0)
@@ -100,6 +101,10 @@ void vector_device::device_add_mconfig(machine_config &config)
 	else if (!strcmp(config.options().vector_driver(), "udp_dvg"))
 	{
 		VECTOR_UDP_DVG(config, "vector_udp_dvg");
+	}
+	else if (!strcmp(config.options().vector_driver(), "tcp_dvg"))
+	{
+		VECTOR_TCP_DVG(config, "vector_tcp_dvg");
 	}
 }
 void vector_device::add_line(float xf0, float yf0, float xf1, float yf1, int intensity) {};
