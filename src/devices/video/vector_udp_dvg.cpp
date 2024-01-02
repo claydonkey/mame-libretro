@@ -33,7 +33,8 @@ using namespace std;// Defining region codes
 #define RIGHT                    0x2
 #define BOTTOM                   0x4
 #define TOP                      0x8
-#define POINTS_WITH_HEADER       1
+#define HEADER_ADDITION          1
+
 DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VECTOR_UDP_DVG")
 
 
@@ -707,7 +708,7 @@ int dctr = 0;
 	 printf("D FLAG_COMPLETE\n");
 	 return cnt;
  }
-
+ uint16_t pkt_cnt;
 int vector_device_udp_dvg::send_vectors()
 {
 
@@ -803,15 +804,13 @@ int vector_device_udp_dvg::send_vectors()
 	int32_t full_buffers = 0;
 	int32_t out_points_packed_size = out_m_packed_pnts.size();
 	static uint32_t point_bytes = 0;
-#if !POINTS_WITH_HEADER
 	c_header[4] = FLAG_XY;
+#if HEADER_ADDITION == 0
 
 #if MAME_DEBUG
 		printf("I FLAG_XY\n");
 #endif
-
 	result = packets_write((uint8_t*)c_header, SIZEOF_HEADER);
-
 
 	for (full_buffers = 0; full_buffers < (out_points_packed_size - BUFF_SIZE); full_buffers += BUFF_SIZE) {
 		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, BUFF_SIZE);
@@ -824,32 +823,10 @@ int vector_device_udp_dvg::send_vectors()
 		result = packets_write(m_send_buffer, out_points_packed_size % BUFF_SIZE);
 		point_bytes += out_points_packed_size % BUFF_SIZE;
 	}
-#elif POINTS_WITH_PKT_CTR
-	uint8_t point_cnt[2];
-	uint16_t pkt_cnt = 0;
-	c_header[4] = FLAG_XY;
-	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))); full_buffers += (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
-		int16ToByte(point_cnt, pkt_cnt);
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER), (char*)point_cnt, (SIZEOF_PKT_CTR));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER + SIZEOF_PKT_CTR), (char*)out_points_buff + full_buffers, (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		result = packets_write(m_send_buffer, BUFF_SIZE);
-		point_bytes += (BUFF_SIZE - SIZEOF_HEADER);
-		pkt_cnt++;
-	}
 
-	if (out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER) + SIZEOF_HEADER);
-		point_bytes += out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER);
+#elif HEADER_ADDITION == 1
 
-	}
-#else
-
-	c_header[4] = FLAG_XY;
 	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - SIZEOF_HEADER)); full_buffers += (BUFF_SIZE - SIZEOF_HEADER)) {
-	 
 		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
 		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers , (BUFF_SIZE - SIZEOF_HEADER));
 		result = packets_write(m_send_buffer, BUFF_SIZE);
@@ -861,6 +838,28 @@ int vector_device_udp_dvg::send_vectors()
 		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER));
 		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER));
 		point_bytes += out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER) ;
+	}
+#elif HEADER_ADDITION == 2
+	uint8_t point_cnt[2];
+
+	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))); full_buffers += (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
+		int16ToByte(point_cnt, pkt_cnt++);
+		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
+		memcpy((char*)(m_send_buffer + SIZEOF_HEADER), (char*)point_cnt, (SIZEOF_PKT_CTR));
+		memcpy((char*)(m_send_buffer + SIZEOF_HEADER + SIZEOF_PKT_CTR), (char*)out_points_buff + full_buffers, (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
+		result = packets_write(m_send_buffer, BUFF_SIZE);
+		point_bytes += (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR));
+
+	}
+
+	if (out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
+		int16ToByte(point_cnt, pkt_cnt++);
+		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
+		memcpy((char*)(m_send_buffer + SIZEOF_HEADER), (char*)point_cnt, (SIZEOF_PKT_CTR));
+		memcpy((char*)(m_send_buffer + SIZEOF_HEADER + SIZEOF_PKT_CTR), (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
+		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
+		point_bytes += out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR));
+
 	}
 #endif
 //	total_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
@@ -958,7 +957,7 @@ void vector_device_udp_dvg::get_dvg_info()
 {
 	int      result;
 	uint32_t version, major, minor;
-
+	  pkt_cnt = 0;
 	if (m_json_length)
 	{
 		return;
