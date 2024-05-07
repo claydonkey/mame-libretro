@@ -18,7 +18,6 @@
 #include <algorithm>
 #include <iostream>
 #include <string> 
-
 #include <stdio.h>
 #include <string.h>
 
@@ -27,16 +26,17 @@ using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
 // ns, us, ms, s, h, etc.
 
+char c_header[SIZEOF_HEADER] = { '$', 'c', 'm', 'd', '_', 0, 0, 0, 0 };
+char r_header[SIZEOF_HEADER] = { '$', 'r', 's', 'p', '_', 0, 0, 0, 0 };
 using namespace util;
 using namespace std;// Defining region codes 
 #define LEFT                     0x1
 #define RIGHT                    0x2
 #define BOTTOM                   0x4
 #define TOP                      0x8
-#define HEADER_ADDITION          1
+
 
 DEFINE_DEVICE_TYPE(VECTOR_UDP_DVG, vector_device_udp_dvg, "vector_udp_dvg", "VECTOR_UDP_DVG")
-
 
 
 const vector_device_udp_dvg::game_info_t vector_device_udp_dvg::s_games[] = {
@@ -88,7 +88,6 @@ vector_device_udp_dvg::vector_device_udp_dvg(const machine_config& mconfig, cons
 	m_ymax(0),
 	m_xscale(1.0),
 	m_yscale(1.0),
-
 	m_swap_xy(false),
 	m_flip_x(false),
 	m_flip_y(true),
@@ -127,13 +126,30 @@ void vector_device_udp_dvg::device_stop_client() {
 void vector_device_udp_dvg::device_start()
 {
 	rcvMBps = { 0 };
-	std::string host(machine().config().options().vector_udp_host());
-	device_sethost("udp_socket." + host + ":" + machine().config().options().vector_udp_port());
+	std::string host(machine().config().options().vector_host());
+
+
+	if (!strcmp(machine().config().options().vector_protocol(), "tcp")) {
+		device_sethost("socket." + host + ":" + std::to_string(machine().config().options().vector_ip_port()));
+		m_protocol = PROTO_TCP;
+	}
+	else if (!strcmp(machine().config().options().vector_protocol(), "udp"))
+	{
+		device_sethost("udp_socket." + host + ":" + std::to_string(machine().config().options().vector_ip_port()));
+		m_protocol = PROTO_UDP;
+	}
+	else
+	{
+		fprintf(stderr, "vector_device_vectrx2020: error: vector_protocol %s unknown\n", machine().config().options().vector_protocol());
+		::exit(1);
+	}
+
+
 	std::error_condition filerr = device_start_client();
 
 	if (filerr.value())
 	{
-		fprintf(stderr, "vector_device_udp_dvg: error: osd_file::open failed: %s udp host %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_udp_host());
+		fprintf(stderr, "vector_device_vectrx2020: error: osd_file::open failed: %s host %s protocol %s\n", const_cast<char*>(filerr.message().c_str()), machine().config().options().vector_host(), machine().config().options().vector_protocol());
 		::exit(1);
 	}
 
@@ -145,6 +161,8 @@ void vector_device_udp_dvg::device_start()
 	{
 		m_gamma_table[i] = apply_brightness_contrast_gamma_fp(i, machine().options().brightness(), machine().options().contrast(), machine().options().gamma());
 	}
+
+	set_dvg_protocol();
 
 	determine_game_settings();
 	m_clipx_min = DVG_RES_MIN;
@@ -325,6 +343,8 @@ void vector_device_udp_dvg::cmd_reset(uint32_t initial)
 {
 	m_in_vec_last_x = 0;
 	m_in_vec_last_y = 0;
+	out_meta.clear();
+	out_data.clear();
 	m_in_vectors.clear();
 	m_out_vectors.clear();
 
@@ -332,14 +352,14 @@ void vector_device_udp_dvg::cmd_reset(uint32_t initial)
 
 void vector_device_udp_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_coords)
 {
- 
+
 	int32_t    x0, y0, x1, y1;
 	bool blank;
 	x0 = m_in_vec_last_x;
 	y0 = m_in_vec_last_y;
 	x1 = x;
 	y1 = y;
-	bool add=true;
+	bool add = true;
 	blank = (color.r() == 0) && (color.g() == 0) && (color.b() == 0);
 	if ((x1 == x0) && (y1 == y0) && blank)
 	{
@@ -382,20 +402,23 @@ int vector_device_udp_dvg::determine_game_settings()
 	Document d;
 
 	get_dvg_info();
-
+	m_flip_y = false;
 	d.Parse(reinterpret_cast<const char*> (&m_json_buf[0]));
 	m_vertical_display = d["vertical"].GetBool();
 
 	if (machine().config().gamedrv().flags & machine_flags::SWAP_XY)
 	{
+		std::cout << "SWAP_XY " << std::endl;
 		m_swap_xy = true;
 	}
 	if (machine().config().gamedrv().flags & machine_flags::FLIP_Y)
 	{
-		m_flip_y = false;
+		std::cout << "FLIP_Y " << std::endl;
+		m_flip_y = true;
 	}
 	if (machine().config().gamedrv().flags & machine_flags::FLIP_X)
 	{
+		std::cout << "FLIP_X " << std::endl;
 		m_flip_x = true;
 	}
 
@@ -419,6 +442,8 @@ int vector_device_udp_dvg::determine_game_settings()
 			}
 		}
 	}
+	//todo: check if need for RGB currently mhavoc needs this to be true
+	m_exclude_blank_vectors = true;
 	return 0;
 }
 
@@ -469,31 +494,8 @@ void vector_device_udp_dvg::transform_final(int* px, int* py)
 }
 
 
-int vector_device_udp_dvg::packet_read(uint8_t* buf, int size)
-{
-	int result = size;
-	uint32_t read = 0;
-
-	m_port->read(buf, 0, size, read);
-	while (!read)
-		m_port->read(buf, 0, size, read);
-
-	if (read != size)
-	{
-		result = -1;
-	}
-	return result;
-}
 
 
-int vector_device_udp_dvg::packets_write(uint8_t* buf, int size)
-{
-
-	uint32_t written = 0, total;
-	total = size;
-	m_port->write(buf, 0, size, written);
-	return written;
-}
 
 
 
@@ -517,17 +519,17 @@ uint8_t* int64ToByte(uint8_t a[], uint64_t n) {
 	memcpy(a, &n, 8);
 	return a;
 }
-uint8_t * int32ToByte(uint8_t a[], uint32_t n) {
+uint8_t* int32ToByte(uint8_t a[], uint32_t n) {
 	memcpy(a, &n, 4);
 	return a;
 }
 
 
 uint8_t* int16ToByte(uint8_t a[], uint16_t n) {
-		memcpy(a, &n, 2);
-		return a;
-	}
-uint8_t c_header[] = { '$','c','m','d','_',' ' };
+	memcpy(a, &n, 2);
+	return a;
+}
+
 uint64_t lineno = 0;
 #if MAME_DEBUG
 
@@ -540,397 +542,282 @@ extern "C" {
 
 	}ds_v_colors_t;
 
-  typedef  struct _colors_t {
+	typedef  struct _colors_t {
 		uint8_t b : 8;
 		uint8_t g : 8;
 		uint8_t r : 8;
 	} ds_colors_t;
 
- typedef struct {
+	typedef struct {
 		ds_colors_t rgb;
 		uint16_t y : 12;
 		uint16_t x : 12;
 
 	}	ds_point_t;
 }
- 
+
 
 int dctr = 0;
- extern "C"  typedef   union {
+extern "C"  typedef   union {
 	ds_point_t pnt;
 	ds_v_colors_t colors;
 }ds_dvg_vec;
 
- int32_t vector_device_udp_dvg::deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change)
- {
+uint32_t last_rgb = 0xFFFFFFFF; // Initialize with an impossible color
+uint16_t pkt_cnt;
 
-	 in_packed_points_buff += cnt;
-	 ds_dvg_vec point;
-	 static ds_colors_t prev_colors;
-
-	 point.pnt.rgb.r = 0;
-	 point.pnt.rgb.g = 0;
-	 point.pnt.rgb.b = 0;
-
-	 if (color_change) {
-
-		 prev_colors.r = point.pnt.rgb.r = *(in_packed_points_buff);
-		 prev_colors.g = point.pnt.rgb.g = *(in_packed_points_buff + 1);
-		 prev_colors.b = point.pnt.rgb.b = *(in_packed_points_buff + 2);
-		 cnt += 3;
-		 in_packed_points_buff += 3;
-	 }
-	 else {
-		 point.pnt.rgb.r = prev_colors.r;
-		 point.pnt.rgb.g = prev_colors.g;
-		 point.pnt.rgb.b = prev_colors.b;
-	 }
-
-	 point.pnt.y = ((*(in_packed_points_buff + 1) & 0xF0) << 4) + *(in_packed_points_buff);
-	 point.pnt.x = ((*(in_packed_points_buff + 2) & 0x0F) << 8) + ((*(in_packed_points_buff + 2) & 0xF0) >> 4) + ((*(in_packed_points_buff + 1) & 0x0F) << 4);
-	 cnt += 3;
-	 in_packed_points_buff += 3;
-
-	 //if(dctr<3)
-	 printf("D line:%u color_change=%u x=%u y=%u r=%u g=%u b=%u\n", lineno++, color_change, point.pnt.x, point.pnt.y, point.pnt.rgb.r, point.pnt.rgb.g, point.pnt.rgb.b);
-
-	 return cnt;
- }
-
-
- int32_t _deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change) {
-	in_packed_points_buff += cnt;
-	ds_dvg_vec point;
-	static ds_colors_t prev_colors;
-
-	point.pnt.rgb.r = 0;
-	point.pnt.rgb.g = 0;
-	point.pnt.rgb.b = 0;
-
-	if (color_change) {
-
-		prev_colors.r = point.pnt.rgb.r = *(in_packed_points_buff);
-		prev_colors.g = point.pnt.rgb.g = *(in_packed_points_buff + 1);
-		prev_colors.b = point.pnt.rgb.b = *(in_packed_points_buff + 2);
-		cnt += 3;
-		in_packed_points_buff += 3;
-	}
-	else {
-		point.pnt.rgb.r = prev_colors.r;
-		point.pnt.rgb.g = prev_colors.g;
-		point.pnt.rgb.b = prev_colors.b;
-	}
-
-	point.pnt.y = ((*(in_packed_points_buff + 1) & 0xF0) << 4) + *(in_packed_points_buff);
-	point.pnt.x = ((*(in_packed_points_buff + 2) & 0x0F) << 8) + ((*(in_packed_points_buff + 2) & 0xF0) >> 4) + ((*(in_packed_points_buff + 1) & 0x0F) << 4);
-	cnt += 3;
-	in_packed_points_buff += 3;
-
-	//if(dctr<3)
-	printf( "D line:%u color_change=%u x=%u y=%u r=%u g=%u b=%u\n", lineno++, color_change, point.pnt.x, point.pnt.y, point.pnt.rgb.r, point.pnt.rgb.g, point.pnt.rgb.b);
-	
-	return cnt;
-}
-
- int32_t _deserialize(uint8_t* in_meta_buff, uint8_t* in_packed_points_buff) {
-
-	uint8_t* start_points_buff = in_packed_points_buff;
-
-	uint8_t meta_byte = 0;
-	uint32_t int_bit_iter = 0, byte_iter = 0, in_p_size = 0;
-	int32_t cnt = 0;
-	printf("D FLAG_XY\n");
-	ByteToint32(in_meta_buff + SIZEOF_HEADER, &in_p_size);
-	if (in_p_size >= 8) {
-
-		for (byte_iter = 0; byte_iter <= (in_p_size - 8); byte_iter += 8) {
-			meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-			for (int_bit_iter = 0; int_bit_iter < 8; int_bit_iter++) {
-				uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-				cnt = _deserialize_points(in_packed_points_buff, cnt, colorbit);
-				if (cnt == -1)
-					return -1;
-			}
-		}
-	}
-	if (in_p_size % 8) {
-
-		meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-
-		for (int_bit_iter = 0; int_bit_iter < in_p_size % 8; int_bit_iter++) {
-			uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-			cnt = _deserialize_points(in_packed_points_buff, cnt, colorbit);
-			if (cnt == -1)
-				return -1;
-		}
-	}
-	in_packed_points_buff = start_points_buff;
-	printf("D FLAG_COMPLETE\n");
-	return cnt;
-}
-
- int32_t vector_device_udp_dvg::deserialize()
- {
-
-	 uint8_t* in_packed_points_buff = out_m_packed_pnts.data();
-	 uint8_t* in_meta_buff = out_meta_points.data();
-	 uint8_t* start_points_buff = in_packed_points_buff;
-
-	 uint8_t meta_byte = 0;
-	 uint32_t int_bit_iter = 0, byte_iter = 0, in_p_size = 0;
-	 int32_t cnt = 0;
-	 printf("D FLAG_XY\n");
-	 ByteToint32(in_meta_buff + SIZEOF_HEADER, &in_p_size);
-	 if (in_p_size >= 8) {
-
-		 for (byte_iter = 0; byte_iter <= (in_p_size - 8); byte_iter += 8) {
-			 meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-			 for (int_bit_iter = 0; int_bit_iter < 8; int_bit_iter++) {
-				 uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-				 cnt = _deserialize_points(in_packed_points_buff, cnt, colorbit);
-				 if (cnt == -1)
-					 return -1;
-			 }
-		 }
-	 }
-	 if (in_p_size % 8) {
-
-		 meta_byte = *(in_meta_buff + (SIZEOF_HEADER + SIZEOF_LEN) + byte_iter / 8);
-
-		 for (int_bit_iter = 0; int_bit_iter < in_p_size % 8; int_bit_iter++) {
-			 uint8_t colorbit = 0b1 & (meta_byte >> int_bit_iter);
-			 cnt = deserialize_points(in_packed_points_buff, cnt, colorbit);
-			 if (cnt == -1)
-				 return -1;
-		 }
-	 }
-	 in_packed_points_buff = start_points_buff;
-	 printf("D FLAG_COMPLETE\n");
-	 return cnt;
- }
- uint16_t pkt_cnt;
 int vector_device_udp_dvg::send_vectors()
 {
 
 	int      result = -1;
 
-	cmd_vec_postproc();
-
-	static uint64_t total_byte_ctr = 0;
-	static uint64_t chrono_byte_ctr = 0;
-	static uint64_t previous_byte_ctr = 0;
-
-	uint32_t out_bit_iter = 0;
 	uint8_t meta_byte = 0;
-	out_meta_points.clear();
-	out_m_packed_pnts.clear();
-	c_header[4] = FLAG_COMPLETE;
-	out_meta_points.assign(c_header, c_header + SIZEOF_HEADER);
-	int32_t m_last_r=0;
-	int32_t m_last_g=0;
-	int32_t m_last_b=0;
-	  dctr = 0;
-	int32_t m_last_r2 = 0;
-	int32_t m_last_g2 = 0;
-	int32_t m_last_y = 0;
-	int32_t m_last_x = 0;
-	int32_t m_last_b2 = 0;
-	bool first = true;
-	for (auto& vec : m_out_vectors)
+	size_t out_bit_iter = 0;
+	cmd_vec_postproc();
+	int bytes_sent = 0;
+	for (const auto& dvg : m_out_vectors)
 	{
-		dvg_vec point;
+		// Scale and clamp the color and coordinates
+		uint32_t r = static_cast<uint32_t>(dvg.color.r());
+		uint32_t g = static_cast<uint32_t>(dvg.color.g());
+		uint32_t b = static_cast<uint32_t>(dvg.color.b());
+		uint32_t rgb = (r << 16) | (g << 8) | b;
+		int32_t y1 = dvg.y1;
+		int32_t x1 = dvg.x1;
+		transform_final(&x1, &y1);
+		// Scale and clamp the x and y coordinates
+		uint32_t x = static_cast<uint32_t>(x1);
+		uint32_t y = static_cast<uint32_t>(y1);
+		// std::cout << "serialized point " << ": (" << dvg.pnt.y  << ", " << dvg.pnt.x  << ")\n";
 
-		bool color_change = ((m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()));
-		bool point_change = ((m_last_y != vec.y1) || (m_last_x != vec.x1));
-		if (first)
+		bool color_change = (rgb != last_rgb);
+
+		// Update the meta byte
+		meta_byte |= (color_change << (7 - out_bit_iter % 8));
+
+		// Pack the color if it has changed
+		if (color_change)
 		{
-			point_change = true;
-			color_change = true;
-		}
-		first = false;
-		int32_t y = vec.y1;
-		int32_t x = vec.x1;
-		m_last_y = y;
-		m_last_x = x;
-		transform_final(&x, &y);
-		
-		point.pnt.x = x;
-		point.pnt.y = y;
-	//	if (point_change){
-		
-			if (color_change)
-			{
-				point.pnt.r = m_last_r = vec.color.r();
-				point.pnt.g = m_last_g = vec.color.g();
-				point.pnt.b = m_last_b = vec.color.b();
-			}
-
-		uint8_t m_ar[8];
-		int64ToByte(m_ar, point.val);
-
-		if (color_change) {
-			out_m_packed_pnts.push_back(m_ar[2]); //r
-			out_m_packed_pnts.push_back(m_ar[1]); //g
-			out_m_packed_pnts.push_back(m_ar[0]); //b
+			out_data.push_back(r & 0xFF); // Red
+			out_data.push_back(g & 0xFF); // Green
+			out_data.push_back(b & 0xFF); // Blue
+			last_rgb = rgb;
 		}
 
-		if (!(out_bit_iter % 8) && out_bit_iter) {
-			out_meta_points.push_back(meta_byte);
+		// Pack the x and y coordinates
+		out_data.push_back((x >> 4) & 0xFF);                     // Higher 8 bits of x
+		out_data.push_back(((x & 0xF) << 4) | ((y >> 8) & 0xF)); // Lower 4 bits of x and higher 4 bits of y
+		out_data.push_back(y & 0xFF);                            // Lower 8 bits of y
+
+		// Push the meta byte to out_meta every 8 points or at the end
+		if (++out_bit_iter % 8 == 0 || &dvg == &m_out_vectors.back())
+		{
+			out_meta.push_back(meta_byte);
 			meta_byte = 0;
 		}
 
-		meta_byte |= color_change << (out_bit_iter % 8);
-		out_m_packed_pnts.push_back(m_ar[4]); //xy (backwards) //skipping the byte in between color and coord (no m_ar[3])
-		out_m_packed_pnts.push_back(((m_ar[5] & 0x0F) << 4) | ((m_ar[6] & 0xF0) >> 4));
-		out_m_packed_pnts.push_back(((m_ar[6] & 0x0F) << 4) | (m_ar[7] & 0x0F));
-		out_bit_iter++;
-	//}
-#if MAME_DEBUG2
-  printf("W line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno++, point.colors.color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
-#endif
-	}
-	
-    uint32_t out_points_size = m_out_vectors.size();
-    static uint32_t frame_counter;
-	out_meta_points.push_back(meta_byte);
-	uint8_t meta_out_points_size[4];
-	int32ToByte(meta_out_points_size, out_points_size);
-
-	for (int i = 3; i >= 0; i--)
-		out_meta_points.insert(out_meta_points.begin() + SIZEOF_HEADER, meta_out_points_size[i]);
-
-
-	uint8_t* out_points_buff = out_m_packed_pnts.data();
-	int32_t full_buffers = 0;
-	int32_t out_points_packed_size = out_m_packed_pnts.size();
-	static uint32_t point_bytes = 0;
-	c_header[4] = FLAG_XY;
-#if HEADER_ADDITION == 0
-
-#if MAME_DEBUG
-		printf("I FLAG_XY\n");
-#endif
-	result = packets_write((uint8_t*)c_header, SIZEOF_HEADER);
-
-	for (full_buffers = 0; full_buffers < (out_points_packed_size - BUFF_SIZE); full_buffers += BUFF_SIZE) {
-		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, BUFF_SIZE);
-		result = packets_write(m_send_buffer, BUFF_SIZE );
-		point_bytes += BUFF_SIZE;
-	}
-	
-	if (out_points_packed_size % BUFF_SIZE) {
-		memcpy((char*)m_send_buffer, (char*)out_points_buff + full_buffers, out_points_packed_size % BUFF_SIZE);
-		result = packets_write(m_send_buffer, out_points_packed_size % BUFF_SIZE);
-		point_bytes += out_points_packed_size % BUFF_SIZE;
-	}
-
-#elif HEADER_ADDITION == 1
-
-	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - SIZEOF_HEADER)); full_buffers += (BUFF_SIZE - SIZEOF_HEADER)) {
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers , (BUFF_SIZE - SIZEOF_HEADER));
-		result = packets_write(m_send_buffer, BUFF_SIZE);
-		point_bytes += (BUFF_SIZE - SIZEOF_HEADER);
-	}
-
-	if (out_points_packed_size  % (BUFF_SIZE- SIZEOF_HEADER)) {
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)m_send_buffer + SIZEOF_HEADER, (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER));
-		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER));
-		point_bytes += out_points_packed_size % (BUFF_SIZE - SIZEOF_HEADER) ;
-	}
-#elif HEADER_ADDITION == 2
-	uint8_t point_cnt[2];
-
-	for (full_buffers = 0; full_buffers < (out_points_packed_size - (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))); full_buffers += (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
-		int16ToByte(point_cnt, pkt_cnt++);
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER), (char*)point_cnt, (SIZEOF_PKT_CTR));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER + SIZEOF_PKT_CTR), (char*)out_points_buff + full_buffers, (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		result = packets_write(m_send_buffer, BUFF_SIZE);
-		point_bytes += (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR));
 
 	}
-
-	if (out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR))) {
-		int16ToByte(point_cnt, pkt_cnt++);
-		memcpy((char*)m_send_buffer, (char*)c_header, (SIZEOF_HEADER));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER), (char*)point_cnt, (SIZEOF_PKT_CTR));
-		memcpy((char*)(m_send_buffer + SIZEOF_HEADER + SIZEOF_PKT_CTR), (char*)out_points_buff + full_buffers, out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		result = packets_write(m_send_buffer, out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR)));
-		point_bytes += out_points_packed_size % (BUFF_SIZE - (SIZEOF_HEADER + SIZEOF_PKT_CTR));
-
-	}
-#endif
-//	total_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
-	//chrono_byte_ctr += out_meta_points.size() + out_points_packed_size + 6;
-	
-	total_byte_ctr +=  out_points_packed_size;
-	chrono_byte_ctr += out_points_packed_size;
-
-	static std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<__int64, std::ratio<1, 1000000000>>>	timer_start;
-
-	if (chrono_byte_ctr >= (1000 * BUFF_SIZE)) {
-		auto timer_elapsed = high_resolution_clock::now() - timer_start;
-		long long ms = std::chrono::duration_cast<microseconds>(timer_elapsed).count();
-		rcvMBps.f = (float)chrono_byte_ctr / (float)ms;
-		timer_start = high_resolution_clock::now();
-		chrono_byte_ctr = 0;
-	}
-
-	int ci = 0;
-	dctr = 0;
-#if MAME_DEBUG
-
-	for (auto& vec : m_out_vectors)
-	{
-		dvg_vec point = { 0 };
-		bool color_change = ((m_last_r != vec.color.r()) || (m_last_g != vec.color.g()) || (m_last_b != vec.color.b()));
-		int32_t y = vec.y1;
-		int32_t x = vec.x1;
-		transform_final(&x, &y);
-		//point.pnt.x = (x & 0x3f00);
-		//point.pnt.y = (y & 0x3f00);
-		point.pnt.x = (x);
-		point.pnt.y = (y);
-	
-		if ( color_change)
-		{
-			m_last_r2 = vec.color.r();
-			m_last_g2 = vec.color.g();
-			m_last_b2 = vec.color.b();
-			 
-			point.pnt.r = m_last_r2;
-			point.pnt.g = m_last_g2;
-			point.pnt.b = m_last_b2;
-		}
-
-		printf("I line:%llu color_change=%u x=%u y=%u r=%u g=%u b=%u \n\r", lineno2++, color_change, point.pnt.x, point.pnt.y, point.pnt.r, point.pnt.g, point.pnt.b);
-		dctr++;
-	}
-#endif
-#if MAME_DEBUG
-	
-		printf("I FLAG_COMPLETE\n");
-	
-#endif
-		 
-	result = packets_write(out_meta_points.data(), out_meta_points.size());
+	std::string data_to_send(out_data.begin(), out_data.end());
+	std::string meta_to_send(out_meta.begin(), out_meta.end());
+	   std::string compressed_data;
 	cmd_reset(0);
-	m_last_r = m_last_g = m_last_b = -1;
+	if (!compressData(data_to_send, compressed_data, m_compression_level_t::LEVEL_NONE))
+	{
+		return -1;
+	}
+	else
+		
+	return sendFrame(meta_to_send, compressed_data);
 
-	frame_counter += 1;
-	if (!(frame_counter % 100)) {
-	 	printf("%lu frames @ %llu bytes per frame || total bytes: %lu upstream @ %09.4f MBps (0x%08lx)\n\r", frame_counter, (total_byte_ctr - previous_byte_ctr) / 100, point_bytes, rcvMBps.f, rcvMBps.u);
-		previous_byte_ctr = total_byte_ctr;
+}
+bool vector_device_udp_dvg::compressData(const std::string& input_data, std::string& compressed_data, m_compression_level_t compression_level)
+{
+	if (compression_level == m_compression_level_t::LEVEL_NONE)
+	{
+		compressed_data = input_data;
+		return true;
 	}
 
-#if MAME_DEBUG
-	_deserialize(out_meta_points.data(), out_m_packed_pnts.data());
-#endif
-	return result;
+	//const int max_compressed_size = LZ4_compressBound(input_data.size());
+	//std::vector<char> compressed_data_buffer(sizeof(int) + max_compressed_size);
+
+	int decompressed_size = input_data.size();
+	//std::memcpy(compressed_data_buffer.data(), &decompressed_size, sizeof(int));
+
+	int compressed_data_size = 0;
+	if (compression_level == m_compression_level_t::LEVEL_SAFE)
+	{
+		//compressed_data_size = LZ4_compress_default(
+	//		input_data.data(), compressed_data_buffer.data() + sizeof(int),
+	//		input_data.size(), max_compressed_size);
+	}
+	else if (compression_level > m_compression_level_t::LEVEL_SAFE)
+	{
+		//compressed_data_size = LZ4_compress_HC(
+	//		input_data.data(), compressed_data_buffer.data() + sizeof(int),
+	//		input_data.size(), max_compressed_size, compression_level);
+	}
+
+	if (compressed_data_size > 0)
+	{
+	//	compressed_data_buffer.resize(sizeof(int) + compressed_data_size);
+	//	compressed_data.assign(compressed_data_buffer.begin(), compressed_data_buffer.end());
+		return true;
+	}
+	else
+	{
+		std::cerr << "Failed to compress data with LZ4." << std::endl;
+		return false;
+	}
+}
+int vector_device_udp_dvg::sendFrame(const std::string& meta_data, const std::string& point_data)
+{
+
+	int packets_sent = 0;
+
+	auto sendDataChunks = [this, &packets_sent](const std::string& data, cmd_enum cmd) -> std::size_t {
+		std::size_t total_bytes_sent = 0;
+		std::size_t offset = 0;
+		const std::size_t data_size = data.size();
+
+		while (offset < data_size)
+		{
+			std::size_t chunk_size = std::min(static_cast<std::size_t>(SERVER_DATA_SIZE), data_size - offset);
+			packets_sent++;
+			auto bytes_sent = writePacket(cmd, data.data() + offset, chunk_size);
+			if (bytes_sent == static_cast<std::size_t>(-1))
+			{
+				return -1;
+			}
+			total_bytes_sent += bytes_sent;
+			offset += chunk_size;
+		}
+		return total_bytes_sent;
+		};
+
+
+	std::size_t data_bytes_sent = sendDataChunks(point_data, FLAG_DVG_POINTS);
+	if (data_bytes_sent == static_cast<std::size_t>(-1))
+	{
+		return -1;
+	}
+
+	uint32_t point_data_size = htonl(static_cast<uint32_t>(point_data.size()));
+	std::string meta_data_with_size(reinterpret_cast<const char*>(&point_data_size), sizeof(point_data_size));
+	meta_data_with_size += meta_data;
+
+	std::size_t meta_bytes_sent = sendDataChunks(meta_data_with_size, FLAG_META);
+
+	if (meta_bytes_sent == static_cast<std::size_t>(-1))
+	{
+		std::cout << "ERROR:: meta_bytes_sent" << std::endl;
+		return -1;
+	}
+	//std::cout << "meta_bytes_sent: " << meta_data.size() << std::endl;
+
+	std::size_t eot_bytes_sent = sendEOT(meta_data.size(), FLAG_EOT);
+	std::size_t total_bytes_sent = meta_bytes_sent + data_bytes_sent + eot_bytes_sent;
+
+	return total_bytes_sent;
 }
 
+std::size_t vector_device_udp_dvg::sendEOT(std::size_t data_size, cmd_enum cmd)
+{
+	uint32_t network_order_size = htonl(static_cast<uint32_t>(data_size));
+	std::size_t eot_bytes_sent = writePacket(cmd, reinterpret_cast<char*>(&network_order_size), sizeof(network_order_size));
+	if (eot_bytes_sent == static_cast<std::size_t>(-1))
+	{
+		return -1;
+	}
+	return eot_bytes_sent;
+}
+
+
+std::size_t vector_device_udp_dvg::readPacket(const cmd_enum command, uint8_t* message)
+{
+	if (!message)
+	{
+		return -1; // Invalid message buffer
+	}
+
+	uint32_t bytes_read;
+
+	try
+	{
+		m_port->read((char*)message, 0, SERVER_BUFF_SIZE, bytes_read);
+		while (!bytes_read)
+			m_port->read((char*)message, 0, SERVER_BUFF_SIZE, bytes_read);
+		if (bytes_read == 0)
+			return -1;
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << "read failed " << e.what() << std::endl;
+		//   displayMsg(std::string("read failed ") + e.what(), {255, 0, 0, 255});
+		return -1;
+	}
+	// Check if the message starts with "$rsp_" and the specified command
+	if (bytes_read >= SIZEOF_HEADER && strncmp((const char*)message, "$rsp", 4) == 0 && message[4] == command)
+	{
+		// Extract the message length in network byte order
+		uint32_t payload_length_network;
+		memcpy(&payload_length_network, message + 5, sizeof(payload_length_network));
+
+		// Convert the message length to host byte order
+		uint16_t payload_length = ntohs(payload_length_network);
+
+		// Check if the bytes read match the expected payload length plus the header size
+		if ((bytes_read - SIZEOF_HEADER) != payload_length)
+		{
+			// Handle error: incomplete message
+			return 0;
+		}
+
+		// Move the payload to the beginning of the message buffer
+		memmove(message, message + SIZEOF_HEADER, payload_length);
+
+		// Return the payload length
+		return payload_length;
+	}
+
+	return -1; // Command not found or other error
+}
+
+std::size_t vector_device_udp_dvg::writePacket(const cmd_enum command, const char* data, std::size_t data_size)
+{
+
+	uint32_t bytes_sent = 0;
+	c_header[4] = static_cast<char>(command);
+	uint32_t payload_length = htonl(data_size);
+	std::memcpy(c_header + MSG_IDX_START, &payload_length, sizeof(payload_length));
+	std::vector<char> packet(SIZEOF_HEADER + data_size);
+	std::memcpy(packet.data(), c_header, SIZEOF_HEADER);
+
+	try
+	{
+		if (data && data_size > 0)
+		{
+			std::memcpy(packet.data() + SIZEOF_HEADER, data, data_size);
+		}
+
+		m_port->write(packet.data(), 0, packet.size(), bytes_sent);
+
+		if (bytes_sent != packet.size())
+		{
+			std::cerr << "Failed to send the packet." << std::endl;
+			return -1; 
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << "Failed to send the packet: " << e.what() << std::endl;
+
+		return -1;
+	}
+
+	return static_cast<std::size_t>(bytes_sent);
+}
 void vector_device_udp_dvg::device_reset()
 {
 }
@@ -952,12 +839,26 @@ void vector_device_udp_dvg::add_point(int x, int y, rgb_t color, int intensity)
 	}
 	cmd_add_vec(x, y, color, true);
 }
+void vector_device_udp_dvg::set_dvg_protocol()
+{
+
+	printf("protocol %d\n", m_protocol);
+	writePacket(FLAG_SET_PROTOCOL, std::to_string(static_cast<int>(m_protocol)).c_str(), 1);
+}
+std::string replaceAll(std::string str, const std::string& from, const std::string& to) {
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+	}
+	return str;
+}
 
 void vector_device_udp_dvg::get_dvg_info()
 {
 	int      result;
 	uint32_t version, major, minor;
-	  pkt_cnt = 0;
+	pkt_cnt = 0;
 	if (m_json_length)
 	{
 		return;
@@ -965,22 +866,25 @@ void vector_device_udp_dvg::get_dvg_info()
 
 	sscanf(emulator_info::get_build_version(), "%u.%u", &major, &minor);
 	version = (((minor / 1000) % 10) << 12) | (((minor / 100) % 10) << 8) | (((minor / 10) % 10) << 4) | (minor % 10);
-	sprintf((char*)m_send_buffer, "$cmd%c %lu", FLAG_GET_DVG_INFO, version);
-	packets_write(m_send_buffer, CMD_LEN + 4);
+	writePacket(FLAG_GET_DVG_INFO, reinterpret_cast<const char*>(&version), sizeof(version));
+	result = readPacket(FLAG_GET_DVG_INFO, reinterpret_cast<uint8_t*>(&m_recv_buffer));
 
-	result = packet_read(reinterpret_cast<uint8_t*> (&m_recv_buffer), 2);
-	uint16_t len = (m_recv_buffer[0] << 8) + m_recv_buffer[1];
-	result = packet_read(reinterpret_cast<uint8_t*> (&m_recv_buffer), len);
+	sendGameInfo();
+	if (result <= 0)
+	{
+		std::cerr << "Failed to receive packet data." << std::endl;
+		return;
+	}
+}
 
-	StringBuffer sb;
-	PrettyWriter writer(sb);
+void  vector_device_udp_dvg::sendGameInfo() {
+	rapidjson::StringBuffer sb;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
 	GameDetails(machine()).Serialize(writer);
-
 	const char* json = sb.GetString();
-	uint16_t json_len = (uint16_t)sb.GetSize();
-
-	sprintf((char*)m_send_buffer, "$cmd%c %s", FLAG_GET_GAME_INFO, json);
-	packets_write(m_send_buffer, CMD_LEN + json_len);
+	uint16_t json_len = static_cast<uint16_t>(sb.GetSize());
+	std::cout << "Serialized JSON: " << json << std::endl;
+	writePacket(FLAG_GET_GAME_INFO, json, json_len);
 }
 
 uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)

@@ -106,7 +106,7 @@ using namespace rapidjson;
 			prefix = src.find("src\\mame\\");
 		if (std::string_view::npos != prefix)
 			src.remove_prefix(prefix + 9);
-		util::stream_format(driver_buf, _("\n%1$s %2$s\nDriver: %3$s\n"),
+		util::stream_format(driver_buf, _("%1$s %2$s Driver: %3$s"),
 			//ui::system_list::instance().systems()[driver_list::find(machine().system().name)].description,
 			machine.system().year,
 			machine.system().manufacturer,
@@ -142,7 +142,7 @@ using namespace rapidjson;
 
 			// if more than one, prepend a #x in front of the CPU name and display clock
 			util::stream_format(cpu_str_buf,
-				(count > 1) ? ((clock != 0) ? "%1$dx" "%2$s %3$s" "%4$s\n" : "%1$dx"  "%2$s\n") : ((clock != 0) ? "%2$s %3$s"  "%4$s\n" : "%2$s\n"), count, name, hz, (d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz"));
+				(count > 1) ? ((clock != 0) ? "%1$dx" "%2$s %3$s" "%4$s" : "%1$dx"  "%2$s") : ((clock != 0) ? "%2$s %3$s"  "%4$s" : "%2$s"), count, name, hz, (d == 9) ? _("GHz\n") : (d == 6) ? _("MHz\n") : (d == 3) ? _("kHz\n") : _("Hz\n"));
 
 		}
 
@@ -157,7 +157,7 @@ using namespace rapidjson;
 
 			// append the Sound: string
 			if (!found_sound)
-				sound_buf << _("\nSound:\n");
+				sound_buf << _("");
 			found_sound = true;
 
 			// count how many identical sound chips we have
@@ -183,18 +183,18 @@ using namespace rapidjson;
 			// if more than one, prepend a #x in front of the soundchip name and display clock
 			util::stream_format(sound_buf,
 				(count > 1)
-				? ((clock != 0) ? "%1$dx"  "%2$s %3$s" UTF8_NBSP "%4$s\n" : "%1$dx"  "%2$s\n")
-				: ((clock != 0) ? "%2$s %3$s "   "%4$s\n" : "%2$s\n"),
+				? ((clock != 0) ? "%1$dx" "%2$s %3$s" "%4$s" : "%1$dx"  "%2$s")
+				: ((clock != 0) ? "%2$s %3$s"   "%4$s" : "%2$s"),
 				count, sound.device().name(), hz,
-				(d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz"));
+				(d == 9) ? _("GHz\n") : (d == 6) ? _("MHz\n") : (d == 3) ? _("kHz\n") : _("Hz\n"));
 		}
 
 		// display screen information
-		video_buf << _("\nVideo:\n");
+	
 		screen_device_enumerator scriter(machine.root_device());
 		int scrcount = scriter.count();
 		if (scrcount == 0)
-			video_buf << _("None\n");
+			video_buf << _("None");
 		else
 		{
 			for (screen_device& screen : scriter)
@@ -216,14 +216,15 @@ using namespace rapidjson;
 					}
 
 					const rectangle& visarea = screen.visible_area();
-					detail = string_format("%d " UTF8_MULTIPLY " %d (%s) %s" UTF8_NBSP "Hz",
+					detail = string_format("%d " UTF8_MULTIPLY " %d (%s) %s" UTF8_NBSP "Hz\n",
 						visarea.width(), visarea.height(),
 						(screen.orientation() & ORIENTATION_SWAP_XY) ? "V" : "H",
 						hz);
 				}
 
+
 				util::stream_format(video_buf,
-					(scrcount > 1) ? _("%1$s: %2$s\n") : _("%2$s\n"),
+					(scrcount > 1) ? _("%1$s: %2$s") : _("%2$s"),
 					get_screen_desc(screen),detail);
 			}
 		}
@@ -232,9 +233,9 @@ using namespace rapidjson;
 		manufacturer_ = machine.config().gamedrv().manufacturer;
 		year_ = machine.config().gamedrv().year;
 		rom_ = machine.config().gamedrv().rom->name;
-
-		m_cpu_ = "CPU:\n" + cpu_str_buf.str();
-		driver_ = driver_buf.str() +"\n";
+		flags_ = machine.config().gamedrv().flags;
+		m_cpu_ = cpu_str_buf.str();
+		driver_ = driver_buf.str() ;
 		sound_ = sound_buf.str();
 		video_ = video_buf.str();
 	}
@@ -254,8 +255,8 @@ using namespace rapidjson;
 		writer.String(name_.c_str(), static_cast<SizeType>(name_.length())); 
 		writer.String("manufacturer");
 		writer.String(manufacturer_.c_str(), static_cast<SizeType>(manufacturer_.length())); 
-		writer.String("driver");
-		writer.String(driver_.c_str(), static_cast<SizeType>(driver_.length()));
+	//	writer.String("driver");
+		//writer.String(driver_.c_str(), static_cast<SizeType>(driver_.length()));
 		writer.String("year");
 		writer.String(year_.c_str(), static_cast<SizeType>(year_.length()));
 		writer.String("rom");
@@ -266,6 +267,8 @@ using namespace rapidjson;
 		writer.String(sound_.c_str(), static_cast<SizeType>(sound_.length()));
 		writer.String("video");
 		writer.String(video_.c_str(), static_cast<SizeType>(video_.length()));
+		writer.String("flags");
+		writer.Uint(flags_);
 		writer.EndObject();
 	}
 

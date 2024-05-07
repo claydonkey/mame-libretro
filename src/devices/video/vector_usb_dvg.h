@@ -34,7 +34,7 @@ private:
 	std::string m_cpu_;
 	std::string driver_;
 	std::string sound_;
-
+	machine_flags::type flags_;
 
 };
 

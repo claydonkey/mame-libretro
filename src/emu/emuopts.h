@@ -116,10 +116,10 @@
 #define OPTION_FLICKER              "flicker"
 #define OPTION_VECTOR_DRIVER        "vector_driver"
 #define OPTION_VECTOR_PORT          "vector_port"
-#define OPTION_VECTOR_UDP_PORT      "vector_udp_port"
-#define OPTION_VECTOR_UDP_HOST      "vector_udp_host"
-#define OPTION_VECTOR_TCP_HOST      "vector_tcp_host"
-#define OPTION_VECTOR_TCP_PORT       "vector_tcp_port"
+#define OPTION_VECTOR_IP_PORT          "vector_ip_port"
+#define OPTION_VECTOR_XY_HEADER     "vector_xy_header"
+#define OPTION_VECTOR_HOST          "vector_host"
+#define OPTION_VECTOR_PROTOCOL          "vector_protocol"
 #define OPTION_VECTOR_SCREEN_MIRROR "vector_screen_mirror"
 #define OPTION_VECTOR_ROTATE        "vector_rotate"
 #define OPTION_VECTOR_BRIGHT        "vector_bright"
@@ -414,12 +414,11 @@ public:
 	float beam_intensity_weight() const { return float_value(OPTION_BEAM_INTENSITY_WEIGHT); }
 	float flicker() const { return float_value(OPTION_FLICKER); }
 	const char *vector_driver() const { return value(OPTION_VECTOR_DRIVER); }
-	const char *vector_udp_port() const { return value(OPTION_VECTOR_UDP_PORT); }
 	const char* vector_port() const { return value(OPTION_VECTOR_PORT); }
-	const char* vector_udp_host() const { return value(OPTION_VECTOR_UDP_HOST); }
-	const char* vector_tcp_port() const { return value(OPTION_VECTOR_TCP_PORT); }
-	const char* vector_tcp_host() const { return value(OPTION_VECTOR_TCP_HOST); }
- 
+	int  vector_ip_port() const { return int_value(OPTION_VECTOR_IP_PORT); }
+	int  vector_xy_header() const { return int_value(OPTION_VECTOR_XY_HEADER); }
+	const char* vector_host() const { return value(OPTION_VECTOR_HOST); }
+	const char* vector_protocol() const { return value(OPTION_VECTOR_PROTOCOL); }
 	bool  vector_screen_mirror() const { return bool_value(OPTION_VECTOR_SCREEN_MIRROR); }
 	float vector_scale() const { return float_value(OPTION_VECTOR_SCALE); }
 	float vector_scale_x() const { return float_value(OPTION_VECTOR_SCALE_X); }

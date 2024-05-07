@@ -71,7 +71,7 @@ private:
 	optional_device<vector_interface> m_v_st_device;
 	optional_device<vector_interface> m_usb_dvg_device;
 	optional_device<vector_interface> m_udp_dvg_device;
-	optional_device<vector_interface> m_tcp_dvg_device;
+
 	
 	 
 
