@@ -1,0 +1,7 @@
+﻿  lz4.c
+  lz4file.c
+  lz4frame.c
+  lz4hc.c
+  xxhash.c
+  Generating Code...
+  lz4.vcxproj -> C:\Users\antho\Documents\vectrx2020\lz4\x64\Debug\lz4.lib

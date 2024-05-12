@@ -196,6 +196,7 @@ cinematronics/dlair2.cpp
 cinematronics/embargo.cpp
 cinematronics/jack.cpp
 cinematronics/leland.cpp
+cinematronics/nl_tailg.cpp
 cirsa/cirsa820xxx.cpp
 cirsa/cirsa910510.cpp
 cirsa/miniguay.cpp

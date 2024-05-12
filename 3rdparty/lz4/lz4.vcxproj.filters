@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="3rdParty">
+      <UniqueIdentifier>{9dc16a30-ecd7-4549-9080-f47d6d89cc93}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="lib\lz4.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\lz4file.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\lz4frame.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\lz4hc.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="xxhash.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
