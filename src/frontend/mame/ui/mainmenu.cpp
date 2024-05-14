@@ -69,7 +69,8 @@ enum : unsigned {
 	ABOUT,
 	QUIT_GAME,
 	DISMISS,
-	SELECT_GAME
+	SELECT_GAME,
+	VECTOR_OPTIONS
 };
 
 /***************************************************************************
@@ -158,6 +159,8 @@ void menu_main::populate(float &customtop, float &custombottom)
 	item_append(_("menu-main", "Slider Controls"), 0, (void *)SLIDERS);
 
 	item_append(_("menu-main", "Video Options"), 0, (void *)VIDEO_TARGETS);
+
+	item_append(_("menu-main", "Vector Options"), 0, (void*)VIDEO_TARGETS);
 
 	if (machine().crosshair().get_usage())
 		item_append(_("menu-main", "Crosshair Options"), 0, (void *)CROSSHAIR);

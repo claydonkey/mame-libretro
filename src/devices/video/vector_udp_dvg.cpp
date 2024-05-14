@@ -181,12 +181,14 @@ void vector_device_udp_dvg::device_start()
 	int draw_steps = machine().config().options().vector_draw_steps();
 	int move_steps = machine().config().options().vector_move_steps();
 	int compression_level = machine().config().options().vector_compression();
+	int dac_period = machine().config().options().vector_dac_period();
 	std::cout << "HOST SETTINGS" << std::endl;
 	std::cout << "-------------" << std::endl;
 	std::cout << "rgb " << m_st.settings.rgb << std::endl;
 	std::cout << "draw_steps " << m_st.settings.draw_steps << std::endl;
 	std::cout << "move_steps " << m_st.settings.move_steps << std::endl;
 	std::cout << "compression_level " << m_st.settings.compressionLevel << std::endl;
+	std::cout << "dac_period " << m_st.settings.dac_period << std::endl;
 	std::cout << std::endl;
 	std::cout << "CLIENT SETTINGS" << std::endl;
 	std::cout << "---------------" << std::endl;
@@ -194,6 +196,7 @@ void vector_device_udp_dvg::device_start()
 	std::cout << "draw_steps " << draw_steps << std::endl;
 	std::cout << "move_steps " << move_steps << std::endl;
 	std::cout << "compression_level " << compression_level << std::endl;
+	std::cout << "dac_period " << dac_period << std::endl;
 
 
 	if (compression_level >= m_compression_level_t::LEVEL_NONE && compression_level <= m_compression_level_t::LEVEL_MAX) {
@@ -204,14 +207,16 @@ void vector_device_udp_dvg::device_start()
 		fprintf(stderr, "vector_device_vectrx2020: error: vector_compression_level %d unknown\n", machine().config().options().vector_compression());
 		::exit(1);
 	}
+	if (dac_period && dac_period != m_st.settings.dac_period)
+		m_st.settings.dac_period = dac_period;
 
 	if (rgb != m_st.settings.rgb)
 		m_st.settings.rgb = rgb;
 
-	if (move_steps != m_st.settings.move_steps)
+	if (move_steps && move_steps != m_st.settings.move_steps)
 		m_st.settings.move_steps = move_steps;
 
-	if (draw_steps != m_st.settings.draw_steps)
+	if (draw_steps && draw_steps != m_st.settings.draw_steps)
 		m_st.settings.draw_steps = draw_steps;
 
 
@@ -232,28 +237,28 @@ std::size_t vector_device_udp_dvg::get_dvg_settings()
 	std::size_t result = 0;
 	try
 	{
-	// Send the command to get settings
-	std::size_t bytes_sent = writePacket(FLAG_GET_DVG_SETTINGS, nullptr, 0);
-	if (bytes_sent <= 0)
-	{
-		// Handle error: failed to send command
-		return -1;
-	}
+		// Send the command to get settings
+		std::size_t bytes_sent = writePacket(FLAG_GET_DVG_SETTINGS, nullptr, 0);
+		if (bytes_sent <= 0)
+		{
+			// Handle error: failed to send command
+			return -1;
+		}
 
-	// Read the response message
-	result = readPacket(FLAG_GET_DVG_SETTINGS, buffer);
-	if (result <= 0)
-	{
-		// Handle error: failed to read message or command mismatch
-		return -1;
-	}
+		// Read the response message
+		result = readPacket(FLAG_GET_DVG_SETTINGS, buffer);
+		if (result <= 0)
+		{
+			// Handle error: failed to read message or command mismatch
+			return -1;
+		}
 
-	// At this point, buffer contains the settings payload
-	std::cout << std::endl
-		<< "buffer: " << buffer << std::endl;
+		// At this point, buffer contains the settings payload
+		std::cout << std::endl
+			<< "buffer: " << buffer << std::endl;
 
-	// Deserialize the settings from the buffer
-	deserializeSettings(buffer, result);
+		// Deserialize the settings from the buffer
+		deserializeSettings(buffer, result);
 	}
 	catch (const std::exception& e)
 	{
@@ -284,7 +289,7 @@ std::size_t vector_device_udp_dvg::set_dvg_settings()
 	catch (const std::exception& e)
 	{
 		std::cout << "set_dvg_settings " << e.what() << std::endl;
-	
+
 		return -1;
 	}
 	return bytes_sent;
@@ -297,11 +302,14 @@ void vector_device_udp_dvg::serializeSettings(char** buffer, std::size_t* size)
 	m_st::messageSettings settingsMsg;
 
 	settingsMsg.set_font_type(static_cast<m_st::Font>(m_st.font_type));
-
+	settingsMsg.set_page(static_cast<m_st::Pagetype>(m_st.page));
 
 	m_st::Settings* protoSettings = settingsMsg.mutable_settings();
+
 	protoSettings->set_dac_period(m_st.settings.dac_period);
 	protoSettings->set_draw_steps(m_st.settings.draw_steps);
+	protoSettings->set_x_offset(m_st.settings.x_offset);
+	protoSettings->set_y_offset(m_st.settings.y_offset);
 	protoSettings->set_dwell(m_st.settings.dwell);
 	protoSettings->set_fine_type(m_st.settings.fine_type);
 	protoSettings->set_controllers(m_st.settings.controllers);
@@ -326,7 +334,7 @@ void vector_device_udp_dvg::serializeSettings(char** buffer, std::size_t* size)
 	protoSettings->set_move_steps(m_st.settings.move_steps);
 
 
-	  // Serialize the Protobuf message to a byte buffer
+	// Serialize the Protobuf message to a byte buffer
 	*size = settingsMsg.ByteSizeLong();
 	*buffer = new char[*size]; // Allocate memory for the buffer
 	if (!settingsMsg.SerializeToArray(*buffer, *size))
@@ -346,13 +354,18 @@ void vector_device_udp_dvg::deserializeSettings(uint8_t* buffer, uint16_t size)
 	if (settingsMsg.ParseFromString(serialized_data))
 
 	{
-
+	 
+		m_st.page = static_cast<m_pagetype_enum>(settingsMsg.page());
 		m_st.font_type = static_cast<m_font_t>(settingsMsg.font_type());
 		// Map nested message 'Settings'
 		const m_st::Settings& protoSettings = settingsMsg.settings();
 		m_st.settings.dac_period = protoSettings.dac_period();
 		m_st.settings.draw_steps = protoSettings.draw_steps();
 		m_st.settings.dwell = protoSettings.dwell();
+
+		m_st.settings.x_offset = protoSettings.x_offset();
+		m_st.settings.y_offset = protoSettings.y_offset();
+
 		m_st.settings.fine_type = protoSettings.fine_type();
 		m_st.settings.controllers = protoSettings.controllers();
 		m_st.settings.lcd = protoSettings.lcd();
@@ -386,14 +399,20 @@ void vector_device_udp_dvg::deserializeSettings(uint8_t* buffer, uint16_t size)
 	}
 }
 
-
+void vector_device_udp_dvg::device_off()
+{
+	device_stop();
+}
+ 
 void vector_device_udp_dvg::device_stop()
 {
-	uint32_t cmd;
 
-	cmd = (FLAG_EXIT << 29);
+		std::size_t eot_bytes_sent = writePacket(FLAG_EXIT, nullptr, 0);
+		if (eot_bytes_sent == static_cast<std::size_t>(-1))
+		{
+			std::cerr << "Failed to send device_stop ." << std::endl;
+		}
 
-	//packets_write(&m_cmd_buf[0], m_cmd_offs);
 }
 
 uint32_t vector_device_udp_dvg::compute_code(int32_t x, int32_t y)
@@ -807,8 +826,8 @@ int vector_device_udp_dvg::send_vectors()
 #if 1 ==0
 	for (const auto& dvg : m_out_vectors)
 	{
-	
-	 
+
+
 		uint32_t rgb = ((dvg.color.r() & 0xff) << 16) | ((dvg.color.g() & 0xff) << 8) | ((dvg.color.b() & 0xff));
 		int32_t y1 = dvg.y1;
 		int32_t x1 = dvg.x1;
@@ -851,7 +870,7 @@ int vector_device_udp_dvg::send_vectors()
 	uint32_t r, g, b, x, y, rgb;
 	for (const auto& dvg : m_out_vectors)
 	{
-		r = (dvg.color.r() & 0xff)>>4;
+		r = (dvg.color.r() & 0xff) >> 4;
 		g = (dvg.color.g() & 0xff) >> 4;
 		b = (dvg.color.b() & 0xff) >> 4;
 
@@ -861,8 +880,8 @@ int vector_device_udp_dvg::send_vectors()
 		int32_t x1 = dvg.x1;
 		transform_final(&x1, &y1);
 		// Scale and clamp the x and y coordinates
-		 x = static_cast<uint32_t>(x1);
-		 y = static_cast<uint32_t>(y1);
+		x = static_cast<uint32_t>(x1);
+		y = static_cast<uint32_t>(y1);
 		// std::cout << "serialized point " << ": (" << dvg.pnt.y  << ", " << dvg.pnt.x  << ")\n";
 
 		bool color_change = (rgb != last_rgb);
@@ -1036,7 +1055,7 @@ std::size_t vector_device_udp_dvg::readPacket(const cmd_enum command, uint8_t* m
 	{
 		uint32_t payload_length_network;
 		memcpy(&payload_length_network, message + 5, sizeof(payload_length_network));
-		uint16_t payload_length = ntohs(payload_length_network);
+		uint32_t payload_length = ntohl(payload_length_network);
 		if ((bytes_read - SIZEOF_HEADER) != payload_length)
 		{
 			return 0;
@@ -1118,7 +1137,7 @@ std::string replaceAll(std::string str, const std::string& from, const std::stri
 	return str;
 }
 
-
+ 
 
 void  vector_device_udp_dvg::send_game_info() {
 	rapidjson::StringBuffer sb;
@@ -1129,13 +1148,62 @@ void  vector_device_udp_dvg::send_game_info() {
 	std::cout << "Game info: " << json << std::endl;
 	writePacket(FLAG_GET_GAME_INFO, json, json_len);
 }
-
+uint32_t orientation_flags;
+float xscale;
+float yscale;
 uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
 {
 	rgb_t color = rgb_t(108, 108, 108);
 	rgb_t black = rgb_t(0, 0, 0);
 	int x0, y0, x1, y1;
+ 
+	
 
+	if (orientation_flags != screen.orientation()) {
+		orientation_flags = screen.orientation();
+		if (orientation_flags & ORIENTATION_SWAP_XY) {
+			m_st.settings.orientation = FLIP_XY;
+		}
+		else 	if (orientation_flags & ORIENTATION_FLIP_Y) {
+			m_st.settings.orientation = FLIP_Y;
+		}
+		else 	if (orientation_flags & ORIENTATION_FLIP_X) {
+			m_st.settings.orientation = FLIP_X;
+		}
+		else 	if (orientation_flags & ROT90) {
+			m_st.settings.orientation = ROT_90;
+		}
+		else 	if (orientation_flags & ROT180) {
+			m_st.settings.orientation = ROT_180;
+		}
+		else 	if (orientation_flags & ROT270) {
+			m_st.settings.orientation = ROT_270;
+		}
+		else 	if (orientation_flags & ROT0) {
+			m_st.settings.orientation = DEFAULT_ORIENTATION;
+		}
+		std::cout << "rotation"  << std::endl;
+		set_dvg_settings();
+	}
+
+
+	if (yscale != screen.yscale()) {
+		yscale = screen.yscale();
+
+		m_st.settings.scaley = 100 * yscale;
+
+		std::cout << "yscale" << std::endl;
+		set_dvg_settings();
+	}
+	if (xscale != screen.xscale()) {
+		xscale = screen.xscale();
+		
+			m_st.settings.scalex = 100* xscale;
+		
+			std::cout << "xscale" << std::endl;
+		set_dvg_settings();
+	}
+ 
 	m_xmin = screen.visible_area().min_x;
 	m_xmax = screen.visible_area().max_x;
 	m_ymin = screen.visible_area().min_y;

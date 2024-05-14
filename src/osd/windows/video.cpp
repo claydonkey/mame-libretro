@@ -148,6 +148,11 @@ void windows_osd_interface::extract_video_config()
 	const char *stemp;
 
 	// global options: extract the data
+	video_config.dvg_ip = options().vector_host();
+	video_config.rgb = options().vector_rgb();
+	video_config.draw_steps = options().vector_draw_steps();
+	video_config.move_steps = options().vector_move_steps();
+
 	video_config.windowed      = options().window();
 	video_config.prescale      = options().prescale();
 	video_config.filter        = options().filter();

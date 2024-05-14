@@ -11,8 +11,7 @@
 #include <ws2tcpip.h>
 #include <vector>
 #include "msgpack/msgpack.hpp"
-
-
+#include "video/ui.h"
 #ifdef __GNUC__
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
@@ -80,7 +79,9 @@ typedef enum _cmd_enum
 	FLAG_GET_GAME_INFO = 0x9,
 	FLAG_SET_PROTOCOL = 0xB,
 	FLAG_META_EOT = 0xC,
+	FLAG_GET_DVG_SETTINGS = 0xD,
 	FLAG_EOT = 0xE,
+	FLAG_SET_DVG_SETTINGS = 0xF,
 	FLAG_COMPLETE_MONOCHROME = 0xA
 }cmd_enum;
 
@@ -180,19 +181,26 @@ public:
 	int32_t deserialize();
 	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) override;
-
+	virtual void device_off() override;
 private:
 
+
+    std::size_t set_dvg_settings();
+	void serializeSettings(char** buffer, std::size_t* size);
+	std::size_t get_dvg_settings();
+	void deserializeSettings(uint8_t* buffer, uint16_t size);
+	
+	m_st_t m_st;
 	uint32_t out_bit_iter ;
 	uint8_t meta_byte ;
 	 uint64_t total_byte_ctr;
 	 uint64_t chrono_byte_ctr ;
 	 uint64_t previous_byte_ctr = 0;
 
-	 void sendGameInfo();
+	 void send_game_info();
 	int32_t deserialize_points(uint8_t* in_packed_points_buff, uint32_t cnt, bool color_change);
 
-	 
+	 uint16_t pkt_cnt;
 	protocol_enum_t m_protocol;
 	bool m_exclude_blank_vectors;
 	int32_t m_xmin;
@@ -250,7 +258,7 @@ private:
 	std::size_t writePacket(const cmd_enum command, const char* data, std::size_t data_size);
 	void transform_and_scale_coords(int* px, int* py);
 	std::size_t sendEOT(std::size_t data_size, cmd_enum eottype);
-	
+
 
 protected:
 	virtual std::error_condition  device_start_client();
@@ -267,7 +275,7 @@ protected:
 	virtual void device_start() override;
 	virtual void device_reset() override;
 	virtual void device_stop() override;
-	int determine_game_settings();
+
 };
 
 // device type definition

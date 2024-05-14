@@ -120,7 +120,12 @@
 #define OPTION_VECTOR_XY_HEADER     "vector_xy_header"
 #define OPTION_VECTOR_HOST          "vector_host"
 #define OPTION_VECTOR_PROTOCOL          "vector_protocol"
+#define OPTION_VECTOR_COMPRESSION   "vector_compression"
 #define OPTION_VECTOR_SCREEN_MIRROR "vector_screen_mirror"
+#define OPTION_VECTOR_DRAW_STEPS    "vector_draw_steps"
+#define OPTION_VECTOR_MOVE_STEPS    "vector_move_steps"
+#define OPTION_VECTOR_RGB           "vector_rgb"
+#define OPTION_VECTOR_DAC_PERIOD    "vector_dac_period"
 #define OPTION_VECTOR_ROTATE        "vector_rotate"
 #define OPTION_VECTOR_BRIGHT        "vector_bright"
 #define OPTION_VECTOR_SCALE         "vector_scale"
@@ -416,9 +421,15 @@ public:
 	const char *vector_driver() const { return value(OPTION_VECTOR_DRIVER); }
 	const char* vector_port() const { return value(OPTION_VECTOR_PORT); }
 	int  vector_ip_port() const { return int_value(OPTION_VECTOR_IP_PORT); }
-	int  vector_xy_header() const { return int_value(OPTION_VECTOR_XY_HEADER); }
 	const char* vector_host() const { return value(OPTION_VECTOR_HOST); }
+ 
 	const char* vector_protocol() const { return value(OPTION_VECTOR_PROTOCOL); }
+	const int vector_compression() const { return int_value(OPTION_VECTOR_COMPRESSION); }
+	const int vector_dac_period() const { return int_value(OPTION_VECTOR_DAC_PERIOD); }
+	const int vector_draw_steps() const { return int_value(OPTION_VECTOR_DRAW_STEPS); }
+	const int vector_move_steps() const { return int_value(OPTION_VECTOR_MOVE_STEPS); }
+	const bool vector_rgb() const { return bool_value(OPTION_VECTOR_RGB); }
+ 
 	bool  vector_screen_mirror() const { return bool_value(OPTION_VECTOR_SCREEN_MIRROR); }
 	float vector_scale() const { return float_value(OPTION_VECTOR_SCALE); }
 	float vector_scale_x() const { return float_value(OPTION_VECTOR_SCALE_X); }

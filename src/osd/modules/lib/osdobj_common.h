@@ -86,6 +86,12 @@
 #define OSDOPTION_BGFX_LUT              "bgfx_lut"
 #define OSDOPTION_BGFX_AVI_NAME         "bgfx_avi_name"
 
+#define OSDOPTION_VECTOR_RGB            "vector_rgb"
+#define OSDOPTION_VECTOR_MOVE_STEPS     "vector_move_steps"
+#define OSDOPTION_VECTOR_DRAW_STEPS     "vector_draw_steps"
+#define OSDOPTION_VECTOR_PORT           "vector_port"
+#define OSDOPTION_VECTOR_IP             "vector_ip"
+
 //============================================================
 //  TYPE DEFINITIONS
 //============================================================
@@ -117,6 +123,14 @@ public:
 	bool maximize() const { return bool_value(OSDOPTION_MAXIMIZE); }
 	bool wait_vsync() const { return bool_value(OSDOPTION_WAITVSYNC); }
 	bool sync_refresh() const { return bool_value(OSDOPTION_SYNCREFRESH); }
+
+	//vector options
+	bool vectorrgb() const { return bool_value(OSDOPTION_VECTOR_RGB); }
+	int movesteps() const { return int_value(OSDOPTION_VECTOR_MOVE_STEPS); }
+	bool drawsteps() const { return int_value(OSDOPTION_VECTOR_DRAW_STEPS); }
+	const char* vectorip() const { return value(OSDOPTION_VECTOR_IP); }
+	const char* vectorport() const { return value(OSDOPTION_VECTOR_PORT); }
+
 
 	// per-window options
 	const char *screen() const { return value(OSDOPTION_SCREEN); }

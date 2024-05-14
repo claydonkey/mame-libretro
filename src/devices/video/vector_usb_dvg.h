@@ -70,6 +70,7 @@ public:
 	virtual uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) override;
 
 private:
+
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t *pX1, int32_t *pY1, int32_t *pX2, int32_t *pY2);
 	void cmd_vec_postproc();
@@ -81,7 +82,7 @@ private:
 	int serial_write(uint8_t *buf, int size);
 	int serial_send();
 	void transform_and_scale_coords(int *px, int *py);
-	int determine_game_settings();
+
 	void transform_final(int *px, int *py);
 
 	static const game_info_t s_games[];

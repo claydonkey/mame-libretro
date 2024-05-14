@@ -169,6 +169,13 @@ const options_entry windows_options::s_option_entries[] =
 	{ WINOPTION_PRIORITY "(-15-1)",                   "0",        core_options::option_type::INTEGER,    "thread priority for the main game thread; range from -15 to 1" },
 	{ WINOPTION_PROFILE,                              "0",        core_options::option_type::INTEGER,    "enables profiling, specifying the stack depth to track" },
 
+
+	// vector options
+	{ nullptr,                                        nullptr,    core_options::option_type::HEADER,     "VECTOR OPTIONS" },
+	{ WINOPTION_VECTORS,                                 "0",        core_options::option_type::BOOLEAN,    "enables menu bar if available by UI implementation" },
+	{ WINOPTION_ATTACH_VECTORS,                        "",         core_options::option_type::STRING,     "attach to arbitrary window" },
+
+
 	// video options
 	{ nullptr,                                        nullptr,    core_options::option_type::HEADER,     "WINDOWS VIDEO OPTIONS" },
 	{ WINOPTION_MENU,                                 "0",        core_options::option_type::BOOLEAN,    "enables menu bar if available by UI implementation" },

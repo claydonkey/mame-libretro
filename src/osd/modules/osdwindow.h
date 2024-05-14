@@ -301,6 +301,14 @@ struct osd_video_config
 
 	// YUV options
 	int                 scale_mode;
+
+
+	// vector  options
+	bool                rgb;                   // color?
+	int                 move_steps;                   // number of move steps
+	int                 draw_steps;                 // number of draw steps
+	const char *              dvg_ip;                 // dvg_ip address
+	char*               dvg_port;                 // dvg port
 };
 
 //============================================================

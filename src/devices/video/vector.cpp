@@ -116,7 +116,15 @@ void vector_device::device_start()
 	m_vector_list = std::make_unique<point[]>(MAX_POINTS);
 }
 
-void vector_device::device_stop(){}
+void vector_device::device_stop(){
+
+	if (m_udp_dvg_device.found())
+	{
+		m_udp_dvg_device->device_off();
+
+	
+	}
+}
 
 void vector_device::device_reset(){}
 

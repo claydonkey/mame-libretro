@@ -25,6 +25,10 @@
 #define WINOPTION_MENU                  "menu"
 #define WINOPTION_ATTACH_WINDOW         "attach_window"
 
+//vector options
+#define WINOPTION_VECTORS                  "vectors"
+#define WINOPTION_ATTACH_VECTORS        "attach_vectors"
+
 // core post-processing options
 #define WINOPTION_HLSLPATH                  "hlslpath"
 #define WINOPTION_HLSL_ENABLE               "hlsl_enable"
@@ -136,6 +140,9 @@ public:
 	// video options
 	bool menu() const { return bool_value(WINOPTION_MENU); }
 	const char *attach_window() const { return value(WINOPTION_ATTACH_WINDOW); }
+
+	bool vectors() const { return bool_value(WINOPTION_VECTORS); }
+	const char* attach_vectors() const { return value(WINOPTION_ATTACH_VECTORS); }
 
 	// core post-processing options
 	const char *screen_post_fx_dir() const { return value(WINOPTION_HLSLPATH); }

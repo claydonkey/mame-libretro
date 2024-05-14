@@ -25,7 +25,7 @@ public:
 	virtual void add_line(float xf0, float yf0, float xf1, float yf1, int intensity);
 	virtual void add_point(int x, int y, rgb_t color, int intensity);
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect);
-	 
+	virtual void device_off() ;
 
 protected:
 	int m_vector_index;

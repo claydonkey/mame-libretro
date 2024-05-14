@@ -11,7 +11,7 @@
 #include "logmacro.h"
 #include <language.h>
 #include <drivenum.h>
- 
+
 using namespace util;
 
 
@@ -142,7 +142,7 @@ using namespace rapidjson;
 
 			// if more than one, prepend a #x in front of the CPU name and display clock
 			util::stream_format(cpu_str_buf,
-				(count > 1) ? ((clock != 0) ? "%1$dx" "%2$s %3$s" "%4$s" : "%1$dx"  "%2$s") : ((clock != 0) ? "%2$s %3$s"  "%4$s" : "%2$s"), count, name, hz, (d == 9) ? _("GHz\n") : (d == 6) ? _("MHz\n") : (d == 3) ? _("kHz\n") : _("Hz\n"));
+				(count > 1) ? ((clock != 0) ? "%1$dx" "%2$s %3$s" "%4$s" : "%1$dx"  "%2$s") : ((clock != 0) ? "%2$s %3$s"  "%4$s" : "%2$s"), count, name, hz, (d == 9) ? _("GHz") : (d == 6) ? _("MHz\n") : (d == 3) ? _("kHz\n") : _("Hz\n"));
 
 		}
 
@@ -242,9 +242,6 @@ using namespace rapidjson;
 
 	GameDetails::GameDetails(const GameDetails& rhs) : machine_(rhs.machine_) {}
 	 
-
-
-
 	template <typename Writer>
 	void GameDetails::Serialize(Writer& writer) const {
 		// This base class just write out name-value pairs, without wrapping within an object.
@@ -518,8 +515,6 @@ void vector_device_usb_dvg::cmd_add_vec(int x, int y, rgb_t color, bool screen_c
 	m_in_vec_last_x = x;
 	m_in_vec_last_y = y;
 }
-
-
 //
 // Add commands to the serial buffer to send.  When we detect
 // color changes, we add a command to update it.
@@ -582,12 +577,72 @@ void  vector_device_usb_dvg::transform_and_scale_coords(int* px, int* py)
 //
 // Determine game type, orientation
 //
-int vector_device_usb_dvg::determine_game_settings()
+void vector_device_usb_dvg::get_dvg_info()
 {
 	uint32_t i;
 	Document d;
 
-	get_dvg_info();
+	uint32_t cmd = 0;
+
+	uint8_t  cmd_buf[4] = {};
+	int      result;
+
+	uint32_t version, major, minor;
+
+	if (m_json_length)
+	{
+		return;
+	}
+
+	cmd = (FLAG_CMD << 29) | FLAG_CMD_GET_DVG_INFO;
+	sscanf(emulator_info::get_build_version(), "%u.%u", &major, &minor);
+	version = (((minor / 1000) % 10) << 12) | (((minor / 100) % 10) << 8) | (((minor / 10) % 10) << 4) | (minor % 10);
+	cmd |= version << 8;
+	cmd_buf[0] = cmd >> 24;
+	cmd_buf[1] = cmd >> 16;
+	cmd_buf[2] = cmd >> 8;
+	cmd_buf[3] = cmd >> 0;
+	serial_write(cmd_buf, 4);
+
+	result = serial_read(reinterpret_cast<uint8_t*> (&cmd), sizeof(cmd));
+	if (result < 0) goto END;
+	result = serial_read(reinterpret_cast<uint8_t*> (&m_json_length), sizeof(m_json_length));
+	if (result < 0) goto END;
+	m_json_length = (std::min)(m_json_length, MAX_JSON_SIZE - 1);
+	result = serial_read(&m_json_buf[0], m_json_length);
+	if (result < 0) goto END;
+END:
+
+	StringBuffer sb;
+	PrettyWriter writer(sb);
+	GameDetails(machine()).Serialize(writer);
+
+	const char* json = sb.GetString();
+	uint16_t json_len = (uint16_t)sb.GetSize();
+	m_cmd_offs = 0;
+	for (uint16_t len = 0; len < (json_len / 3) + 1; len++)
+	{
+		cmd = (FLAG_GAME << 29);
+		if (((len * 3) + 0) < json_len) cmd |= (json[(len * 3) + 0] << 0);
+		if (((len * 3) + 1) < json_len)	cmd |= (json[(len * 3) + 1] << 8);
+		if (((len * 3) + 2) < json_len)	cmd |= (json[(len * 3) + 2] << 16);
+
+		m_cmd_buf[m_cmd_offs++] = cmd >> 24;
+		m_cmd_buf[m_cmd_offs++] = cmd >> 16;
+		m_cmd_buf[m_cmd_offs++] = cmd >> 8;
+		m_cmd_buf[m_cmd_offs++] = cmd >> 0;
+
+	}
+	serial_write(&m_cmd_buf[0], m_cmd_offs);
+	m_cmd_offs = 0;
+
+	cmd = (FLAG_CMD_END << 29) | json_len;
+
+	cmd_buf[0] = cmd >> 24;
+	cmd_buf[1] = cmd >> 16;
+	cmd_buf[2] = cmd >> 8;
+	cmd_buf[3] = cmd >> 0;
+	serial_write(cmd_buf, 4);
 
 	d.Parse(reinterpret_cast<const char*> (&m_json_buf[0]));
 	m_vertical_display = d["vertical"].GetBool();
@@ -625,7 +680,7 @@ int vector_device_usb_dvg::determine_game_settings()
 			}
 		}
 	}
-	return 0;
+	
 }
 
 
@@ -812,7 +867,7 @@ void vector_device_usb_dvg::device_start()
 		m_gamma_table[i] = apply_brightness_contrast_gamma_fp(i, machine().options().brightness(), machine().options().contrast(), machine().options().gamma());
 	}
 
-	determine_game_settings();
+	get_dvg_info();
 	m_clipx_min = DVG_RES_MIN;
 	m_clipy_min = DVG_RES_MIN;
 	m_clipx_max = DVG_RES_MAX;
@@ -853,72 +908,7 @@ void vector_device_usb_dvg::add_point(int x, int y, rgb_t color, int intensity)
 
 }
 
-void vector_device_usb_dvg::get_dvg_info()
-{
-	uint32_t cmd = 0;
-
-	uint8_t  cmd_buf[4] = {};
-	int      result;
-
-	uint32_t version, major, minor;
-
-	if (m_json_length)
-	{
-		return;
-	}
-
-	cmd = (FLAG_CMD << 29) | FLAG_CMD_GET_DVG_INFO;
-	sscanf(emulator_info::get_build_version(), "%u.%u", &major, &minor);
-	version = (((minor / 1000) % 10) << 12) | (((minor / 100) % 10) << 8) | (((minor / 10) % 10) << 4) | (minor % 10);
-	cmd |= version << 8;
-	cmd_buf[0] = cmd >> 24;
-	cmd_buf[1] = cmd >> 16;
-	cmd_buf[2] = cmd >> 8;
-	cmd_buf[3] = cmd >> 0;
-	serial_write(cmd_buf, 4);
-
-	result = serial_read(reinterpret_cast<uint8_t*> (&cmd), sizeof(cmd));
-	if (result < 0) goto END;
-	result = serial_read(reinterpret_cast<uint8_t*> (&m_json_length), sizeof(m_json_length));
-	if (result < 0) goto END;
-	m_json_length = (std::min)(m_json_length, MAX_JSON_SIZE - 1);
-	result = serial_read(&m_json_buf[0], m_json_length);
-	if (result < 0) goto END;
-END:
-
-	StringBuffer sb;
-	PrettyWriter writer(sb);
-	GameDetails(machine()).Serialize(writer);
-
-	const char* json = sb.GetString();
-	uint16_t json_len = (uint16_t)sb.GetSize();
-	m_cmd_offs = 0;
-	for (uint16_t len = 0; len < (json_len / 3) + 1; len++)
-	{
-		cmd = (FLAG_GAME << 29);
-		if (((len * 3) + 0) < json_len) cmd |= (json[(len * 3) + 0] << 0);
-		if (((len * 3) + 1) < json_len)	cmd |= (json[(len * 3) + 1] << 8);
-		if (((len * 3) + 2) < json_len)	cmd |= (json[(len * 3) + 2] << 16);
-
-		m_cmd_buf[m_cmd_offs++] = cmd >> 24;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 16;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 8;
-		m_cmd_buf[m_cmd_offs++] = cmd >> 0;
-
-	}
-	serial_write(&m_cmd_buf[0], m_cmd_offs);
-	m_cmd_offs = 0;
-
-	cmd = (FLAG_CMD_END << 29) | json_len;
-
-	cmd_buf[0] = cmd >> 24;
-	cmd_buf[1] = cmd >> 16;
-	cmd_buf[2] = cmd >> 8;
-	cmd_buf[3] = cmd >> 0;
-	serial_write(cmd_buf, 4);
-
-
-}
+ 
 uint32_t vector_device_usb_dvg::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
 {
 	rgb_t color = rgb_t(108, 108, 108);

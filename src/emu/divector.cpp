@@ -20,6 +20,7 @@ vector_interface::vector_interface(const machine_config& mconfig, device_type ty
 
 void vector_interface::add_point(int x, int y, rgb_t color, int intensity) {};
 void vector_interface::add_line(float xf0, float yf0, float xf1, float yf1, int intensity) {};
+void vector_interface::device_off() {};
 
 uint32_t vector_interface::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect)
 {

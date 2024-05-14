@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+package m_st;
+
+enum Protocol {
+  SERVER_PROTO_UDP = 0;
+  SERVER_PROTO_TCP = 1;
+}
+
+// Enumerations
+enum Orientation {
+  DEFAULT_ORIENTATION = 0;
+  ROT_90 = 1;
+  ROT_180 = 2;
+  ROT_270 = 3;
+  FLIP_X = 4;
+  FLIP_Y = 5;
+  FLIP_XY = 6;
+}
+
+enum BufferMode {
+  DMA_NORMAL_MODE = 0;
+  DMA_CIRCULAR_MODE = 1;
+  DMA_PFCTRL_MODE = 2;
+  DMA_DOUBLE_BUFFER_M0_MODE = 3;
+  DMA_DOUBLE_BUFFER_M1_MODE = 4;
+}
+
+enum Mode {
+  NO_MODE = 0;
+  SERVER =1;
+  V3D =2;
+  EMU =3;
+  PAGES=4;
+  OPENGL=5;
+  MUSIC =6;
+  ILDA= 7;
+  UI =8;
+  SVG =9;
+  CTRLS=10;
+  DVG =11;
+  ZIP=12;
+  SYS=13;
+}
+
+enum uiFlags {
+  UI_OFF = 0;
+  SPINNER = 1;
+  UART_DEBUG = 2;
+  CRT_OVERLAY =3;
+  LCD_OVERLAY = 4;
+  LCD_MIRROR = 5;
+  SCREEN = 6;
+  TIMINGS = 7;
+  HAPTICS = 8;
+  GEOM = 9;
+  MODE = 10;
+  MEM = 11;
+  LOGO = 12;
+  FPS = 13;
+  SWITCHES = 14;
+  FFT = 15;
+  FRAME = 16;
+  OVRFLOW = 17;
+  POINTS = 18;
+  FRAME_CPLXTY = 19;
+  CONNECTED = 20;
+  EMPTY = 21;
+}
+
+enum Pagetype {
+  PAGE_OFF = 0;
+  ANALOG_CLOCK =1;
+  DIGITAL_CLOCK =2;
+  ALPHABET=3;
+  LOREM=4;
+  SVG_TEST=5;
+  TEST_CARD=6;
+}
+
+enum Font {
+  HERSHEY_FONT = 0;
+  ASTEROIDS_FONT = 1;
+}
+
+enum BufferType {
+  DOUBLE_BUFFER = 0;
+  SINGLE_BUFFER = 1;
+  SINGLE_BUFFER_FIXED = 2;
+}
+
+// Messages for structures
+message TextPos {
+  uint32 y = 1;
+  uint32 x = 2;
+}
+ 
+message Settings {
+  uint32 dac_period = 1;
+  uint32 draw_steps = 2;
+  uint32 dwell = 3;
+  bool fine_type = 4;
+  bool controllers = 5;
+  bool lcd = 6;
+  bool audio = 7;
+  bool draw_jumps = 8;
+  bool auto_sync = 9;
+  BufferMode buffer_mode = 10;
+  BufferType buffer_type = 11;
+  uint32 scalex = 12;
+  uint32 scaley = 13;
+  Orientation orientation = 14;
+  uint32 ui_flags = 15; // This could be a repeated field if multiple flags can be set.
+  uint32 romsize = 16;
+  uint32 disp_tri_num = 17;
+  uint32 disp_seg_num = 18;
+  uint32 stl_tri_num = 19;
+  uint32 stl_tri_mem = 20;
+  uint32 frame_ctr = 21;
+  uint32 app_dac_period = 22;
+  uint32 app_draw_steps = 23;
+  uint32 minx = 24;
+  uint32 miny = 25;
+  uint32 maxx = 26;
+  uint32 maxy = 27;
+  bool in_freertos = 28;
+  Protocol protocol = 29;
+  uint32 compressionLevel = 30;
+  bool rgb = 31;
+  uint32 move_steps = 32;
+  bool stats = 33;
+    uint32 x_offset = 34;
+     uint32 y_offset = 36;
+}
+
+message Timer {
+  uint32 stamp = 1;
+  uint32 ptime = 2;
+  uint32 time = 3;
+  string name = 4;
+}
+
+ 
+
+message Fps {
+  double fps = 1;
+  uint32 mstart = 2;
+  uint32 mend = 3;
+  bool overflowed = 4;
+}
+
+ 
+message Stats {
+  Fps fps_timer = 1;
+  bool overflowed = 2;
+  double ink = 3;
+  double no_ink = 4;
+  repeated Timer p_timer = 5 ;
+  uint32 frame_complexity = 6;
+ 
+}
+
+
+ 
+message messageSettings {
+  // Function pointers are omitted since they cannot be represented in Protobuf.
+  string name = 1;
+  Mode mode = 2;
+  Settings settings = 3;
+  uint32 timer_idx = 4;
+  Stats stats = 5;
+  float spec_scale = 6;
+  uint32 buffer_size_override = 7;
+  Font font_type = 8;
+  Pagetype page = 9;
+
+}
+

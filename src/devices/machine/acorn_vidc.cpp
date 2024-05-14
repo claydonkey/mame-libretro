@@ -271,7 +271,8 @@ inline void acorn_vidc10_device::screen_dynamic_res_change()
 #if 0
 	// TODO: move to debugger custom command
 	const int m_vidc_vblank_time = m_crtc_regs[CRTC_VDER] * (m_crtc_interlace+1);
-	printf("Configuring: htotal %d vtotal %d border %d x %d display origin %d x %d vblank = %d\n",
+	printf("Configuring: 
+	tal %d vtotal %d border %d x %d display origin %d x %d vblank = %d\n",
 		m_crtc_regs[CRTC_HCR], m_crtc_regs[CRTC_VCR],
 		visarea.right(), visarea.bottom(),
 		m_crtc_regs[CRTC_HDER]-m_crtc_regs[CRTC_HDSR],m_crtc_regs[CRTC_VDER]-m_crtc_regs[CRTC_VDSR]+1,
