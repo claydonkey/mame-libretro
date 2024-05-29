@@ -106,6 +106,19 @@ const options_entry osd_options::s_option_entries[] =
 	{ OSDOPTION_FILTER ";glfilter;flt",       "1",              core_options::option_type::BOOLEAN,   "use bilinear filtering when scaling emulated video" },
 	{ OSDOPTION_PRESCALE "(1-8)",             "1",              core_options::option_type::INTEGER,   "scale emulated video by this factor before applying filters/shaders" },
 
+	{ nullptr,                                nullptr,          core_options::option_type::HEADER,    "OSD VECTOR OPTIONS" },
+		{ OSDOPTION_VECTOR_MOVE_STEPS              "(1-100)",           "20"     ,         core_options::option_type::INTEGER,    "vector move steps: "},
+		{ OSDOPTION_VECTOR_DRAW_STEPS             "(1-100)",           "6"     ,             core_options::option_type::INTEGER,   "vector draw steps" },
+		{ OSDOPTION_VECTOR_PORT "2390",                 OSDOPTVAL_AUTO,              core_options::option_type::STRING,   "ip port"},
+		{ OSDOPTION_VECTOR_IP    ,         OSDOPTVAL_AUTO,              core_options::option_type::STRING,   "ip" },
+		{ OSDOPTION_VECTOR_OFFSET_X               "(-4096-4096)",           "0"   ,              core_options::option_type::INTEGER,   "x offset" },
+		{ OSDOPTION_VECTOR_OFFSET_Y          "(-4096-4096)",           "0"   ,                core_options::option_type::INTEGER,   "y offset" },
+		{ OSDOPTION_VECTOR_SCALE_X               "(0.0-10.0)",           "1"   ,     core_options::option_type::FLOAT,   "x scale" },
+	{ OSDOPTION_VECTOR_SCALE_Y                     "(0.0-10.0)",           "1"   ,   core_options::option_type::FLOAT,    "y scale" },
+	{ OSDOPTION_VECTOR_BUFFER_MODE                     "(0-1)",           "1"   ,   core_options::option_type::INTEGER,    "buffer mode" },
+		{ OSDOPTION_VECTOR_BUFFER_TYPE                    "(0-1)",           "1"   ,   core_options::option_type::INTEGER,    "buffer type" },
+	
+
 #if USE_OPENGL
 	{ nullptr,                                nullptr,          core_options::option_type::HEADER,    "OpenGL-SPECIFIC OPTIONS" },
 	{ OSDOPTION_GL_FORCEPOW2TEXTURE,          "0",              core_options::option_type::BOOLEAN,   "force power-of-two texture sizes (default no)" },

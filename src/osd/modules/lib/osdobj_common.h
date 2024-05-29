@@ -91,7 +91,12 @@
 #define OSDOPTION_VECTOR_DRAW_STEPS     "vector_draw_steps"
 #define OSDOPTION_VECTOR_PORT           "vector_port"
 #define OSDOPTION_VECTOR_IP             "vector_ip"
-
+#define OSDOPTION_VECTOR_OFFSET_X            "vector_x_offset"
+#define OSDOPTION_VECTOR_OFFSET_Y            "vector_y_offset"
+#define OSDOPTION_VECTOR_SCALE_X            "vector_x_scale"
+#define OSDOPTION_VECTOR_SCALE_Y            "vector_y_scale"
+#define OSDOPTION_VECTOR_BUFFER_MODE     "vector_buffer_mode"
+#define OSDOPTION_VECTOR_BUFFER_TYPE     "vector_buffer_type"
 //============================================================
 //  TYPE DEFINITIONS
 //============================================================
@@ -130,8 +135,11 @@ public:
 	bool drawsteps() const { return int_value(OSDOPTION_VECTOR_DRAW_STEPS); }
 	const char* vectorip() const { return value(OSDOPTION_VECTOR_IP); }
 	const char* vectorport() const { return value(OSDOPTION_VECTOR_PORT); }
-
-
+	float vectorscalex() const { return float_value(OSDOPTION_VECTOR_SCALE_X); }
+	float vectorscaley() const { return float_value(OSDOPTION_VECTOR_SCALE_X); }
+	int vectoroffsetx() const { return int_value(OSDOPTION_VECTOR_OFFSET_X); }
+	int vectoroffsety() const { return int_value(OSDOPTION_VECTOR_OFFSET_Y); }
+	int vectorbuffermode() const { return int_value(OSDOPTION_VECTOR_BUFFER_MODE); }
 	// per-window options
 	const char *screen() const { return value(OSDOPTION_SCREEN); }
 	const char *aspect() const { return value(OSDOPTION_ASPECT); }

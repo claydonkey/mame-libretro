@@ -23,10 +23,13 @@ files {
 	MAME_DIR .. "src/devices/video/vector_usb_dvg.h",
 	MAME_DIR .. "src/devices/video/vector_v_st.cpp",
 	MAME_DIR .. "src/devices/video/vector_v_st.h",
+	MAME_DIR .. "src/devices/video/vector_udp_dvg.cpp",
+	MAME_DIR .. "src/devices/video/vector_udp_dvg.h",
 }
 includedirs {
     ext_includedir("rapidjson"),
-    ext_includedir("termiWin")
+    ext_includedir("termiWin"),
+     ext_includedir("protobuf")
 }
 
 --------------------------------------------------

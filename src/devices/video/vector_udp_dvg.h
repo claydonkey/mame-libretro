@@ -87,27 +87,7 @@ typedef enum _cmd_enum
 
 using namespace std;
 
-typedef enum
-{
-	LEVEL_NONE = 0,
-	LEVEL_SAFE,
-	LEVEL_1,
-	LEVEL_2,
-	LEVEL_3,
-	LEVEL_4,
-	LEVEL_5,
-	LEVEL_6,
-	LEVEL_7,
-	LEVEL_8,
-	LEVEL_9,
-	LEVEL_10,
-	LEVEL_11,
-	LEVEL_12,
-	LEVEL_13,
-	LEVEL_14,
-	LEVEL_15,
-	LEVEL_MAX
-} m_compression_level_t;
+ 
 
  
 

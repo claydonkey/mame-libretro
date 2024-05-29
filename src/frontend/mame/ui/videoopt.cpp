@@ -62,8 +62,6 @@ void menu_video_targets::populate(float &customtop, float &custombottom)
 	item_append("Snapshot", 0, &machine().video().snapshot_target());
 	item_append(menu_item_type::SEPARATOR);
 
-	item_append("Vector", 0, &machine().video().snapshot_target());
-	item_append(menu_item_type::SEPARATOR);
 }
 
 /*-------------------------------------------------

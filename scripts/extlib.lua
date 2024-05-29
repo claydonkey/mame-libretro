@@ -20,6 +20,7 @@ local extlibs = {
 	rapidjson  = { "rapidjson", "3rdparty/rapidjson/include" },
 	pugixml    = { "pugixml",   "3rdparty/pugixml/src" },
 	termiWin   = { "termiWin",  "3rdparty/termiWin/include" },
+	protobuf   = { "protobuf",  "3rdparty/protobuf/include" },
 }
 
 -- system lib options
@@ -92,7 +93,10 @@ newoption {
 	trigger = "with-system-termios",
 	description = "Use system termios library",
 }
-
+newoption {
+	trigger = "with-system-protobuf",
+	description = "Use system protobuf library",
+}
 -- build helpers
 function ext_lib(lib)
 	local opt = _OPTIONS["with-system-" .. lib]

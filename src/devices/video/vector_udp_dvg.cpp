@@ -176,20 +176,36 @@ void vector_device_udp_dvg::device_start()
 	m_clipy_max = DVG_RES_MAX;
 
 	get_dvg_settings();
-
+	int dwell = machine().config().options().vector_dwell();
 	bool rgb = machine().config().options().vector_rgb();
 	int draw_steps = machine().config().options().vector_draw_steps();
 	int move_steps = machine().config().options().vector_move_steps();
 	int compression_level = machine().config().options().vector_compression();
 	int dac_period = machine().config().options().vector_dac_period();
+	int x_scale = machine().config().options().vector_scale_x() * 100;
+	int y_scale = machine().config().options().vector_scale_y() * 100;
+	int x_offset = machine().config().options().vector_offset_x();
+	int y_offset = machine().config().options().vector_offset_y();
+
+	//int buffer_mode = machine().config().options().vector_buffer_mode();
+	int buffer_type = machine().config().options().vector_buffer_type();
+
 	std::cout << "HOST SETTINGS" << std::endl;
 	std::cout << "-------------" << std::endl;
 	std::cout << "rgb " << m_st.settings.rgb << std::endl;
+	std::cout << "dwell " << m_st.settings.dwell << std::endl;
 	std::cout << "draw_steps " << m_st.settings.draw_steps << std::endl;
 	std::cout << "move_steps " << m_st.settings.move_steps << std::endl;
 	std::cout << "compression_level " << m_st.settings.compressionLevel << std::endl;
 	std::cout << "dac_period " << m_st.settings.dac_period << std::endl;
+	std::cout << "x_scale " << m_st.settings.scalex << std::endl;
+	std::cout << "y_scale " << m_st.settings.scaley << std::endl;
+	std::cout << "x_offset " << m_st.settings.x_offset << std::endl;
+	std::cout << "y_offset " << m_st.settings.y_offset << std::endl;
+	std::cout << "buffer_mode " << m_st.settings.buffer_mode << std::endl;
+	std::cout << "buffer_type " << m_st.settings.buffer_type << std::endl;
 	std::cout << std::endl;
+
 	std::cout << "CLIENT SETTINGS" << std::endl;
 	std::cout << "---------------" << std::endl;
 	std::cout << "rgb " << rgb << std::endl;
@@ -197,7 +213,13 @@ void vector_device_udp_dvg::device_start()
 	std::cout << "move_steps " << move_steps << std::endl;
 	std::cout << "compression_level " << compression_level << std::endl;
 	std::cout << "dac_period " << dac_period << std::endl;
-
+	std::cout << "x_scale " << x_scale << std::endl;
+	std::cout << "y_scale " << y_scale << std::endl;
+	std::cout << "x_offset " << x_offset << std::endl;
+	std::cout << "y_offset " << y_offset << std::endl;
+	std::cout << "dwell " << dwell << std::endl;
+	//std::cout << "buffer_mode " << buffer_mode << std::endl;
+	std::cout << "buffer_type " << buffer_type << std::endl;
 
 	if (compression_level >= m_compression_level_t::LEVEL_NONE && compression_level <= m_compression_level_t::LEVEL_MAX) {
 		m_st.settings.compressionLevel = static_cast<m_compression_level_t>(compression_level);
@@ -207,6 +229,29 @@ void vector_device_udp_dvg::device_start()
 		fprintf(stderr, "vector_device_vectrx2020: error: vector_compression_level %d unknown\n", machine().config().options().vector_compression());
 		::exit(1);
 	}
+
+	if (x_scale != m_st.settings.scalex)
+		m_st.settings.scalex = x_scale;
+
+	if (y_scale != m_st.settings.scaley)
+		m_st.settings.scaley = y_scale;
+
+	if (dwell != m_st.settings.dwell)
+		m_st.settings.dwell = dwell;
+
+	if (buffer_type != m_st.settings.buffer_type)
+		m_st.settings.buffer_type = static_cast<enum_buffer_type_t>(buffer_type);
+
+	if (x_offset != m_st.settings.x_offset)
+		m_st.settings.x_offset = x_offset;
+
+
+	if (y_offset != m_st.settings.y_offset)
+		m_st.settings.y_offset = y_offset;
+
+	if (dwell != m_st.settings.dwell)
+		m_st.settings.dwell = dwell;
+
 	if (dac_period && dac_period != m_st.settings.dac_period)
 		m_st.settings.dac_period = dac_period;
 
@@ -325,7 +370,7 @@ void vector_device_udp_dvg::serializeSettings(char** buffer, std::size_t* size)
 	protoSettings->set_ui_flags(m_st.settings.ui_flags);
 	protoSettings->set_in_freertos(m_st.settings.in_freertos);
 	protoSettings->set_protocol(static_cast<m_st::Protocol>(m_st.settings.protocol));
-	protoSettings->set_compressionlevel(m_st.settings.compressionLevel);
+	protoSettings->set_compressionlevel(static_cast<m_st::compressionFlags>(m_st.settings.compressionLevel));
 	protoSettings->set_rgb(m_st.settings.rgb);
 	protoSettings->set_maxx(m_st.settings.maxx);
 	protoSettings->set_maxy(m_st.settings.maxy);
@@ -349,23 +394,19 @@ void vector_device_udp_dvg::serializeSettings(char** buffer, std::size_t* size)
 void vector_device_udp_dvg::deserializeSettings(uint8_t* buffer, uint16_t size)
 {
 	m_st::messageSettings settingsMsg;
-	// Convert the raw buffer to a string that ParseFromString can use
 	std::string serialized_data(reinterpret_cast<char*>(buffer), size);
 	if (settingsMsg.ParseFromString(serialized_data))
-
 	{
-	 
+
 		m_st.page = static_cast<m_pagetype_enum>(settingsMsg.page());
 		m_st.font_type = static_cast<m_font_t>(settingsMsg.font_type());
-		// Map nested message 'Settings'
+
 		const m_st::Settings& protoSettings = settingsMsg.settings();
 		m_st.settings.dac_period = protoSettings.dac_period();
 		m_st.settings.draw_steps = protoSettings.draw_steps();
 		m_st.settings.dwell = protoSettings.dwell();
-
 		m_st.settings.x_offset = protoSettings.x_offset();
 		m_st.settings.y_offset = protoSettings.y_offset();
-
 		m_st.settings.fine_type = protoSettings.fine_type();
 		m_st.settings.controllers = protoSettings.controllers();
 		m_st.settings.lcd = protoSettings.lcd();
@@ -377,21 +418,17 @@ void vector_device_udp_dvg::deserializeSettings(uint8_t* buffer, uint16_t size)
 		m_st.settings.scalex = protoSettings.scalex();
 		m_st.settings.scaley = protoSettings.scaley();
 		m_st.settings.orientation = static_cast<m_orientation_enum>(protoSettings.orientation());
-		m_st.settings.ui_flags = protoSettings.ui_flags();                                 // Assuming ui_flags is a bitmask
-		m_st.settings.in_freertos = protoSettings.in_freertos();                           // Assuming ui_flags is a bitmask
-		m_st.settings.protocol = static_cast<m_protocol_enum_t>(protoSettings.protocol()); // Assuming ui_flags is a bitmask
-		m_st.settings.compressionLevel = protoSettings.compressionlevel();                 // Assuming ui_flags is a bitmask
+		m_st.settings.ui_flags = protoSettings.ui_flags();
+		m_st.settings.in_freertos = protoSettings.in_freertos();
+		m_st.settings.protocol = static_cast<m_protocol_enum_t>(protoSettings.protocol());
+		m_st.settings.compressionLevel = static_cast<m_compression_level_t>(protoSettings.compressionlevel());
 		m_st.settings.rgb = protoSettings.rgb();
 		m_st.settings.move_steps = protoSettings.move_steps();
-		m_st.settings.maxx =
-			protoSettings.maxx(); // Assuming ui_flags is a bitmask
-		m_st.settings.maxy =
-			protoSettings.maxy(); // Assuming ui_flags is a bitmask
-		m_st.settings.minx =
-			protoSettings.minx(); // Assuming ui_flags is a bitmask
-		m_st.settings.miny =
-			protoSettings.miny(); // Assuming ui_flags is a bitmask
-		// ... and so on for other fields
+		m_st.settings.maxx = protoSettings.maxx();
+		m_st.settings.maxy = protoSettings.maxy();
+		m_st.settings.minx = protoSettings.minx();
+		m_st.settings.miny = protoSettings.miny();
+	
 	}
 	else
 	{
@@ -403,15 +440,15 @@ void vector_device_udp_dvg::device_off()
 {
 	device_stop();
 }
- 
+
 void vector_device_udp_dvg::device_stop()
 {
 
-		std::size_t eot_bytes_sent = writePacket(FLAG_EXIT, nullptr, 0);
-		if (eot_bytes_sent == static_cast<std::size_t>(-1))
-		{
-			std::cerr << "Failed to send device_stop ." << std::endl;
-		}
+	std::size_t eot_bytes_sent = writePacket(FLAG_EXIT, nullptr, 0);
+	if (eot_bytes_sent == static_cast<std::size_t>(-1))
+	{
+		std::cerr << "Failed to send device_stop ." << std::endl;
+	}
 
 }
 
@@ -804,7 +841,7 @@ extern "C" {
 		uint16_t x : 12;
 
 	}	ds_point_t;
-}
+	}
 
 
 int dctr = 0;
@@ -1137,7 +1174,7 @@ std::string replaceAll(std::string str, const std::string& from, const std::stri
 	return str;
 }
 
- 
+
 
 void  vector_device_udp_dvg::send_game_info() {
 	rapidjson::StringBuffer sb;
@@ -1156,9 +1193,9 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 	rgb_t color = rgb_t(108, 108, 108);
 	rgb_t black = rgb_t(0, 0, 0);
 	int x0, y0, x1, y1;
- 
-	
 
+
+	/*
 	if (orientation_flags != screen.orientation()) {
 		orientation_flags = screen.orientation();
 		if (orientation_flags & ORIENTATION_SWAP_XY) {
@@ -1182,11 +1219,11 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 		else 	if (orientation_flags & ROT0) {
 			m_st.settings.orientation = DEFAULT_ORIENTATION;
 		}
-		std::cout << "rotation"  << std::endl;
+		std::cout << "rotation" << std::endl;
 		set_dvg_settings();
 	}
-
-
+	*/
+	/*
 	if (yscale != screen.yscale()) {
 		yscale = screen.yscale();
 
@@ -1197,13 +1234,13 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 	}
 	if (xscale != screen.xscale()) {
 		xscale = screen.xscale();
-		
-			m_st.settings.scalex = 100* xscale;
-		
-			std::cout << "xscale" << std::endl;
+
+		m_st.settings.scalex = 100 * xscale;
+
+		std::cout << "xscale" << std::endl;
 		set_dvg_settings();
 	}
- 
+	*/
 	m_xmin = screen.visible_area().min_x;
 	m_xmax = screen.visible_area().max_x;
 	m_ymin = screen.visible_area().min_y;
@@ -1220,7 +1257,7 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 
 	m_xscale = (DVG_RES_MAX + 1.0) / (m_xmax - m_xmin);
 	m_yscale = (DVG_RES_MAX + 1.0) / (m_ymax - m_ymin);
-
+	
 	x0 = 0;
 	y0 = 0;
 	x1 = (cliprect.right() - cliprect.left()) * m_xscale;
@@ -1406,6 +1443,7 @@ uint32_t vector_device_udp_dvg::screen_update(screen_device& screen, bitmap_rgb3
 			cmd_add_vec(2949, 1658, color, false);
 			break;
 		}
+		
 		send_vectors();
 	}
 	return 0;

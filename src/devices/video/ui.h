@@ -71,7 +71,27 @@ extern "C" {
 		uint32_t load_audio_len;
 		m_arcade_mode arcade_mode;
 	} m_game_settings_t;
-
+	typedef enum _m_compression_level_t
+	{
+		LEVEL_NONE = 0,
+		LEVEL_SAFE,
+		LEVEL_1,
+		LEVEL_2,
+		LEVEL_3,
+		LEVEL_4,
+		LEVEL_5,
+		LEVEL_6,
+		LEVEL_7,
+		LEVEL_8,
+		LEVEL_9,
+		LEVEL_10,
+		LEVEL_11,
+		LEVEL_12,
+		LEVEL_13,
+		LEVEL_14,
+		LEVEL_15,
+		LEVEL_MAX
+	} m_compression_level_t;
 	typedef enum _m_mode_enum {
 		NO_MODE = 0,
 		M_MAME_WIFI,
@@ -166,12 +186,12 @@ extern "C" {
 		uint16_t maxy;
 		bool in_freertos;
 		m_protocol_enum_t protocol;
-		uint8_t compressionLevel;
+		m_compression_level_t compressionLevel;
 		bool rgb;
 		uint16_t move_steps;
 		bool stats;
-		uint16_t x_offset;
-		uint16_t y_offset;
+		int16_t x_offset;
+		int16_t y_offset;
 	} m_settings_t;
 
 	typedef struct _p_timer_t {
