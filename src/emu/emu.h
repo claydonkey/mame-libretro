@@ -70,6 +70,7 @@
 #include "dislot.h"
 #include "disound.h"
 #include "divideo.h"
+#include "divector.h"
 #include "dinvram.h"
 #include "schedule.h"
 

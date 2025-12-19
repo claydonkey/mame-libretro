@@ -84,13 +84,13 @@ menu_select_game::menu_select_game(mame_ui_manager &mui, render_container &conta
 		std::string fake_ini;
 		if (found == std::string::npos)
 		{
-			fake_ini = util::string_format(u8"\uFEFF%s = 1\n", tmp);
+			fake_ini = util::string_format("\uFEFF%s = 1\n", tmp);
 		}
 		else
 		{
 			std::string const sub_filter(tmp.substr(found + 1));
 			tmp.resize(found);
-			fake_ini = util::string_format(u8"\uFEFF%s = %s\n", tmp, sub_filter);
+			fake_ini = util::string_format("\uFEFF%s = %s\n", tmp, sub_filter);
 		}
 
 		util::core_file::ptr file;

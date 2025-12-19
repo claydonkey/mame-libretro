@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include "video/vector.h"
 
+ 
 class vector_device;
 
 class vector_options
@@ -18,12 +20,14 @@ public:
 	static float s_beam_width_max;
 	static float s_beam_dot_size;
 	static float s_beam_intensity_weight;
+    static char * s_vector_driver;
+	static bool s_mirror;
 
 protected:
 	static void init(emu_options& options);
 };
 
-class vector_device : public device_t, public device_video_interface
+class vector_device : public vector_interface
 {
 public:
 	template <typename T> static constexpr rgb_t color111(T c) { return rgb_t(pal1bit(c >> 2), pal1bit(c >> 1), pal1bit(c >> 0)); }
@@ -33,13 +37,12 @@ public:
 	// construction/destruction
 	vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
-	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	void clear_list();
+	 uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect) override;
+	 void clear_list();
 
-	void add_point(int x, int y, rgb_t color, int intensity);
-
-	// device-level overrides
-	virtual void device_start() override ATTR_COLD;
+	 void add_point(int x, int y, rgb_t color, int intensity) override;
+	// void add_line(float xf0, float yf0, float xf1, float yf1, int intensity) override;
+ 
 
 private:
 	/* The vertices are buffered here */
@@ -51,15 +54,24 @@ private:
 		rgb_t col;
 		int intensity;
 	};
+	optional_device<vector_interface> vectrx2020_device;
 
 	std::unique_ptr<point[]> m_vector_list;
-	int m_vector_index;
+ 
 	int m_min_intensity;
 	int m_max_intensity;
-
+	bool now;
 	float normalized_sigmoid(float n, float k);
-};
 
+
+protected:
+	
+
+    virtual void device_add_mconfig(machine_config &config) override;
+    // device-level overrides
+    virtual void device_start() override;
+ 
+};
 // device type definition
 DECLARE_DEVICE_TYPE(VECTOR, vector_device)
 

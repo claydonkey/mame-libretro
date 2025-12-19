@@ -87,7 +87,7 @@ class software_part
 
 public:
 	// construction/destruction
-	software_part(software_info &info, std::string &&name, std::string &&interface);
+	software_part(software_info &info, std::string &&name, std::string && intf);
 	software_part(software_part const &) = delete;
 	software_part(software_part &&) = delete;
 	software_part& operator=(software_part const &) = delete;
@@ -96,7 +96,7 @@ public:
 	// getters
 	software_info &info() const noexcept { return m_info; }
 	const std::string &name() const noexcept { return m_name; }
-	const std::string &interface() const noexcept { return m_interface; }
+	const std::string &intf() const noexcept { return m_interface; }
 	const software_info_item::set &features() const noexcept { return m_features; }
 	const std::vector<rom_entry> &romdata() const noexcept { return m_romdata; }
 
@@ -139,8 +139,8 @@ public:
 	const std::list<software_part> &parts() const { return m_partdata; }
 
 	// additional operations
-	const software_part *find_part(std::string_view part_name, const char *interface = nullptr) const;
-	bool has_multiple_parts(const char *interface) const;
+	const software_part *find_part(std::string_view part_name, const char * intf = nullptr) const;
+	bool has_multiple_parts(const char *intf) const;
 
 private:
 	// internal state

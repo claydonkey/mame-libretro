@@ -20,6 +20,8 @@ local extlibs = {
 	glm        = { "glm",       "3rdparty/glm" },
 	rapidjson  = { "rapidjson", "3rdparty/rapidjson/include" },
 	pugixml    = { "pugixml",   "3rdparty/pugixml/src" },
+	vectrx2020_lib = { "vectrx2020_lib", "../../vectrx2020_lib" },
+	vectrx2020_device = { "vectrx2020_device", "../../vectrx2020_Device" },
 }
 
 -- system lib options
@@ -93,6 +95,10 @@ newoption {
 	description = "Use system pugixml library",
 }
 
+newoption {
+	trigger = "with-system-vectrx2020_lib",
+	description = "Use system vectrx2020_lib library",
+}
 -- build helpers
 function ext_lib(lib)
 	local opt = _OPTIONS["with-system-" .. lib]

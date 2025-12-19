@@ -42,8 +42,8 @@
  **************************************************************************** */
 
 #include "emu.h"
-#include "vector.h"
-
+#include "video/vector.h"
+#include "video/vectrx2020.h"
 #include "emuopts.h"
 #include "render.h"
 #include "screen.h"
@@ -59,6 +59,7 @@ float vector_options::s_beam_width_min = 0.0f;
 float vector_options::s_beam_width_max = 0.0f;
 float vector_options::s_beam_dot_size = 0.0f;
 float vector_options::s_beam_intensity_weight = 0.0f;
+bool  vector_options::s_mirror = false;
 
 void vector_options::init(emu_options& options)
 {
@@ -67,30 +68,37 @@ void vector_options::init(emu_options& options)
 	s_beam_dot_size = options.beam_dot_size();
 	s_beam_intensity_weight = options.beam_intensity_weight();
 	s_flicker = options.flicker();
+	s_mirror = options.vector_screen_mirror();
 }
 
 // device type definition
 DEFINE_DEVICE_TYPE(VECTOR, vector_device, "vector_device", "VECTOR")
 
 vector_device::vector_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, VECTOR, tag, owner, clock),
-		device_video_interface(mconfig, *this),
-		m_vector_list(nullptr),
-		m_min_intensity(255),
-		m_max_intensity(0)
+: vector_interface(mconfig, VECTOR, tag, owner, clock),
+
+vectrx2020_device(*this, "vectrx2020"),
+m_vector_list(nullptr),
+m_min_intensity(255),
+m_max_intensity(0),
+now(false)
 {
+
 }
 
-void vector_device::device_start()
-{
+void vector_device::device_add_mconfig(machine_config &config) {
+        VECTRX2020(config, "vectrx2020");
+}
+void vector_device::device_start() {
 	vector_options::init(machine().options());
 
 	m_vector_index = 0;
 
 	/* allocate memory for tables */
-	m_vector_list = std::make_unique<point[]>(MAX_POINTS);
+	m_vector_list = std::make_unique < point[]>(MAX_POINTS);
 }
 
+ 
 /*
  * www.dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/
  */
@@ -107,6 +115,14 @@ float vector_device::normalized_sigmoid(float n, float k)
  */
 void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 {
+	if (vectrx2020_device.found())
+	{
+		vectrx2020_device->add_point(x, y, color, intensity);
+	}
+	if (!vector_options::s_mirror) {
+		return;
+	}
+
 	point *newpoint;
 
 	intensity = std::clamp(intensity, 0, 255);
@@ -147,9 +163,15 @@ void vector_device::clear_list(void)
 	m_vector_index = 0;
 }
 
+ 
 
 uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
+	if (vectrx2020_device.found())
+	{
+		vectrx2020_device->screen_update(screen, bitmap, cliprect);
+	}
+
 	uint32_t flags = PRIMFLAG_ANTIALIAS(1) | PRIMFLAG_BLENDMODE(BLENDMODE_ADD) | PRIMFLAG_VECTOR(1);
 	const rectangle &visarea = screen.visible_area();
 	float xscale = 1.0f / (65536 * visarea.width());
@@ -197,6 +219,7 @@ uint32_t vector_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 				beam_width,
 				(curpoint->intensity << 24) | (curpoint->col & 0xffffff),
 				flags);
+			 add_line(coords.x0, coords.y0, coords.x1, coords.y1, curpoint->intensity);
 		}
 
 		lastx = curpoint->x;

@@ -2040,7 +2040,7 @@ ui_software_info::ui_software_info(
 	, supported(sw.supported())
 	, part(p.name())
 	, driver(&d)
-	, listname(li), interface(p.interface()), instance(is)
+	, listname(li), interface(p.intf()), instance(is)
 	, startempty(0)
 	, parentlongname()
 	, infotext()

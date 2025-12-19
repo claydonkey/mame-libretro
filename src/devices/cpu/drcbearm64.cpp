@@ -2684,7 +2684,9 @@ void drcbe_arm64::op_read(a64::Assembler &a, const uml::instruction &inst)
 	assert(spacesizep.is_size_space());
 
 	auto const &accessors = m_memory_accessors[spacesizep.space()];
-	bool const have_specific = (uintptr_t(nullptr) != accessors.specific.read.function) || accessors.specific.read.is_virtual;
+	bool const have_specific =
+		accessors.specific.read.function != uintptr_t(0) ||
+		accessors.specific.read.is_virtual;
 
 	if (have_specific && ((1 << spacesizep.size()) == accessors.specific.native_bytes))
 	{
@@ -2768,7 +2770,9 @@ void drcbe_arm64::op_readm(a64::Assembler &a, const uml::instruction &inst)
 	assert(spacesizep.is_size_space());
 
 	auto const &accessors = m_memory_accessors[spacesizep.space()];
-	bool const have_specific = (uintptr_t(nullptr) != accessors.specific.read.function) || accessors.specific.read.is_virtual;
+	bool const have_specific =
+		accessors.specific.read.function != uintptr_t(0) ||
+		accessors.specific.read.is_virtual;
 
 	if (have_specific && ((1 << spacesizep.size()) == accessors.specific.native_bytes))
 	{
@@ -2853,7 +2857,9 @@ void drcbe_arm64::op_write(a64::Assembler &a, const uml::instruction &inst)
 	assert(spacesizep.is_size_space());
 
 	auto const &accessors = m_memory_accessors[spacesizep.space()];
-	bool const have_specific = (uintptr_t(nullptr) != accessors.specific.write.function) || accessors.specific.write.is_virtual;
+	bool const have_specific =
+		accessors.specific.read.function != uintptr_t(0) ||
+		accessors.specific.read.is_virtual;
 
 	if (have_specific && ((1 << spacesizep.size()) == accessors.specific.native_bytes))
 	{
@@ -2920,7 +2926,9 @@ void drcbe_arm64::op_writem(a64::Assembler &a, const uml::instruction &inst)
 
 	// set up a call to the write handler
 	auto const &accessors = m_memory_accessors[spacesizep.space()];
-	bool const have_specific = (uintptr_t(nullptr) != accessors.specific.write.function) || accessors.specific.write.is_virtual;
+	bool const have_specific =
+		accessors.specific.read.function != uintptr_t(0) ||
+		accessors.specific.read.is_virtual;
 
 	if (have_specific && ((1 << spacesizep.size()) == accessors.specific.native_bytes))
 	{

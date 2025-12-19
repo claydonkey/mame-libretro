@@ -410,7 +410,7 @@ std::string cassette_image_device::call_display()
 	// only show the image when a cassette is loaded and the motor is on
 	if (exists() && !is_stopped() && motor_on())
 	{
-		static char const *const shapes[] = { u8"\u2500", u8"\u2572", u8"\u2502", u8"\u2571" };
+		static char const *const shapes[] = { "\u2500", "\u2572", "\u2502", "\u2571" };
 
 		// figure out where we are in the cassette
 		double position = get_position();
@@ -422,8 +422,8 @@ std::string cassette_image_device::call_display()
 
 		// play or record
 		const char *status_icon = (uistate == CASSETTE_PLAY)
-			? u8"\u25ba"
-			: u8"\u25cf";
+			? "\u25ba"
+			: "\u25cf";
 
 		// create information string
 		result = string_format("%s %s %02d:%02d (%04d) [%02d:%02d (%04d)]",

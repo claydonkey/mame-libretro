@@ -150,7 +150,7 @@ void unsp_device::code_flush_cache()
 
 void unsp_device::code_compile_block(offs_t pc)
 {
-	compiler_state compiler = { 0 };
+	compiler_state compiler(0, 0); // dummy compiler state for now
 	const opcode_desc *seqhead, *seqlast;
 	bool override = false;
 

@@ -130,6 +130,7 @@ if (STANDALONE~=true) then
 	}
 end
 	links {
+		ext_lib("vectrx2020_lib"),
 		"optional",
 		"emu",
 	}
@@ -224,6 +225,8 @@ end
 		MAME_DIR .. "src/lib/util",
 		MAME_DIR .. "3rdparty",
 		GEN_DIR  .. _target .. "/layout",
+		MAME_DIR .. "../../vectrx2020_lib",
+		MAME_DIR .. "../../vectrx2020_Device",
 		ext_includedir("zlib"),
 		ext_includedir("flac"),
 	}

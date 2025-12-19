@@ -114,7 +114,29 @@
 #define OPTION_BEAM_DOT_SIZE        "beam_dot_size"
 #define OPTION_BEAM_INTENSITY_WEIGHT   "beam_intensity_weight"
 #define OPTION_FLICKER              "flicker"
-
+#define OPTION_VECTOR_DRIVER        "vector_driver"
+#define OPTION_VECTOR_PORT          "vector_port"
+#define OPTION_VECTOR_IP_PORT       "vector_ip_port"
+#define OPTION_VECTOR_XY_HEADER     "vector_xy_header"
+#define OPTION_VECTOR_HOST          "vector_host"
+#define OPTION_VECTOR_PROTOCOL      "vector_protocol"
+#define OPTION_VECTOR_COMPRESSION   "vector_compression"
+#define OPTION_VECTOR_SCREEN_MIRROR "vector_screen_mirror"
+#define OPTION_VECTOR_DRAW_STEPS    "vector_draw_steps"
+#define OPTION_VECTOR_SYNC_MODE     "vector_sync_mode"
+#define OPTION_VECTOR_RGB           "vector_rgb"
+#define OPTION_VECTOR_DWELL         "vector_dwell"
+#define OPTION_VECTOR_DAC_PERIOD    "vector_dac_period"
+#define OPTION_VECTOR_ROTATE        "vector_rotate"
+#define OPTION_VECTOR_BRIGHT        "vector_bright"
+#define OPTION_VECTOR_SCALE         "vector_scale"
+#define OPTION_VECTOR_SCALE_X       "vector_scale_x"
+#define OPTION_VECTOR_SCALE_Y       "vector_scale_y"
+#define OPTION_VECTOR_OFFSET_X      "vector_offset_x"
+#define OPTION_VECTOR_OFFSET_Y      "vector_offset_y"
+#define OPTION_VECTOR_BUFFER_MODE   "vector_buffer_mode"
+#define OPTION_VECTOR_BUFFER_TYPE   "vector_buffer_type"
+#define OPTION_VECTOR_CENTRE_BEAM   "vector_centre_beam"
 // core sound options
 #define OPTION_SAMPLERATE           "samplerate"
 #define OPTION_SAMPLES              "samples"
@@ -398,7 +420,29 @@ public:
 	float beam_dot_size() const { return float_value(OPTION_BEAM_DOT_SIZE); }
 	float beam_intensity_weight() const { return float_value(OPTION_BEAM_INTENSITY_WEIGHT); }
 	float flicker() const { return float_value(OPTION_FLICKER); }
-
+    const char *vector_driver() const { return value(OPTION_VECTOR_DRIVER); }
+	const char* vector_port() const { return value(OPTION_VECTOR_PORT); }
+	int  vector_ip_port() const { return int_value(OPTION_VECTOR_IP_PORT); }
+	const char* vector_host() const { return value(OPTION_VECTOR_HOST); }
+ 
+	const char* vector_protocol() const { return value(OPTION_VECTOR_PROTOCOL); }
+	const int vector_compression() const { return int_value(OPTION_VECTOR_COMPRESSION); }
+	const int vector_dac_period() const { return int_value(OPTION_VECTOR_DAC_PERIOD); }
+	const int vector_draw_steps() const { return int_value(OPTION_VECTOR_DRAW_STEPS); }
+	const int vector_sync_mode() const { return int_value(OPTION_VECTOR_SYNC_MODE); }
+	const bool vector_rgb() const { return bool_value(OPTION_VECTOR_RGB); }
+	const int vector_dwell() const { return int_value(OPTION_VECTOR_DWELL); }
+	bool  vector_screen_mirror() const { return bool_value(OPTION_VECTOR_SCREEN_MIRROR); }
+	float vector_scale() const { return float_value(OPTION_VECTOR_SCALE); }
+	float vector_scale_x() const { return float_value(OPTION_VECTOR_SCALE_X); }
+	float vector_scale_y() const { return float_value(OPTION_VECTOR_SCALE_Y); }
+	int vector_offset_x() const { return int_value(OPTION_VECTOR_OFFSET_X); }
+	int vector_offset_y() const { return int_value(OPTION_VECTOR_OFFSET_Y); }
+	int vector_buffer_mode() const { return int_value(OPTION_VECTOR_BUFFER_MODE); }
+	int vector_buffer_type() const { return int_value(OPTION_VECTOR_BUFFER_TYPE); }
+	int vector_rotate() const { return int_value(OPTION_VECTOR_ROTATE); }
+	int vector_bright() const { return int_value(OPTION_VECTOR_BRIGHT); }
+	const bool vector_centre_beam() const { return bool_value(OPTION_VECTOR_CENTRE_BEAM); }
 	// core sound options
 	int sample_rate() const { return int_value(OPTION_SAMPLERATE); }
 	bool samples() const { return bool_value(OPTION_SAMPLES); }

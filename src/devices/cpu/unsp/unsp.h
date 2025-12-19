@@ -173,6 +173,11 @@ protected:
 		compiler_state(compiler_state const&) = delete;
 		compiler_state& operator=(compiler_state const&) = delete;
 
+		// C++20-compatible constructor
+		compiler_state(uint32_t cycles = 0, uml::code_label label = 0)
+			: m_cycles(cycles), m_labelnum(label) {
+		}
+
 		uint32_t m_cycles;          /* accumulated cycles */
 		uml::code_label m_labelnum; /* index for local labels */
 	};

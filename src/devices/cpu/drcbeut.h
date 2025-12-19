@@ -169,7 +169,7 @@ private:
 
 struct resolved_member_function
 {
-	uintptr_t obj = uintptr_t(nullptr);
+	uintptr_t obj = reinterpret_cast<uintptr_t>(nullptr);
 	uint8_t *func = nullptr;
 
 	explicit operator bool() const noexcept

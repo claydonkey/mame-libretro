@@ -1926,15 +1926,15 @@ std::vector<ui::menu_item> mame_ui_manager::slider_init(running_machine &machine
 			std::string str = string_format(_("Overclock CPU %1$s"), exec.device().tag());
 			slider_alloc(std::move(str), 100, 1000, 4000, 10, std::bind(&mame_ui_manager::slider_overclock, this, std::ref(exec.device()), _1, _2));
 		}
-		for (device_sound_interface &snd : sound_interface_enumerator(machine.root_device()))
-		{
-			device_execute_interface *exec;
-			if (!snd.device().interface(exec) && snd.device().unscaled_clock() != 0)
-			{
-				std::string str = string_format(_("Overclock %1$s sound"), snd.device().tag());
-				slider_alloc(std::move(str), 100, 1000, 4000, 10, std::bind(&mame_ui_manager::slider_overclock, this, std::ref(snd.device()), _1, _2));
-			}
-		}
+	//	for (device_sound_interface &snd : sound_interface_enumerator(machine.root_device()))
+	//	{
+	//		device_execute_interface *exec;
+			//if (!snd.device().interface(exec) && snd.device().unscaled_clock() != 0)
+		//	{
+		//		std::string str = string_format(_("Overclock %1$s sound"), snd.device().tag());
+		//		slider_alloc(std::move(str), 100, 1000, 4000, 10, std::bind(&mame_ui_manager::slider_overclock, this, std::ref(snd.device()), _1, _2));
+		//	}
+	//	}
 	}
 
 	// add screen parameters
@@ -2055,9 +2055,9 @@ int32_t mame_ui_manager::slider_volume(std::string *str, int32_t newval)
 		if (curval == -960)
 			*str = _("Mute");
 		else if (curval % 10)
-			*str = string_format(_(u8"%1$5.1f\u00a0dB"), float(curval) * 0.1f);
+			*str = string_format(_("%1$5.1f\u00a0dB"), float(curval) * 0.1f);
 		else
-			*str = string_format(_(u8"%1$3d\u00a0dB"), curval / 10);
+			*str = string_format(_("%1$3d\u00a0dB"), curval / 10);
 	}
 	return curval;
 }
@@ -2080,9 +2080,9 @@ int32_t mame_ui_manager::slider_devvol(device_sound_interface *snd, std::string 
 		if (curval == -960)
 			*str = _("Mute");
 		else if (curval % 10)
-			*str = string_format(_(u8"%1$5.1f\u00a0dB"), float(curval) * 0.1f);
+			*str = string_format(_("%1$5.1f\u00a0dB"), float(curval) * 0.1f);
 		else
-			*str = string_format(_(u8"%1$3d\u00a0dB"), curval / 10);
+			*str = string_format(_("%1$3d\u00a0dB"), curval / 10);
 	}
 	return curval;
 }
@@ -2105,9 +2105,9 @@ int32_t mame_ui_manager::slider_devvol_chan(device_sound_interface *snd, int cha
 		if (curval == -960)
 			*str = _("Mute");
 		else if (curval % 10)
-			*str = string_format(_(u8"%1$5.1f\u00a0dB"), float(curval) * 0.1f);
+			*str = string_format(_("%1$5.1f\u00a0dB"), float(curval) * 0.1f);
 		else
-			*str = string_format(_(u8"%1$3d\u00a0dB"), curval / 10);
+			*str = string_format(_("%1$3d\u00a0dB"), curval / 10);
 	}
 	return curval;
 }
@@ -2197,7 +2197,7 @@ int32_t mame_ui_manager::slider_refresh(screen_device &screen, std::string *str,
 	}
 
 	if (str)
-		*str = string_format(_(u8"%1$.3f\u00a0Hz"), screen.frame_period().as_hz());
+		*str = string_format(_("%1$.3f\u00a0Hz"), screen.frame_period().as_hz());
 	double refresh = screen.frame_period().as_hz();
 	return floor((refresh - defrefresh) * 1000.0 + 0.5);
 }

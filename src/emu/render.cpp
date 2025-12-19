@@ -2255,7 +2255,7 @@ void render_target::load_additional_layout_files(const char *basename, bool have
 				if (!remainder || (((majdim + 1) / 2) <= remainder))
 				{
 					generate_view(
-							util::string_format(_("view-name", u8"%1$u×%2$u Left-to-Right, Top-to-Bottom"), majdim, mindim).c_str(),
+							util::string_format(_("view-name", "%1$u×%2$u Left-to-Right, Top-to-Bottom"), majdim, mindim).c_str(),
 							majdim,
 							false,
 							[&screens, majdim] (unsigned x, unsigned y)
@@ -2264,7 +2264,7 @@ void render_target::load_additional_layout_files(const char *basename, bool have
 								return (screens.size() > i) ? int(i) : -1;
 							});
 					generate_view(
-							util::string_format(_("view-name", u8"%1$u×%2$u Left-to-Right, Top-to-Bottom (Gapless)"), majdim, mindim).c_str(),
+							util::string_format(_("view-name", "%1$u×%2$u Left-to-Right, Top-to-Bottom (Gapless)"), majdim, mindim).c_str(),
 							majdim,
 							true,
 							[&screens, majdim] (unsigned x, unsigned y)
@@ -2273,7 +2273,7 @@ void render_target::load_additional_layout_files(const char *basename, bool have
 								return (screens.size() > i) ? int(i) : -1;
 							});
 					generate_view(
-							util::string_format(_("view-name", u8"%1$u×%2$u Top-to-Bottom, Left-to-Right"), mindim, majdim).c_str(),
+							util::string_format(_("view-name", "%1$u×%2$u Top-to-Bottom, Left-to-Right"), mindim, majdim).c_str(),
 							mindim,
 							false,
 							[&screens, majdim] (unsigned x, unsigned y)
@@ -2282,7 +2282,7 @@ void render_target::load_additional_layout_files(const char *basename, bool have
 								return (screens.size() > i) ? int(i) : -1;
 							});
 					generate_view(
-							util::string_format(_("view-name", u8"%1$u×%2$u Top-to-Bottom, Left-to-Right (Gapless)"), mindim, majdim).c_str(),
+							util::string_format(_("view-name", "%1$u×%2$u Top-to-Bottom, Left-to-Right (Gapless)"), mindim, majdim).c_str(),
 							mindim,
 							true,
 							[&screens, majdim] (unsigned x, unsigned y)

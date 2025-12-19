@@ -11,6 +11,67 @@
 ---------------------------------------------------------------------------
 
 --------------------------------------------------
+-- vectrx2020 library objects
+--------------------------------------------------
+ if not _OPTIONS["with-system-vectrx2020_lib"] then
+
+project "vectrx2020_lib"
+    uuid "e2f8b2d1-3c7f-4e3d-8a3b-1d9e5f2a9c5f"  -- Use a unique UUID
+    kind "StaticLib"
+ 	options {
+		"ForceCPP",
+	}
+
+    configuration { "Release" }
+        defines {
+            "NDEBUG",
+        }
+
+    configuration { "Debug" }
+        defines {
+            "DEBUG",
+        }
+
+ --	configuration { "x64", "vs*" }
+	--	buildoptions { "/utf-8",}
+
+	-- configuration { "x64", "vs*", "Release" }
+	--   buildoptions { "/utf-8", }
+
+	--configuration { "x64", "vs*", "Debug" }
+	--	buildoptions { "/utf-8",  }
+
+    configuration { }  -- Reset configuration filter
+
+    files {
+        MAME_DIR .. "../../vectrx2020_lib/WindowsDeviceHandler.cpp",
+        MAME_DIR .. "../../vectrx2020_lib/DeviceHandlerApi.cpp",
+		MAME_DIR .. "../../vectrx2020_lib/IDeviceHandler.cpp",
+		MAME_DIR .. "../../vectrx2020_lib/font_renderer.cpp",
+        MAME_DIR .. "../../vectrx2020_lib/asteroids_font.cpp",
+    }
+
+	
+
+	includedirs {
+		MAME_DIR .. "../../vectrx2020_lib",
+		MAME_DIR .. "../../vectrx2020_Device",
+	}
+    defines {
+    	"VECTRX2020_STATIC_LIB",
+    }
+     links {
+        "setupapi"
+    }
+ else
+
+    links {
+        ext_lib("vectrx2020_lib"),
+    }
+
+end
+    
+--------------------------------------------------
 -- expat library objects
 --------------------------------------------------
 

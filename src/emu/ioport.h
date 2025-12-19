@@ -2,9 +2,9 @@
 // copyright-holders:Aaron Giles
 /***************************************************************************
 
-    ioport.h
+	ioport.h
 
-    Input/output port handling.
+	Input/output port handling.
 
 ***************************************************************************/
 
@@ -110,130 +110,130 @@ enum
 	INPUT_STRING_Coinage,
 	INPUT_STRING_Coin_A,
 	INPUT_STRING_Coin_B,
-//  INPUT_STRING_20C_1C,    //  0.050000
-//  INPUT_STRING_15C_1C,    //  0.066667
+	//  INPUT_STRING_20C_1C,    //  0.050000
+	//  INPUT_STRING_15C_1C,    //  0.066667
 #define __input_string_coinage_start INPUT_STRING_10C_1C
 	INPUT_STRING_10C_1C,    //  0.100000
 	INPUT_STRING_9C_1C,     //  0.111111
 	INPUT_STRING_8C_1C,     //  0.125000
 	INPUT_STRING_7C_1C,     //  0.142857
 	INPUT_STRING_6C_1C,     //  0.166667
-//  INPUT_STRING_10C_2C,    //  0.200000
+	//  INPUT_STRING_10C_2C,    //  0.200000
 	INPUT_STRING_5C_1C,     //  0.200000
-//  INPUT_STRING_9C_2C,     //  0.222222
-//  INPUT_STRING_8C_2C,     //  0.250000
+	//  INPUT_STRING_9C_2C,     //  0.222222
+	//  INPUT_STRING_8C_2C,     //  0.250000
 	INPUT_STRING_4C_1C,     //  0.250000
-//  INPUT_STRING_7C_2C,     //  0.285714
-//  INPUT_STRING_10C_3C,    //  0.300000
-//  INPUT_STRING_9C_3C,     //  0.333333
-//  INPUT_STRING_6C_2C,     //  0.333333
+	//  INPUT_STRING_7C_2C,     //  0.285714
+	//  INPUT_STRING_10C_3C,    //  0.300000
+	//  INPUT_STRING_9C_3C,     //  0.333333
+	//  INPUT_STRING_6C_2C,     //  0.333333
 	INPUT_STRING_3C_1C,     //  0.333333
 	INPUT_STRING_8C_3C,     //  0.375000
-//  INPUT_STRING_10C_4C,    //  0.400000
+	//  INPUT_STRING_10C_4C,    //  0.400000
 	INPUT_STRING_5C_2C,     //  0.400000
-//  INPUT_STRING_7C_3C,     //  0.428571
-//  INPUT_STRING_9C_4C,     //  0.444444
-//  INPUT_STRING_10C_5C,    //  0.500000
-//  INPUT_STRING_8C_4C,     //  0.500000
-//  INPUT_STRING_6C_3C,     //  0.500000
+	//  INPUT_STRING_7C_3C,     //  0.428571
+	//  INPUT_STRING_9C_4C,     //  0.444444
+	//  INPUT_STRING_10C_5C,    //  0.500000
+	//  INPUT_STRING_8C_4C,     //  0.500000
+	//  INPUT_STRING_6C_3C,     //  0.500000
 	INPUT_STRING_4C_2C,     //  0.500000
 	INPUT_STRING_2C_1C,     //  0.500000
-//  INPUT_STRING_9C_5C,     //  0.555556
-//  INPUT_STRING_7C_4C,     //  0.571429
-//  INPUT_STRING_10C_6C,    //  0.600000
+	//  INPUT_STRING_9C_5C,     //  0.555556
+	//  INPUT_STRING_7C_4C,     //  0.571429
+	//  INPUT_STRING_10C_6C,    //  0.600000
 	INPUT_STRING_5C_3C,     //  0.600000
-//  INPUT_STRING_8C_5C,     //  0.625000
-//  INPUT_STRING_9C_6C,     //  0.666667
-//  INPUT_STRING_6C_4C,     //  0.666667
+	//  INPUT_STRING_8C_5C,     //  0.625000
+	//  INPUT_STRING_9C_6C,     //  0.666667
+	//  INPUT_STRING_6C_4C,     //  0.666667
 	INPUT_STRING_3C_2C,     //  0.666667
-//  INPUT_STRING_10C_7C,    //  0.700000
-//  INPUT_STRING_7C_5C,     //  0.714286
-//  INPUT_STRING_8C_6C,     //  0.750000
+	//  INPUT_STRING_10C_7C,    //  0.700000
+	//  INPUT_STRING_7C_5C,     //  0.714286
+	//  INPUT_STRING_8C_6C,     //  0.750000
 	INPUT_STRING_4C_3C,     //  0.750000
-//  INPUT_STRING_9C_7C,     //  0.777778
-//  INPUT_STRING_10C_8C,    //  0.800000
-//  INPUT_STRING_5C_4C,     //  0.800000
-//  INPUT_STRING_6C_5C,     //  0.833333
-//  INPUT_STRING_7C_6C,     //  0.857143
-//  INPUT_STRING_8C_7C,     //  0.875000
-//  INPUT_STRING_9C_8C,     //  0.888889
-//  INPUT_STRING_10C_9C,    //  0.900000
-//  INPUT_STRING_10C_10C,   //  1.000000
-//  INPUT_STRING_9C_9C,     //  1.000000
-//  INPUT_STRING_8C_8C,     //  1.000000
-//  INPUT_STRING_7C_7C,     //  1.000000
-//  INPUT_STRING_6C_6C,     //  1.000000
-//  INPUT_STRING_5C_5C,     //  1.000000
+	//  INPUT_STRING_9C_7C,     //  0.777778
+	//  INPUT_STRING_10C_8C,    //  0.800000
+	//  INPUT_STRING_5C_4C,     //  0.800000
+	//  INPUT_STRING_6C_5C,     //  0.833333
+	//  INPUT_STRING_7C_6C,     //  0.857143
+	//  INPUT_STRING_8C_7C,     //  0.875000
+	//  INPUT_STRING_9C_8C,     //  0.888889
+	//  INPUT_STRING_10C_9C,    //  0.900000
+	//  INPUT_STRING_10C_10C,   //  1.000000
+	//  INPUT_STRING_9C_9C,     //  1.000000
+	//  INPUT_STRING_8C_8C,     //  1.000000
+	//  INPUT_STRING_7C_7C,     //  1.000000
+	//  INPUT_STRING_6C_6C,     //  1.000000
+	//  INPUT_STRING_5C_5C,     //  1.000000
 	INPUT_STRING_4C_4C,     //  1.000000
 	INPUT_STRING_3C_3C,     //  1.000000
 	INPUT_STRING_2C_2C,     //  1.000000
 	INPUT_STRING_1C_1C,     //  1.000000
-//  INPUT_STRING_9C_10C,    //  1.111111
-//  INPUT_STRING_8C_9C,     //  1.125000
-//  INPUT_STRING_7C_8C,     //  1.142857
-//  INPUT_STRING_6C_7C,     //  1.166667
-//  INPUT_STRING_5C_6C,     //  1.200000
-//  INPUT_STRING_8C_10C,    //  1.250000
+	//  INPUT_STRING_9C_10C,    //  1.111111
+	//  INPUT_STRING_8C_9C,     //  1.125000
+	//  INPUT_STRING_7C_8C,     //  1.142857
+	//  INPUT_STRING_6C_7C,     //  1.166667
+	//  INPUT_STRING_5C_6C,     //  1.200000
+	//  INPUT_STRING_8C_10C,    //  1.250000
 	INPUT_STRING_3C_5C,     //  1.250000
 	INPUT_STRING_4C_5C,     //  1.250000
-//  INPUT_STRING_7C_9C,     //  1.285714
-//  INPUT_STRING_6C_8C,     //  1.333333
+	//  INPUT_STRING_7C_9C,     //  1.285714
+	//  INPUT_STRING_6C_8C,     //  1.333333
 	INPUT_STRING_3C_4C,     //  1.333333
-//  INPUT_STRING_5C_7C,     //  1.400000
-//  INPUT_STRING_7C_10C,    //  1.428571
-//  INPUT_STRING_6C_9C,     //  1.500000
-//  INPUT_STRING_4C_6C,     //  1.500000
+	//  INPUT_STRING_5C_7C,     //  1.400000
+	//  INPUT_STRING_7C_10C,    //  1.428571
+	//  INPUT_STRING_6C_9C,     //  1.500000
+	//  INPUT_STRING_4C_6C,     //  1.500000
 	INPUT_STRING_2C_3C,     //  1.500000
-//  INPUT_STRING_5C_8C,     //  1.600000
-//  INPUT_STRING_6C_10C,    //  1.666667
-//  INPUT_STRING_3C_5C,     //  1.666667
+	//  INPUT_STRING_5C_8C,     //  1.600000
+	//  INPUT_STRING_6C_10C,    //  1.666667
+	//  INPUT_STRING_3C_5C,     //  1.666667
 	INPUT_STRING_4C_7C,     //  1.750000
-//  INPUT_STRING_5C_9C,     //  1.800000
-//  INPUT_STRING_5C_10C,    //  2.000000
-//  INPUT_STRING_4C_8C,     //  2.000000
-//  INPUT_STRING_3C_6C,     //  2.000000
+	//  INPUT_STRING_5C_9C,     //  1.800000
+	//  INPUT_STRING_5C_10C,    //  2.000000
+	//  INPUT_STRING_4C_8C,     //  2.000000
+	//  INPUT_STRING_3C_6C,     //  2.000000
 	INPUT_STRING_2C_4C,     //  2.000000
 	INPUT_STRING_1C_2C,     //  2.000000
-//  INPUT_STRING_4C_9C,     //  2.250000
-//  INPUT_STRING_3C_7C,     //  2.333333
-//  INPUT_STRING_4C_10C,    //  2.500000
+	//  INPUT_STRING_4C_9C,     //  2.250000
+	//  INPUT_STRING_3C_7C,     //  2.333333
+	//  INPUT_STRING_4C_10C,    //  2.500000
 	INPUT_STRING_2C_5C,     //  2.500000
-//  INPUT_STRING_3C_8C,     //  2.666667
-//  INPUT_STRING_3C_9C,     //  3.000000
+	//  INPUT_STRING_3C_8C,     //  2.666667
+	//  INPUT_STRING_3C_9C,     //  3.000000
 	INPUT_STRING_2C_6C,     //  3.000000
 	INPUT_STRING_1C_3C,     //  3.000000
-//  INPUT_STRING_3C_10C,    //  3.333333
+	//  INPUT_STRING_3C_10C,    //  3.333333
 	INPUT_STRING_2C_7C,     //  3.500000
 	INPUT_STRING_2C_8C,     //  4.000000
 	INPUT_STRING_1C_4C,     //  4.000000
-//  INPUT_STRING_2C_9C,     //  4.500000
-//  INPUT_STRING_2C_10C,    //  5.000000
+	//  INPUT_STRING_2C_9C,     //  4.500000
+	//  INPUT_STRING_2C_10C,    //  5.000000
 	INPUT_STRING_1C_5C,     //  5.000000
 	INPUT_STRING_1C_6C,     //  6.000000
 	INPUT_STRING_1C_7C,     //  7.000000
 	INPUT_STRING_1C_8C,     //  8.000000
 	INPUT_STRING_1C_9C,     //  9.000000
 	INPUT_STRING_1C_10C,    //  10.000000
-//  INPUT_STRING_1C_11C,    //  11.000000
-//  INPUT_STRING_1C_12C,    //  12.000000
-//  INPUT_STRING_1C_13C,    //  13.000000
-//  INPUT_STRING_1C_14C,    //  14.000000
-//  INPUT_STRING_1C_15C,    //  15.000000
+	//  INPUT_STRING_1C_11C,    //  11.000000
+	//  INPUT_STRING_1C_12C,    //  12.000000
+	//  INPUT_STRING_1C_13C,    //  13.000000
+	//  INPUT_STRING_1C_14C,    //  14.000000
+	//  INPUT_STRING_1C_15C,    //  15.000000
 	INPUT_STRING_1C_20C,    //  20.000000
 	INPUT_STRING_1C_25C,    //  25.000000
-//  INPUT_STRING_1C_30C,    //  30.000000
-//  INPUT_STRING_1C_40C,    //  40.000000
+	//  INPUT_STRING_1C_30C,    //  30.000000
+	//  INPUT_STRING_1C_40C,    //  40.000000
 	INPUT_STRING_1C_50C,    //  50.000000
-//  INPUT_STRING_1C_99C,    //  99.000000
+	//  INPUT_STRING_1C_99C,    //  99.000000
 	INPUT_STRING_1C_100C,   //  100.000000
 #define __input_string_coinage_end INPUT_STRING_1C_100C
-//  INPUT_STRING_1C_120C,   //  120.000000
-//  INPUT_STRING_1C_125C,   //  125.000000
-//  INPUT_STRING_1C_150C,   //  150.000000
-//  INPUT_STRING_1C_200C,   //  200.000000
-//  INPUT_STRING_1C_250C,   //  250.000000
-//  INPUT_STRING_1C_500C,   //  500.000000
-//  INPUT_STRING_1C_1000C,  //  1000.000000
+	//  INPUT_STRING_1C_120C,   //  120.000000
+	//  INPUT_STRING_1C_125C,   //  125.000000
+	//  INPUT_STRING_1C_150C,   //  150.000000
+	//  INPUT_STRING_1C_200C,   //  200.000000
+	//  INPUT_STRING_1C_250C,   //  250.000000
+	//  INPUT_STRING_1C_500C,   //  500.000000
+	//  INPUT_STRING_1C_1000C,  //  1000.000000
 	INPUT_STRING_Free_Play,
 	INPUT_STRING_Cabinet,
 	INPUT_STRING_Upright,
@@ -299,24 +299,24 @@ enum
 	INPUT_STRING_Continues,
 	INPUT_STRING_Allow_Continue,
 	INPUT_STRING_Level_Select,
-//  INPUT_STRING_Allow,
-//  INPUT_STRING_Forbid,
-//  INPUT_STRING_Enable,
-//  INPUT_STRING_Disable,
+	//  INPUT_STRING_Allow,
+	//  INPUT_STRING_Forbid,
+	//  INPUT_STRING_Enable,
+	//  INPUT_STRING_Disable,
 	INPUT_STRING_Infinite,
-//  INPUT_STRING_Invincibility,
-//  INPUT_STRING_Invulnerability,
+	//  INPUT_STRING_Invincibility,
+	//  INPUT_STRING_Invulnerability,
 	INPUT_STRING_Stereo,
 	INPUT_STRING_Mono,
 	INPUT_STRING_Unused,
 	INPUT_STRING_Unknown,
-//  INPUT_STRING_Undefined,
+	//  INPUT_STRING_Undefined,
 	INPUT_STRING_Standard,
 	INPUT_STRING_Reverse,
 	INPUT_STRING_Alternate,
-//  INPUT_STRING_Reserve,
-//  INPUT_STRING_Spare,
-//  INPUT_STRING_Invalid,
+	//  INPUT_STRING_Reserve,
+	//  INPUT_STRING_Spare,
+	//  INPUT_STRING_Invalid,
 	INPUT_STRING_None,
 
 	INPUT_STRING_COUNT
@@ -329,12 +329,12 @@ enum
 //**************************************************************************
 
 // constructor function pointer
-typedef void(*ioport_constructor)(device_t &owner, ioport_list &portlist, std::ostream &errorbuf);
+typedef void(*ioport_constructor)(device_t& owner, ioport_list& portlist, std::ostream& errorbuf);
 
 // I/O port callback function delegates
-typedef device_delegate<ioport_value ()> ioport_field_read_delegate;
-typedef device_delegate<void (ioport_field &, u32, ioport_value, ioport_value)> ioport_field_write_delegate;
-typedef device_delegate<float (float)> ioport_field_crossmap_delegate;
+typedef device_delegate<ioport_value()> ioport_field_read_delegate;
+typedef device_delegate<void(ioport_field&, u32, ioport_value, ioport_value)> ioport_field_write_delegate;
+typedef device_delegate<float(float)> ioport_field_crossmap_delegate;
 
 
 // ======================> input_device_default
@@ -342,7 +342,7 @@ typedef device_delegate<float (float)> ioport_field_crossmap_delegate;
 // device defined default input settings
 struct input_device_default
 {
-	const char *            tag;            // tag of port to update
+	const char* tag;            // tag of port to update
 	ioport_value            mask;           // mask to apply to the port
 	ioport_value            defvalue;       // new default value
 };
@@ -355,34 +355,34 @@ class input_type_entry
 {
 public:
 	// construction/destruction
-	input_type_entry(ioport_type type, ioport_group group, int player, const char *token, const char *name, input_seq standard) noexcept;
-	input_type_entry(ioport_type type, ioport_group group, int player, const char *token, const char *name, input_seq standard, input_seq decrement, input_seq increment) noexcept;
+	input_type_entry(ioport_type type, ioport_group group, int player, const char* token, const char* name, input_seq standard) noexcept;
+	input_type_entry(ioport_type type, ioport_group group, int player, const char* token, const char* name, input_seq standard, input_seq decrement, input_seq increment) noexcept;
 
 	// getters
 	ioport_type type() const noexcept { return m_type; }
 	ioport_group group() const noexcept { return m_group; }
 	u8 player() const noexcept { return m_player; }
-	const char *token() const noexcept { return m_token; }
+	const char* token() const noexcept { return m_token; }
 	std::string name() const;
-	input_seq &defseq(input_seq_type seqtype = SEQ_TYPE_STANDARD) noexcept { return m_defseq[seqtype]; }
-	const input_seq &defseq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_defseq[seqtype]; }
-	const input_seq &seq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_seq[seqtype]; }
-	const std::string &cfg(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_cfg[seqtype]; }
+	input_seq& defseq(input_seq_type seqtype = SEQ_TYPE_STANDARD) noexcept { return m_defseq[seqtype]; }
+	const input_seq& defseq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_defseq[seqtype]; }
+	const input_seq& seq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_seq[seqtype]; }
+	const std::string& cfg(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_cfg[seqtype]; }
 
 	// setters
 	void restore_default_seq() noexcept;
-	void set_seq(input_seq_type seqtype, const input_seq &seq) noexcept { m_seq[seqtype] = seq; }
+	void set_seq(input_seq_type seqtype, const input_seq& seq) noexcept { m_seq[seqtype] = seq; }
 	template <typename... T> void set_cfg(input_seq_type seqtype, T &&... cfg) { m_cfg[seqtype].assign(std::forward<T>(cfg)...); }
 	void replace_code(input_code oldcode, input_code newcode) noexcept;
-	void configure_osd(const char *token, const char *name) noexcept;
+	void configure_osd(const char* token, const char* name) noexcept;
 
 private:
 	// internal state
 	ioport_type                             m_type;     // IPT_* for this entry
 	ioport_group                            m_group;    // which group the port belongs to
 	u8                                      m_player;   // player number (0 is player 1)
-	const char *                            m_token;    // token used to store settings
-	const char *                            m_name;     // user-friendly name
+	const char* m_token;    // token used to store settings
+	const char* m_name;     // user-friendly name
 	std::array<input_seq, SEQ_TYPE_TOTAL>   m_defseq;   // default input sequence
 	std::array<input_seq, SEQ_TYPE_TOTAL>   m_seq;      // currently configured sequences
 	std::array<std::string, SEQ_TYPE_TOTAL> m_cfg;      // configuration strings
@@ -423,7 +423,7 @@ public:
 	u8 current4way() const noexcept { return m_current4way; }
 
 	// configuration
-	direction_t add_axis(ioport_field &field);
+	direction_t add_axis(ioport_field& field);
 
 	// updates
 	void frame_update();
@@ -460,22 +460,22 @@ public:
 
 	// construction/destruction
 	ioport_condition() { reset(); }
-	ioport_condition(condition_t condition, const char *tag, ioport_value mask, ioport_value value) { set(condition, tag, mask, value); }
+	ioport_condition(condition_t condition, const char* tag, ioport_value mask, ioport_value value) { set(condition, tag, mask, value); }
 
 	// getters
 	condition_t condition() const { return m_condition; }
-	const char *tag() const { return m_tag; }
+	const char* tag() const { return m_tag; }
 	ioport_value mask() const { return m_mask; }
 	ioport_value value() const { return m_value; }
 
 	// operators
-	bool operator==(const ioport_condition &rhs) const { return (m_mask == rhs.m_mask && m_value == rhs.m_value && m_condition == rhs.m_condition && strcmp(m_tag, rhs.m_tag) == 0); }
+	bool operator==(const ioport_condition& rhs) const { return (m_mask == rhs.m_mask && m_value == rhs.m_value && m_condition == rhs.m_condition && strcmp(m_tag, rhs.m_tag) == 0); }
 	bool eval() const;
 	bool none() const { return (m_condition == ALWAYS); }
 
 	// configuration
 	void reset() { set(ALWAYS, "", 0, 0); }
-	void set(condition_t condition, const char *tag, ioport_value mask, ioport_value value)
+	void set(condition_t condition, const char* tag, ioport_value mask, ioport_value value)
 	{
 		m_condition = condition;
 		m_tag = tag;
@@ -484,13 +484,13 @@ public:
 		m_value = value;
 	}
 
-	void initialize(device_t &device);
+	void initialize(device_t& device);
 
 private:
 	// internal state
 	condition_t     m_condition;    // condition to use
-	const char *    m_tag;          // tag of port whose condition is to be tested (must never be nullptr)
-	ioport_port *   m_port;         // reference to the port to be tested
+	const char* m_tag;          // tag of port whose condition is to be tested (must never be nullptr)
+	ioport_port* m_port;         // reference to the port to be tested
 	ioport_value    m_mask;         // mask to apply to the port
 	ioport_value    m_value;        // value to compare against
 };
@@ -503,25 +503,25 @@ class ioport_setting
 {
 public:
 	// construction/destruction
-	ioport_setting(ioport_field &field, ioport_value value, const char *name);
+	ioport_setting(ioport_field& field, ioport_value value, const char* name);
 
 	// getters
-	ioport_field &field() const { return m_field; }
-	device_t &device() const;
-	running_machine &machine() const;
+	ioport_field& field() const { return m_field; }
+	device_t& device() const;
+	running_machine& machine() const;
 	ioport_value value() const { return m_value; }
-	ioport_condition &condition() { return m_condition; }
-	ioport_condition const &condition() const { return m_condition; }
-	const char *name() const { return m_name; }
+	ioport_condition& condition() { return m_condition; }
+	ioport_condition const& condition() const { return m_condition; }
+	const char* name() const { return m_name; }
 
 	// helpers
 	bool enabled() const { return m_condition.eval(); }
 
 private:
 	// internal state
-	ioport_field &      m_field;        // pointer back to the field that owns us
+	ioport_field& m_field;        // pointer back to the field that owns us
 	ioport_value        m_value;        // value of the bits in this setting
-	const char *        m_name;         // user-friendly name to display
+	const char* m_name;         // user-friendly name to display
 	ioport_condition    m_condition;    // condition under which this setting is valid
 };
 
@@ -536,7 +536,7 @@ public:
 	ioport_diplocation(std::string_view name, u8 swnum, bool invert);
 
 	// getters
-	const char *name() const { return m_name.c_str(); }
+	const char* name() const { return m_name.c_str(); }
 	u8 number() const { return m_number; }
 	bool inverted() const { return m_invert; }
 
@@ -560,31 +560,31 @@ class ioport_field
 
 	// flags for ioport_fields
 	static inline constexpr u32 FIELD_FLAG_COCKTAIL = 0x0001;    // set if this field is relevant only for cocktail cabinets
-	static inline constexpr u32 FIELD_FLAG_TOGGLE =   0x0002;    // set if this field should behave as a toggle
+	static inline constexpr u32 FIELD_FLAG_TOGGLE = 0x0002;    // set if this field should behave as a toggle
 	static inline constexpr u32 ANALOG_FLAG_REVERSE = 0x0004;    // analog only: reverse the sense of the axis
-	static inline constexpr u32 ANALOG_FLAG_RESET =   0x0008;    // analog only: always preload in->default for relative axes, returning only deltas
-	static inline constexpr u32 ANALOG_FLAG_WRAPS =   0x0010;    // analog only: positional count wraps around
-	static inline constexpr u32 ANALOG_FLAG_INVERT =  0x0020;    // analog only: bitwise invert bits
+	static inline constexpr u32 ANALOG_FLAG_RESET = 0x0008;    // analog only: always preload in->default for relative axes, returning only deltas
+	static inline constexpr u32 ANALOG_FLAG_WRAPS = 0x0010;    // analog only: positional count wraps around
+	static inline constexpr u32 ANALOG_FLAG_INVERT = 0x0020;    // analog only: bitwise invert bits
 
 public:
 	// construction/destruction
-	ioport_field(ioport_port &port, ioport_type type, ioport_value defvalue, ioport_value maskbits, const char *name = nullptr);
+	ioport_field(ioport_port& port, ioport_type type, ioport_value defvalue, ioport_value maskbits, const char* name = nullptr);
 	~ioport_field();
 
 	// getters
-	ioport_field *next() const { return m_next; }
-	ioport_port &port() const { return m_port; }
-	device_t &device() const;
-	ioport_manager &manager() const;
-	running_machine &machine() const;
+	ioport_field* next() const { return m_next; }
+	ioport_port& port() const { return m_port; }
+	device_t& device() const;
+	ioport_manager& manager() const;
+	running_machine& machine() const;
 	int modcount() const { return m_modcount; }
-	const std::vector<ioport_setting> &settings() const { return m_settinglist; }
-	const std::vector<ioport_diplocation> &diplocations() const { return m_diploclist; }
+	const std::vector<ioport_setting>& settings() const { return m_settinglist; }
+	const std::vector<ioport_diplocation>& diplocations() const { return m_diploclist; }
 
 	ioport_value mask() const { return m_mask; }
 	ioport_value defvalue() const { return m_defvalue; }
-	ioport_condition &condition() { return m_condition; }
-	ioport_condition const &condition() const { return m_condition; }
+	ioport_condition& condition() { return m_condition; }
+	ioport_condition const& condition() const { return m_condition; }
 	ioport_type type() const { return m_type; }
 	u8 player() const { return m_player; }
 	bool digital_value() const { return m_digital_value; }
@@ -600,12 +600,12 @@ public:
 
 	u8 impulse() const noexcept { return m_impulse; }
 	std::string name() const;
-	const char *specific_name() const noexcept { return m_name; }
-	const input_seq &seq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept;
-	const input_seq &defseq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept;
-	const input_seq &defseq_unresolved(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_seq[seqtype]; }
-	void set_defseq(const input_seq &newseq) noexcept { set_defseq(SEQ_TYPE_STANDARD, newseq); }
-	void set_defseq(input_seq_type seqtype, const input_seq &newseq);
+	const char* specific_name() const noexcept { return m_name; }
+	const input_seq& seq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept;
+	const input_seq& defseq(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept;
+	const input_seq& defseq_unresolved(input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept { return m_seq[seqtype]; }
+	void set_defseq(const input_seq& newseq) noexcept { set_defseq(SEQ_TYPE_STANDARD, newseq); }
+	void set_defseq(input_seq_type seqtype, const input_seq& newseq);
 	bool has_dynamic_read() const { return !m_read.isnull(); }
 	bool has_dynamic_write() const { return !m_write.isnull(); }
 
@@ -619,12 +619,12 @@ public:
 	float crosshair_offset() const noexcept { return m_crosshair_offset; }
 	float crosshair_altaxis() const noexcept { return m_crosshair_altaxis; }
 	u16 full_turn_count() const noexcept { return m_full_turn_count; }
-	const ioport_value *remap_table() const noexcept { return m_remap_table; }
+	const ioport_value* remap_table() const noexcept { return m_remap_table; }
 
 	u8 way() const noexcept { return m_way; }
 	std::vector<char32_t> keyboard_codes(int which) const;
 	std::string key_name(int which) const;
-	ioport_field_live &live() const { assert(m_live != nullptr); return *m_live; }
+	ioport_field_live& live() const { assert(m_live != nullptr); return *m_live; }
 
 	// setters
 	void set_crosshair_scale(float scale) { m_crosshair_scale = scale; }
@@ -638,14 +638,14 @@ public:
 
 	// additional operations
 	bool enabled() const { return m_condition.eval(); }
-	const char *setting_name() const;
+	const char* setting_name() const;
 	bool has_previous_setting() const;
 	void select_previous_setting();
 	bool has_next_setting() const;
 	void select_next_setting();
 	float crosshair_read() const;
-	void init_live_state(analog_field *analog);
-	void frame_update(ioport_value &result);
+	void init_live_state(analog_field* analog);
+	void frame_update(ioport_value& result);
 	void reduce_mask(ioport_value bits_to_remove) { m_mask &= ~bits_to_remove; }
 
 	// user-controllable settings for a field
@@ -660,15 +660,15 @@ public:
 		bool            reverse = false;        // for analog controls
 		bool            toggle = false;         // for non-analog controls
 	};
-	void get_user_settings(user_settings &settings) const;
-	void set_user_settings(const user_settings &settings);
+	void get_user_settings(user_settings& settings) const;
+	void set_user_settings(const user_settings& settings);
 
 private:
-	void expand_diplocation(const char *location, std::ostream &errorbuf);
+	void expand_diplocation(const char* location, std::ostream& errorbuf);
 
 	// internal state
-	ioport_field *              m_next;             // pointer to next field in sequence
-	ioport_port &               m_port;             // reference to the port that owns us
+	ioport_field* m_next;             // pointer to next field in sequence
+	ioport_port& m_port;             // reference to the port that owns us
 	std::unique_ptr<ioport_field_live> m_live;      // live state of field (nullptr if not live)
 	int                         m_modcount;         // modification count
 	std::vector<ioport_setting> m_settinglist;      // list of input_setting_configs
@@ -682,7 +682,7 @@ private:
 	u8                          m_player;           // player number (0-based)
 	u32                         m_flags;            // combination of FIELD_FLAG_* and ANALOG_FLAG_* above
 	u8                          m_impulse;          // number of frames before reverting to defvalue
-	const char *                m_name;             // user-friendly name to display
+	const char* m_name;             // user-friendly name to display
 	input_seq                   m_seq[SEQ_TYPE_TOTAL];// sequences of all types
 	ioport_field_read_delegate  m_read;             // read callback routine
 	ioport_field_write_delegate m_write;            // write callback routine
@@ -703,7 +703,7 @@ private:
 	float                       m_crosshair_altaxis;// crosshair alternate axis value
 	ioport_field_crossmap_delegate m_crosshair_mapper; // crosshair mapping function
 	u16                         m_full_turn_count;  // number of optical counts for 1 full turn of the original control
-	const ioport_value *        m_remap_table;      // pointer to an array that remaps the port value
+	const ioport_value* m_remap_table;      // pointer to an array that remaps the port value
 
 	// data relevant to other specific types
 	u8                          m_way;              // digital joystick 2/4/8-way descriptions
@@ -717,11 +717,11 @@ private:
 struct ioport_field_live
 {
 	// construction/destruction
-	ioport_field_live(ioport_field &field, analog_field *analog);
+	ioport_field_live(ioport_field& field, analog_field* analog);
 
 	// public state
-	analog_field *          analog;             // pointer to live analog data if this is an analog field
-	digital_joystick *      joystick;           // pointer to digital joystick information
+	analog_field* analog;             // pointer to live analog data if this is an analog field
+	digital_joystick* joystick;           // pointer to digital joystick information
 	input_seq               seq[SEQ_TYPE_TOTAL];// currently configured input sequences
 	ioport_value            value;              // current value of this port
 	u8                      impulse;            // counter for impulse controls
@@ -742,9 +742,9 @@ class ioport_list : public std::map<std::string, std::unique_ptr<ioport_port>>
 	DISABLE_COPYING(ioport_list);
 
 public:
-	ioport_list() { }
+	ioport_list() {}
 
-	void append(device_t &device, std::ostream &errorbuf);
+	void append(device_t& device, std::ostream& errorbuf);
 };
 
 
@@ -759,37 +759,37 @@ class ioport_port
 
 public:
 	// construction/destruction
-	ioport_port(device_t &owner, const char *tag);
+	ioport_port(device_t& owner, const char* tag);
 	~ioport_port();
 
 	// getters
-	ioport_port *next() const { return m_next; }
-	ioport_manager &manager() const;
-	device_t &device() const { return m_device; }
-	running_machine &machine() const;
-	const simple_list<ioport_field> &fields() const { return m_fieldlist; }
-	const char *tag() const { return m_tag.c_str(); }
+	ioport_port* next() const { return m_next; }
+	ioport_manager& manager() const;
+	device_t& device() const { return m_device; }
+	running_machine& machine() const;
+	const simple_list<ioport_field>& fields() const { return m_fieldlist; }
+	const char* tag() const { return m_tag.c_str(); }
 	int modcount() const { return m_modcount; }
 	ioport_value active() const { return m_active; }
-	ioport_port_live &live() const { assert(m_live != nullptr); return *m_live; }
+	ioport_port_live& live() const { assert(m_live != nullptr); return *m_live; }
 
 	// read/write to the port
 	ioport_value read();
 	void write(ioport_value value, ioport_value mask = ~0);
 
 	// other operations
-	ioport_field *field(ioport_value mask) const;
-	void collapse_fields(std::ostream &errorbuf);
+	ioport_field* field(ioport_value mask) const;
+	void collapse_fields(std::ostream& errorbuf);
 	void frame_update();
 	void init_live_state();
 	void update_defvalue(bool flush_defaults);
 
 private:
-	void insert_field(ioport_field &newfield, ioport_value &disallowedbits, std::ostream &errorbuf);
+	void insert_field(ioport_field& newfield, ioport_value& disallowedbits, std::ostream& errorbuf);
 
 	// internal state
-	ioport_port *               m_next;         // pointer to next port
-	device_t &                  m_device;       // associated device
+	ioport_port* m_next;         // pointer to next port
+	device_t& m_device;       // associated device
 	simple_list<ioport_field>   m_fieldlist;    // list of ioport_fields
 	std::string                 m_tag;          // copy of this port's tag
 	int                         m_modcount;     // modification count
@@ -805,24 +805,24 @@ private:
 class analog_field
 {
 	friend class ioport_manager;
-	friend void ioport_field::set_user_settings(const ioport_field::user_settings &settings);
+	friend void ioport_field::set_user_settings(const ioport_field::user_settings& settings);
 
 public:
 	// construction/destruction
-	analog_field(ioport_field &field);
+	analog_field(ioport_field& field);
 
 	// getters
-	ioport_manager &manager() const noexcept { return m_field.manager(); }
-	ioport_field &field() const noexcept { return m_field; }
+	ioport_manager& manager() const noexcept { return m_field.manager(); }
+	ioport_field& field() const noexcept { return m_field; }
 	s32 sensitivity() const noexcept { return m_sensitivity; }
 	bool reverse() const noexcept { return m_reverse; }
 	s32 delta() const noexcept { return m_delta; }
 	s32 centerdelta() const noexcept { return m_centerdelta; }
 
 	// readers
-	void read(ioport_value &value);
+	void read(ioport_value& value);
 	float crosshair_read();
-	void frame_update(running_machine &machine);
+	void frame_update(running_machine& machine);
 
 	// programmatic override (for script bindings)
 	void set_value(s32 value);
@@ -836,7 +836,7 @@ private:
 	s32 apply_inverse_sensitivity(s32 value) const;
 
 	// internal state
-	ioport_field &      m_field;                // pointer to the input field referenced
+	ioport_field& m_field;                // pointer to the input field referenced
 
 	// adjusted values (right-justified and tweaked)
 	u8 const            m_shift;                // shift to align final value in the port
@@ -887,18 +887,18 @@ class dynamic_field
 {
 public:
 	// construction/destruction
-	dynamic_field(ioport_field &field);
+	dynamic_field(ioport_field& field);
 
 	// getters
-	ioport_field &field() const { return m_field; }
+	ioport_field& field() const { return m_field; }
 
 	// read/write
-	void read(ioport_value &result);
+	void read(ioport_value& result);
 	void write(ioport_value newval);
 
 private:
 	// internal state
-	ioport_field &          m_field;            // reference to the input field
+	ioport_field& m_field;            // reference to the input field
 	u8                      m_shift;            // shift to apply to the final result
 	ioport_value            m_oldval;           // last value
 };
@@ -910,7 +910,7 @@ private:
 struct ioport_port_live
 {
 	// construction/destruction
-	ioport_port_live(ioport_port &port);
+	ioport_port_live(ioport_port& port);
 
 	// public state
 	std::list<analog_field> analoglist;         // list of analog port info
@@ -933,30 +933,30 @@ class ioport_manager
 
 public:
 	// construction/destruction
-	ioport_manager(running_machine &machine);
+	ioport_manager(running_machine& machine);
 	time_t initialize();
 	~ioport_manager();
 
 	// getters
-	running_machine &machine() const noexcept { return m_machine; }
-	const ioport_list &ports() const noexcept { return m_portlist; }
+	running_machine& machine() const noexcept { return m_machine; }
+	const ioport_list& ports() const noexcept { return m_portlist; }
 	bool safe_to_read() const noexcept { return m_safe_to_read; }
 
 	// type helpers
-	const std::vector<input_type_entry> &types() const noexcept { return m_typelist; }
+	const std::vector<input_type_entry>& types() const noexcept { return m_typelist; }
 	bool type_pressed(ioport_type type, int player = 0);
 	std::string type_name(ioport_type type, u8 player) const;
 	ioport_group type_group(ioport_type type, int player) const noexcept;
-	const input_seq &type_seq(ioport_type type, int player = 0, input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept;
-	void set_type_seq(ioport_type type, int player, input_seq_type seqtype, const input_seq &newseq) noexcept;
+	const input_seq& type_seq(ioport_type type, int player = 0, input_seq_type seqtype = SEQ_TYPE_STANDARD) const noexcept;
+	void set_type_seq(ioport_type type, int player, input_seq_type seqtype, const input_seq& newseq) noexcept;
 	static constexpr bool type_is_analog(ioport_type type) noexcept { return (type > IPT_ANALOG_FIRST && type < IPT_ANALOG_LAST); }
 	bool type_class_present(ioport_type_class inputclass) const noexcept;
 
 	// other helpers
-	digital_joystick &digjoystick(int player, int joysticknum);
+	digital_joystick& digjoystick(int player, int joysticknum);
 	int count_players() const noexcept;
 	s32 frame_interpolate(s32 oldval, s32 newval);
-	ioport_type token_to_input_type(const char *string, int &player) const;
+	ioport_type token_to_input_type(const char* string, int& player) const;
 	std::string input_type_to_token(ioport_type type, int player);
 
 private:
@@ -967,43 +967,43 @@ private:
 	void frame_update_callback();
 	void frame_update();
 
-	ioport_port *port(const std::string &tag) const { auto search = m_portlist.find(tag); if (search != m_portlist.end()) return search->second.get(); else return nullptr; }
+	ioport_port* port(const std::string& tag) const { auto search = m_portlist.find(tag); if (search != m_portlist.end()) return search->second.get(); else return nullptr; }
 	void exit();
-	input_seq_type token_to_seq_type(const char *string);
-	static const char *const seqtypestrings[];
+	input_seq_type token_to_seq_type(const char* string);
+	static const char* const seqtypestrings[];
 
-	void load_config(config_type cfg_type, config_level cfg_level, util::xml::data_node const *parentnode);
-	void load_remap_table(util::xml::data_node const &parentnode);
-	bool load_default_config(int type, int player, const std::pair<input_seq, char const *> (&newseq)[SEQ_TYPE_TOTAL]);
-	bool load_controller_config(util::xml::data_node const &portnode, int type, int player, const std::pair<input_seq, char const *> (&newseq)[SEQ_TYPE_TOTAL]);
-	void load_system_config(util::xml::data_node const &portnode, int type, int player, const std::pair<input_seq, char const *> (&newseq)[SEQ_TYPE_TOTAL]);
+	void load_config(config_type cfg_type, config_level cfg_level, util::xml::data_node const* parentnode);
+	void load_remap_table(util::xml::data_node const& parentnode);
+	bool load_default_config(int type, int player, const std::pair<input_seq, char const*>(&newseq)[SEQ_TYPE_TOTAL]);
+	bool load_controller_config(util::xml::data_node const& portnode, int type, int player, const std::pair<input_seq, char const*>(&newseq)[SEQ_TYPE_TOTAL]);
+	void load_system_config(util::xml::data_node const& portnode, int type, int player, const std::pair<input_seq, char const*>(&newseq)[SEQ_TYPE_TOTAL]);
 	void apply_device_defaults();
 
-	void save_config(config_type cfg_type, util::xml::data_node *parentnode);
+	void save_config(config_type cfg_type, util::xml::data_node* parentnode);
 	bool save_this_input_field_type(ioport_type type);
-	void save_default_inputs(util::xml::data_node &parentnode);
-	void save_game_inputs(util::xml::data_node &parentnode);
+	void save_default_inputs(util::xml::data_node& parentnode);
+	void save_game_inputs(util::xml::data_node& parentnode);
 
-	template<typename Type> Type playback_read(Type &result);
+	template<typename Type> Type playback_read(Type& result);
 	time_t playback_init();
-	void playback_end(const char *message = nullptr);
-	void playback_frame(const attotime &curtime);
-	void playback_port(ioport_port &port);
+	void playback_end(const char* message = nullptr);
+	void playback_frame(const attotime& curtime);
+	void playback_port(ioport_port& port);
 
 	template<typename Type> void record_write(Type value);
 	void record_init();
-	void record_end(const char *message = nullptr);
-	void record_frame(const attotime &curtime);
-	void record_port(ioport_port &port);
+	void record_end(const char* message = nullptr);
+	void record_frame(const attotime& curtime);
+	void record_port(ioport_port& port);
 
 	// internal state
-	running_machine &       m_machine;              // reference to owning machine
+	running_machine& m_machine;              // reference to owning machine
 	bool                    m_safe_to_read;         // clear at start; set after state is loaded
 	ioport_list             m_portlist;             // list of input port configurations
 
 	// types
 	std::vector<input_type_entry> m_typelist;       // list of live type states
-	input_type_entry *      m_type_to_entry[IPT_COUNT][MAX_PLAYERS]; // map from type/player to type state
+	input_type_entry* m_type_to_entry[IPT_COUNT][MAX_PLAYERS]; // map from type/player to type state
 
 	// specific special global input states
 	std::list<digital_joystick> m_joystick_list;    // list of digital joysticks
@@ -1033,21 +1033,21 @@ class ioport_configurer
 {
 public:
 	// construction/destruction
-	ioport_configurer(device_t &owner, ioport_list &portlist, std::ostream &errorbuf);
+	ioport_configurer(device_t& owner, ioport_list& portlist, std::ostream& errorbuf);
 
 	// static helpers
-	static const char *string_from_token(const char *string);
+	static const char* string_from_token(const char* string);
 
 	// port helpers
-	ioport_configurer& port_alloc(const char *tag);
-	ioport_configurer& port_modify(const char *tag);
+	ioport_configurer& port_alloc(const char* tag);
+	ioport_configurer& port_modify(const char* tag);
 
 	// field helpers
-	ioport_configurer& field_alloc(ioport_type type, ioport_value defval, ioport_value mask, const char *name = nullptr);
+	ioport_configurer& field_alloc(ioport_type type, ioport_value defval, ioport_value mask, const char* name = nullptr);
 	ioport_configurer& field_add_char(std::initializer_list<char32_t> charlist);
 	ioport_configurer& field_add_code(input_seq_type which, input_code code);
 	ioport_configurer& field_set_way(int way) { m_curfield->m_way = way; return *this; }
-	ioport_configurer& field_set_name(const char *name) { assert(m_curfield != nullptr); m_curfield->m_name = string_from_token(name); return *this; }
+	ioport_configurer& field_set_name(const char* name) { assert(m_curfield != nullptr); m_curfield->m_name = string_from_token(name); return *this; }
 	ioport_configurer& field_set_player(int player) { m_curfield->m_player = player - 1; return *this; }
 	ioport_configurer& field_set_cocktail() { m_curfield->m_flags |= ioport_field::FIELD_FLAG_COCKTAIL; field_set_player(2); return *this; }
 	ioport_configurer& field_set_toggle() { m_curfield->m_flags |= ioport_field::FIELD_FLAG_TOGGLE; return *this; }
@@ -1063,29 +1063,29 @@ public:
 	ioport_configurer& field_set_crossmapper(ioport_field_crossmap_delegate callback) { m_curfield->m_crosshair_mapper = callback; return *this; }
 	ioport_configurer& field_set_full_turn_count(u16 count) { m_curfield->m_full_turn_count = count; return *this; }
 	ioport_configurer& field_set_analog_wraps() { m_curfield->m_flags |= ioport_field::ANALOG_FLAG_WRAPS; return *this; }
-	ioport_configurer& field_set_remap_table(const ioport_value *table) { m_curfield->m_remap_table = table; return *this; }
+	ioport_configurer& field_set_remap_table(const ioport_value* table) { m_curfield->m_remap_table = table; return *this; }
 	ioport_configurer& field_set_analog_invert() { m_curfield->m_flags |= ioport_field::ANALOG_FLAG_INVERT; return *this; }
 	ioport_configurer& field_set_dynamic_read(ioport_field_read_delegate delegate) { m_curfield->m_read = delegate; return *this; }
 	ioport_configurer& field_set_dynamic_write(ioport_field_write_delegate delegate, u32 param = 0) { m_curfield->m_write = delegate; m_curfield->m_write_param = param; return *this; }
-	ioport_configurer& field_set_diplocation(const char *location) { m_curfield->expand_diplocation(location, m_errorbuf); return *this; }
+	ioport_configurer& field_set_diplocation(const char* location) { m_curfield->expand_diplocation(location, m_errorbuf); return *this; }
 	ioport_configurer& field_set_gm_note(u8 note);
 
 	// setting helpers
-	ioport_configurer& setting_alloc(ioport_value value, const char *name);
+	ioport_configurer& setting_alloc(ioport_value value, const char* name);
 
 	// misc helpers
-	ioport_configurer& set_condition(ioport_condition::condition_t condition, const char *tag, ioport_value mask, ioport_value value);
-	ioport_configurer& onoff_alloc(const char *name, ioport_value defval, ioport_value mask, const char *diplocation);
+	ioport_configurer& set_condition(ioport_condition::condition_t condition, const char* tag, ioport_value mask, ioport_value value);
+	ioport_configurer& onoff_alloc(const char* name, ioport_value defval, ioport_value mask, const char* diplocation);
 
 private:
 	// internal state
-	device_t &          m_owner;
-	ioport_list &       m_portlist;
-	std::ostream &      m_errorbuf;
+	device_t& m_owner;
+	ioport_list& m_portlist;
+	std::ostream& m_errorbuf;
 
-	ioport_port *       m_curport;
-	ioport_field *      m_curfield;
-	ioport_setting *    m_cursetting;
+	ioport_port* m_curport;
+	ioport_field* m_curfield;
+	ioport_setting* m_cursetting;
 	int                 m_curshift;
 };
 
@@ -1175,7 +1175,7 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 
 // general flags
 #define PORT_NAME(_name) \
-	configurer.field_set_name(_name);
+    configurer.field_set_name(reinterpret_cast<const char*>(_name));
 
 #define PORT_PLAYER(_player) \
 	configurer.field_set_player(_player);
@@ -1280,9 +1280,10 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 
 // DIP switch definition
 #define PORT_DIPNAME(_mask, _default, _name) \
-	configurer.field_alloc(IPT_DIPSWITCH, (_default), (_mask), (_name));
+    configurer.field_alloc(IPT_DIPSWITCH, (_default), (_mask), (const char*)(_name));
+
 #define PORT_DIPSETTING(_default, _name) \
-	configurer.setting_alloc((_default), (_name));
+    configurer.setting_alloc((_default), (const char*)(_name));
 // physical location, of the form: name:[!]sw,[name:][!]sw,...
 // note that these are specified LSB-first
 #define PORT_DIPLOCATION(_location) \
@@ -1292,13 +1293,15 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 	configurer.set_condition(ioport_condition::_condition, _tag, _mask, _value);
 // analog adjuster definition
 #define PORT_ADJUSTER(_default, _name) \
-	configurer.field_alloc(IPT_ADJUSTER, (_default), 0xff, (_name)); \
+	configurer.field_alloc(IPT_ADJUSTER, (_default), 0xff, reinterpret_cast<const char*>(_name)); \
 	configurer.field_set_min_max(0, 100);
-// config definition
+
 #define PORT_CONFNAME(_mask, _default, _name) \
-	configurer.field_alloc(IPT_CONFIG, (_default), (_mask), (_name));
+	configurer.field_alloc(IPT_CONFIG, (_default), (_mask), reinterpret_cast<const char*>(_name));
+
 #define PORT_CONFSETTING(_default, _name) \
-	configurer.setting_alloc((_default), (_name));
+	configurer.setting_alloc((_default), reinterpret_cast<const char*>(_name));
+
 
 // keyboard chars
 #define PORT_CHAR(...) \
@@ -1448,12 +1451,12 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 //  INLINE FUNCTIONS
 //**************************************************************************
 
-inline ioport_manager &ioport_field::manager() const { return m_port.manager(); }
-inline device_t &ioport_field::device() const { return m_port.device(); }
-inline running_machine &ioport_field::machine() const { return m_port.machine(); }
+inline ioport_manager& ioport_field::manager() const { return m_port.manager(); }
+inline device_t& ioport_field::device() const { return m_port.device(); }
+inline running_machine& ioport_field::machine() const { return m_port.machine(); }
 
-inline device_t &ioport_setting::device() const { return m_field.device(); }
-inline running_machine &ioport_setting::machine() const { return m_field.machine(); }
+inline device_t& ioport_setting::device() const { return m_field.device(); }
+inline running_machine& ioport_setting::machine() const { return m_field.machine(); }
 
 
 #endif // MAME_EMU_IOPORT_H

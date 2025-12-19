@@ -284,7 +284,7 @@ private:
 		class devinfo
 		{
 		public:
-			devinfo(device_gfx_interface &interface, device_palette_interface *first_palette, u8 rotate) :
+			devinfo(device_gfx_interface &interface, device_palette_interface *first_palette,u8  rotate) :
 				m_interface(&interface),
 				m_setcount(0U)
 			{
@@ -1042,7 +1042,7 @@ uint32_t gfx_viewer::handle_palette(mame_ui_manager &mui, render_container &cont
 			if (palette.indirect_entries() && !indirect)
 			{
 				util::stream_format(title_buf,
-						_("gfxview", u8" #%1$X \u2192 %2$X (A:%3$02X R:%4$02X G:%5$02X B:%6$02X)"),
+						_("gfxview", " #%1$X \u2192 %2$X (A:%3$02X R:%4$02X G:%5$02X B:%6$02X)"),
 						index, palette.pen_indirect(index),
 						col.a(), col.r(), col.g(), col.b());
 			}
@@ -1276,7 +1276,7 @@ uint32_t gfx_viewer::handle_gfxset(mame_ui_manager &mui, render_container &conta
 	}
 	if (!found_pixel)
 		util::stream_format(title_buf,
-				_("gfxview", u8" %1$d\u00d7%2$d color %3$X/%4$X"),
+				_("gfxview", " %1$d\u00d7%2$d color %3$X/%4$X"),
 				gfx.width(), gfx.height(),
 				set.m_color, set.m_color_count);
 
@@ -1449,7 +1449,7 @@ uint32_t gfx_viewer::handle_tilemap(mame_ui_manager &mui, render_container &cont
 	else
 	{
 		util::stream_format(title_buf,
-				_("gfxview", u8" %1$d\u00d7%2$d origin (%3$d %4$d)"),
+				_("gfxview", " %1$d\u00d7%2$d origin (%3$d %4$d)"),
 				tilemap.width(), tilemap.height(),
 				m_tilemap.xoffs(), m_tilemap.yoffs());
 	}

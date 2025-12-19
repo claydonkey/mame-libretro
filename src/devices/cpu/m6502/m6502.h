@@ -46,8 +46,8 @@ public:
 		uses_custom_memory_interface = custom_interface;
 	}
 
-	void set_custom_memory_interface(std::unique_ptr<memory_interface> interface) {
-		mintf = std::move(interface);
+	void set_custom_memory_interface(std::unique_ptr<memory_interface> intf) {
+		mintf = std::move(intf);
 	}
 
 	bool get_sync() const { return sync; }

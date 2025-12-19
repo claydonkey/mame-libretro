@@ -67,7 +67,7 @@ menu_control_device_image::menu_control_device_image(mame_ui_manager &mui, rende
 				software_info const &swi = *other.software_entry();
 				for (software_part const &swp : swi.parts())
 				{
-					if (swp.interface() == m_image.image_interface())
+					if (swp.intf() == m_image.image_interface())
 					{
 						if (!m_sld)
 							m_sld = software_list_device::find_by_name(mui.machine().config(), other.software_list_name());

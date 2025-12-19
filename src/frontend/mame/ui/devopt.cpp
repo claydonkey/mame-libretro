@@ -114,8 +114,8 @@ void menu_device_config::populate_text(std::optional<text_layout> &layout, float
 				layout->add_text(
 						util::string_format(
 							(count > 1)
-								? ((clock != 0) ? u8"  %1$d×%2$s %3$s\u00a0%4$s\n" : u8"  %1$d×%2$s\n")
-								: ((clock != 0) ? u8"  %2$s %3$s\u00a0%4$s\n" : "  %2$s\n"),
+								? ((clock != 0) ? "  %1$d×%2$s %3$s\u00a0%4$s\n" : "  %1$d×%2$s\n")
+								: ((clock != 0) ? "  %2$s %3$s\u00a0%4$s\n" :  "  %2$s\n"),
 							count, name, hz,
 							(d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz")),
 						color);
@@ -150,8 +150,8 @@ void menu_device_config::populate_text(std::optional<text_layout> &layout, float
 					layout->add_text(
 							util::string_format(
 								(screen.orientation() & ORIENTATION_SWAP_XY)
-									? _(u8"  Screen '%1$s': %2$d × %3$d (V) %4$s\u00a0Hz\n")
-									: _(u8"  Screen '%1$s': %2$d × %3$d (H) %4$s\u00a0Hz\n"),
+									? _("  Screen '%1$s': %2$d × %3$d (V) %4$s\u00a0Hz\n")
+									: _("  Screen '%1$s': %2$d × %3$d (H) %4$s\u00a0Hz\n"),
 								screen.tag(),
 								visarea.width(),
 								visarea.height(),
@@ -209,8 +209,8 @@ void menu_device_config::populate_text(std::optional<text_layout> &layout, float
 				layout->add_text(
 						util::string_format(
 							(count > 1)
-								? ((clock != 0) ? u8"  %1$d×%2$s %3$s\u00a0%4$s" : u8"  %1$d×%2$s")
-								: ((clock != 0) ? u8"  %2$s %3$s\u00a0%4$s" : "  %2$s"),
+								? ((clock != 0) ? "  %1$d×%2$s %3$s\u00a0%4$s" : "  %1$d×%2$s")
+								: ((clock != 0) ? "  %2$s %3$s\u00a0%4$s" : "  %2$s"),
 							count, sound.device().name(), hz,
 							(d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz")),
 						color);
@@ -228,7 +228,7 @@ void menu_device_config::populate_text(std::optional<text_layout> &layout, float
 					layout->add_text(_(" (Stereo)\n"), color);
 					break;
 				default:
-					layout->add_text(util::string_format(_(u8" (%d\u00a0channels)\n"), io_channels), color);
+					layout->add_text(util::string_format(_(" (%d\u00a0channels)\n"), io_channels), color);
 					break;
 				}
 			}

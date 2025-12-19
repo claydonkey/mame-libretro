@@ -102,6 +102,8 @@ files {
 	MAME_DIR .. "src/emu/disound.h",
 	MAME_DIR .. "src/emu/distate.cpp",
 	MAME_DIR .. "src/emu/distate.h",
+	MAME_DIR .. "src/emu/divector.cpp",
+	MAME_DIR .. "src/emu/divector.h",
 	MAME_DIR .. "src/emu/divideo.cpp",
 	MAME_DIR .. "src/emu/divideo.h",
 	MAME_DIR .. "src/emu/divtlb.cpp",

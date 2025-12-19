@@ -508,8 +508,8 @@ std::string machine_info::game_info_string() const
 		// if more than one, prepend a #x in front of the CPU name, also display clock if it has one
 		util::stream_format(buf,
 				(count > 1)
-					? ((clock != 0) ? u8"%1$d×%2$s %3$s\u00a0%4$s\n" : u8"%1$d×%2$s\n")
-					: ((clock != 0) ? u8"%2$s %3$s\u00a0%4$s\n" : "%2$s\n"),
+					? ((clock != 0) ? "%1$d×%2$s %3$s\u00a0%4$s\n" : "%1$d×%2$s\n")
+					: ((clock != 0) ? "%2$s %3$s\u00a0%4$s\n" : "%2$s\n"),
 				count, name, hz,
 				(d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz"));
 	}
@@ -564,8 +564,8 @@ std::string machine_info::game_info_string() const
 		// if more than one, prepend a #x in front of the soundchip name, also display clock if it has one
 		util::stream_format(buf,
 				(count > 1)
-					? ((clock != 0) ? u8"%1$d×%2$s %3$s\u00a0%4$s" : u8"%1$d×%2$s")
-					: ((clock != 0) ? u8"%2$s %3$s\u00a0%4$s" : "%2$s"),
+					? ((clock != 0) ? "%1$d×%2$s %3$s\u00a0%4$s" : "%1$d×%2$s")
+					: ((clock != 0) ? "%2$s %3$s\u00a0%4$s" : "%2$s"),
 				count, sound.device().name(), hz,
 				(d == 9) ? _("GHz") : (d == 6) ? _("MHz") : (d == 3) ? _("kHz") : _("Hz"));
 
@@ -582,7 +582,7 @@ std::string machine_info::game_info_string() const
 			buf << _(" (Stereo)\n");
 			break;
 		default:
-			buf << util::string_format(_(u8" (%d\u00a0channels)\n"), io_channels);
+			buf << util::string_format(_(" (%d\u00a0channels)\n"), io_channels);
 			break;
 		}
 	}
@@ -614,7 +614,7 @@ std::string machine_info::game_info_string() const
 				}
 
 				const rectangle &visarea = screen.visible_area();
-				detail = string_format(u8"%d × %d (%s) %s\u00a0Hz",
+				detail = string_format("%d × %d (%s) %s\u00a0Hz",
 						visarea.width(), visarea.height(),
 						(screen.orientation() & ORIENTATION_SWAP_XY) ? "V" : "H",
 						hz);

@@ -9347,12 +9347,12 @@ namespace sol {
 		}
 
 		inline decltype(auto) base_class_index_propogation_key() {
-			static const auto& key = u8"\xF0\x9F\x8C\xB2.index";
+			static const auto& key = "\xF0\x9F\x8C\xB2.index";
 			return key;
 		}
 
 		inline decltype(auto) base_class_new_index_propogation_key() {
-			static const auto& key = u8"\xF0\x9F\x8C\xB2.new_index";
+			static const auto& key = "\xF0\x9F\x8C\xB2.new_index";
 			return key;
 		}
 
@@ -15727,9 +15727,9 @@ namespace sol { namespace stack {
 			if (needed_size < SOL_OPTIMIZATION_STRING_CONVERSION_STACK_SIZE_I_) {
 				return convert_into(L, sbo, needed_size, strb, stre);
 			}
-			std::string u8str("", 0);
-			u8str.resize(needed_size);
-			char* target = const_cast<char*>(u8str.data());
+			std::string str("", 0);
+			str.resize(needed_size);
+			char* target = const_cast<char*>(str.data());
 			return convert_into(L, target, needed_size, strb, stre);
 		}
 	};
@@ -15804,9 +15804,9 @@ namespace sol { namespace stack {
 			if (needed_size < SOL_OPTIMIZATION_STRING_CONVERSION_STACK_SIZE_I_) {
 				return convert_into(L, sbo, needed_size, strb, stre);
 			}
-			std::string u8str("", 0);
-			u8str.resize(needed_size);
-			char* target = const_cast<char*>(u8str.data());
+			std::string str("", 0);
+			str.resize(needed_size);
+			char* target = const_cast<char*>(str.data());
 			return convert_into(L, target, needed_size, strb, stre);
 		}
 	};

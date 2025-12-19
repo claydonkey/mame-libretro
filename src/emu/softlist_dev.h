@@ -122,13 +122,13 @@ public:
 
 	// operations
 	const software_info *find(std::string_view look_for);
-	void find_approx_matches(std::string_view name, int matches, const software_info **list, const char *interface);
+	void find_approx_matches(std::string_view name, int matches, const software_info **list, const char *intf);
 	void release();
 	software_compatibility is_compatible(const software_part &part) const;
 
 	// static helpers
 	static software_list_device *find_by_name(const machine_config &mconfig, std::string_view name);
-	static void display_matches(const machine_config &config, const char *interface, std::string_view name);
+	static void display_matches(const machine_config &config, const char * intf, std::string_view name);
 	static device_image_interface *find_mountable_image(const machine_config &mconfig, const software_part &part, std::function<bool (const device_image_interface &)> filter);
 	static device_image_interface *find_mountable_image(const machine_config &mconfig, const software_part &part);
 

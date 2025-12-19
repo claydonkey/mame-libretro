@@ -529,7 +529,7 @@ void software_list_device::internal_validity_check(validity_checker &valid)
 		std::set<std::string> part_names;
 		for (software_part const &part : swinfo.parts())
 		{
-			if (part.interface().empty())
+			if (part.intf().empty())
 				osd_printf_error("%s: %s part %s has no interface\n", m_filename, shortname, part.name());
 
 			if (part.romdata().empty())

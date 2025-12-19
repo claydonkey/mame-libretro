@@ -1220,8 +1220,8 @@ void cli_frontend::output_single_softlist(std::ostream &out, software_list_devic
 		for (const software_part &part : swinfo.parts())
 		{
 			util::stream_format(out, "\t\t\t<part name=\"%s\"", normalize_string(part.name()));
-			if (!part.interface().empty())
-				util::stream_format(out, " interface=\"%s\"", normalize_string(part.interface()));
+			if (!part.intf().empty())
+				util::stream_format(out, " interface=\"%s\"", normalize_string(part.intf()));
 
 			out << ">\n";
 

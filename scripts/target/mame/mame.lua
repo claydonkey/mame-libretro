@@ -83,9 +83,15 @@ function createMAMEProjects(_target, _subtarget, _name)
 		ext_includedir("glm"),
 		ext_includedir("jpeg"),
 		ext_includedir("rapidjson"),
-		ext_includedir("zlib")
+		ext_includedir("zlib"),
+		MAME_DIR .. "../../vectrx2020_lib",
+		MAME_DIR .. "../../vectrx2020_Device",
 	}
-
+    defines {
+    	"VECTRX2020_STATIC_LIB",
+       -- "NOMINMAX",
+        "VECTRX2020_MAME"
+    }
 end
 
 

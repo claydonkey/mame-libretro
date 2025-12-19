@@ -4345,9 +4345,9 @@ public:
 
 	virtual int max_output() { return 1; }
 
-	inline bool interface(discrete_step_interface *&intf) const { intf = m_step_intf; return (intf != nullptr); }
-	inline bool interface(discrete_input_interface *&intf) const { intf = m_input_intf; return (intf != nullptr); }
-	inline bool interface(discrete_sound_output_interface *&intf) const { intf = m_output_intf; return (intf != nullptr); }
+	inline bool intf(discrete_step_interface *&intf) const { intf = m_step_intf; return (intf != nullptr); }
+	inline bool intf(discrete_input_interface *&intf) const { intf = m_input_intf; return (intf != nullptr); }
+	inline bool intf(discrete_sound_output_interface *&intf) const { intf = m_output_intf; return (intf != nullptr); }
 
 	/* get the input value from node #n */
 	inline double input(int n) { return *(m_input[n]); }

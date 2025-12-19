@@ -31,11 +31,13 @@ includedirs {
 	MAME_DIR .. "src/lib/util",
 	MAME_DIR .. "3rdparty",
 	MAME_DIR .. "3rdparty/sol2",
+	MAME_DIR .. "3rdparty/vectrx2020/vectrx2020_Device",
 	GEN_DIR  .. "emu",
 	GEN_DIR  .. "emu/layout",
 }
 
 includedirs {
+	ext_includedir("vectrx2020_lib"),
 	ext_includedir("asio"),
 	ext_includedir("expat"),
 	ext_includedir("lua"),
@@ -43,7 +45,11 @@ includedirs {
 	ext_includedir("flac"),
 	ext_includedir("rapidjson")
 }
-
+defines {
+     	"VECTRX2020_STATIC_LIB",
+	--	"NOMINMAX",
+  	 	"VECTRX2020_MAME"
+	}
 configuration { }
 if (_OPTIONS["targetos"] == "windows") then
 	defines {
