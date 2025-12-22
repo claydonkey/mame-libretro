@@ -146,7 +146,7 @@ private:
 	static const game_info_t s_games[];
 	std::vector<dvg_pnt> m_points;
 	m_st_t m_st;
-	bool m_first_point;
+	bool m_first_point = false;
 	std::unique_ptr<vectrx2020::WindowsDeviceHandler> m_vector_device;
 	bool m_centre_beam;
 	std::string  m_host;
@@ -155,13 +155,13 @@ private:
 	void transform_final(int* px, int* py);
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2);
-	void cmd_reset(uint32_t initial);
+ 
 	void transform_and_scale_coords(int* px, int* py);
 	bool send_local_info();
 	bool get_dvg_info();
 	bool set_dvg_settings();
 	bool get_dvg_settings();
-	void normalize_and_push(int x, int y, ::rgb_t color);
+ 
 
 
 protected:

@@ -732,39 +732,9 @@ uint32_t vectrx2020_device::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, 
 	return accept;
 }
 
+ 
 
-static bool have_first_point = false;
-void vectrx2020_device::cmd_reset(uint32_t initial) {
-	m_points.clear();
-	have_first_point = false;
-}
-
-void vectrx2020_device::normalize_and_push(int x, int y, ::rgb_t color) {
-	dvg_pnt point;
-
-	x = std::clamp(x, 0, DVG_RES_MAX);
-	y = std::clamp(y, 0, DVG_RES_MAX);
-
-	point.pnt.x = ((float)x) / 4096.0f;
-	point.pnt.y = ((float)y) / 4096.0f;
-
-	// Check if this is the first point being added to the vector
-	if (m_points.empty()) {
-		// If it's the first point, set the color to black
-		point.color.r = 0.0f;
-		point.color.g = 0.0f;
-		point.color.b = 0.0f;
-	}
-	else {
-		// Otherwise, use the provided color
-		point.color.r = ((float)color.r()) / 255.0f;
-		point.color.g = ((float)color.g()) / 255.0f;
-		point.color.b = ((float)color.b()) / 255.0f;
-	}
-
-	m_points.push_back(point);
-}
-
+ 
 void vectrx2020_device::transform_and_scale_coords(int* px, int* py) {
 	float x, y;
 
@@ -899,7 +869,7 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity) {
 
 	if (machine().config().options().debug())
 	{
-		if (!have_first_point)
+		if (!m_first_point)
 		{
 			osd_printf_info("----NEW FRAME ---\n");
 		}
@@ -958,10 +928,10 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity) {
 	}
 
 	// Check if this is the start of a new line or the end of the current line
-	if (!have_first_point) {
+	if (!m_first_point) {
 		//  the point and its color will be last values for next point
 
-		have_first_point = true;
+		m_first_point = true;
 	}
 	//else if(add && (m_st.settings.rgb || !blank))
 	else if (add)
@@ -981,11 +951,17 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity) {
 
 		// If the line is accepted after clipping, add it to the vector
 		if (accept) {
-			// Normalize and push the first point
+			m_vector_device->AddPoint(
+				clipped_x1,
+				clipped_y1,
+				vectrx2020::v_rgb_t{ uint32_t(last_color) }
+			);
 
-			normalize_and_push(clipped_x1, clipped_y1, last_color);
-			// Normalize and push the second point
-			normalize_and_push(clipped_x2, clipped_y2, color);
+			m_vector_device->AddPoint(
+				clipped_x2,
+				clipped_y2,
+				vectrx2020::v_rgb_t{ uint32_t(color) }
+			);
 		}
 
 		// The current point becomes the last point for the next line segment
@@ -997,9 +973,8 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity) {
 }
 
 bool vectrx2020_device::send_vectors() {
-	bool result = m_vector_device->SendPoints(m_points.data(), m_points.size());
-	cmd_reset(0);
-	return result;
+
+	return m_vector_device->SendPoints();
 }
 
 
@@ -1017,8 +992,8 @@ bool vectrx2020_device::send_local_info() {
 
 uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) {
 
-	::rgb_t color = ::rgb_t(108, 108, 108);
-	::rgb_t black = ::rgb_t::black();
+	v_rgb_t color = v_rgb_t(108, 108, 108);
+	v_rgb_t black = v_rgb_t::black();
 
 
 
@@ -1037,194 +1012,194 @@ uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& b
 	m_xscale = (DVG_RES_MAX + 1.0) / (m_xmax - m_xmin);
 	m_yscale = (DVG_RES_MAX + 1.0) / (m_ymax - m_ymin);
 
-	if (m_points.size()) {
-		switch (m_artwork) {
-		case GAME_ARMORA:
-			// Upper Right Quadrant
-			// Outer structure
-			normalize_and_push(3446, 2048, black);
-			normalize_and_push(3958, 2048, color);
-			normalize_and_push(3958, 2224, color);
-			normalize_and_push(3958, 3059, color);
-			normalize_and_push(3323, 3059, color);
-			normalize_and_push(3323, 3225, color);
-			normalize_and_push(3194, 3225, color);
-			normalize_and_push(3194, 3393, color);
-			normalize_and_push(3067, 3393, color);
-			normalize_and_push(3067, 3901, color);
-			normalize_and_push(2304, 3901, color);
-			normalize_and_push(2304, 3225, color);
-			normalize_and_push(2048, 3225, color);
-			// Center structure
-			normalize_and_push(2048, 2373, black);
-			normalize_and_push(2562, 2373, color);
-			normalize_and_push(2562, 2738, color);
-			normalize_and_push(2430, 2738, color);
-			normalize_and_push(2430, 2893, color);
-			normalize_and_push(2306, 2893, color);
-			normalize_and_push(2306, 3065, color);
-			normalize_and_push(2048, 3065, color);
-			// Big structure
-			normalize_and_push(2938, 2209, black);
-			normalize_and_push(3198, 2209, color);
-			normalize_and_push(3198, 2383, color);
-			normalize_and_push(3706, 2383, color);
-			normalize_and_push(3706, 2738, color);
-			normalize_and_push(2938, 2738, color);
-			normalize_and_push(2938, 2209, color);
-			// Small structure
-			normalize_and_push(2551, 3055, black);
-			normalize_and_push(2551, 3590, color);
-			normalize_and_push(2816, 3590, color);
-			normalize_and_push(2422, 3590, color);
-			normalize_and_push(2422, 3231, color);
-			normalize_and_push(2555, 3231, color);
-			normalize_and_push(2555, 3055, color);
-			// Upper Left Quadrant
-			// Outer structure
-			normalize_and_push(649, 2048, black);
-			normalize_and_push(649, 2224, color);
-			normalize_and_push(137, 2224, color);
-			normalize_and_push(137, 3059, color);
-			normalize_and_push(772, 3059, color);
-			normalize_and_push(772, 3225, color);
-			normalize_and_push(901, 3225, color);
-			normalize_and_push(901, 3393, color);
-			normalize_and_push(1028, 3393, color);
-			normalize_and_push(1028, 3901, color);
-			normalize_and_push(1792, 3901, color);
-			normalize_and_push(1792, 3225, color);
-			normalize_and_push(2048, 3225, color);
-			// Center structure
-			normalize_and_push(2048, 2373, black);
-			normalize_and_push(2048, 2738, color);
-			normalize_and_push(1533, 2738, color);
-			normalize_and_push(1665, 2738, color);
-			normalize_and_push(1665, 2893, color);
-			normalize_and_push(1789, 2893, color);
-			normalize_and_push(1789, 3065, color);
-			normalize_and_push(2048, 3065, color);
-			// Big structure
-			normalize_and_push(1157, 2209, black);
-			normalize_and_push(1157, 2383, color);
-			normalize_and_push(897, 2383, color);
-			normalize_and_push(389, 2383, color);
-			normalize_and_push(389, 2738, color);
-			normalize_and_push(1157, 2738, color);
-			normalize_and_push(1157, 2209, color);
-			// Small structure
-			normalize_and_push(1544, 3055, black);
-			normalize_and_push(1544, 3590, color);
-			normalize_and_push(1280, 3590, color);
-			normalize_and_push(1673, 3590, color);
-			normalize_and_push(1673, 3231, color);
-			normalize_and_push(1540, 3231, color);
-			normalize_and_push(1540, 3055, color);
-			// Lower Right Quadrant
-			// Outer structure
-			normalize_and_push(3446, 2048, black);
-			normalize_and_push(3446, 1871, color);
-			normalize_and_push(3958, 1871, color);
-			normalize_and_push(3958, 1036, color);
-			normalize_and_push(3323, 1036, color);
-			normalize_and_push(3323, 870, color);
-			normalize_and_push(3194, 870, color);
-			normalize_and_push(3194, 702, color);
-			normalize_and_push(3067, 702, color);
-			normalize_and_push(3067, 194, color);
-			normalize_and_push(2304, 194, color);
-			normalize_and_push(2304, 870, color);
-			normalize_and_push(2048, 870, color);
-			// Center structure
-			normalize_and_push(2048, 1722, black);
-			normalize_and_push(2048, 1357, color);
-			normalize_and_push(2562, 1357, color);
-			normalize_and_push(2430, 1357, color);
-			normalize_and_push(2430, 1202, color);
-			normalize_and_push(2306, 1202, color);
-			normalize_and_push(2306, 1030, color);
-			normalize_and_push(2048, 1030, color);
-			// Big structure
-			normalize_and_push(2938, 1886, black);
-			normalize_and_push(2938, 1712, color);
-			normalize_and_push(3198, 1712, color);
-			normalize_and_push(3706, 1712, color);
-			normalize_and_push(3706, 1357, color);
-			normalize_and_push(2938, 1357, color);
-			normalize_and_push(2938, 1886, color);
-			// Small structure
-			normalize_and_push(2551, 1040, black);
-			normalize_and_push(2551, 505, color);
-			normalize_and_push(2816, 505, color);
-			normalize_and_push(2422, 505, color);
-			normalize_and_push(2422, 864, color);
-			normalize_and_push(2555, 864, color);
-			normalize_and_push(2555, 1040, color);
-			// Lower Left Quadrant
-			// Outer structure
-			normalize_and_push(649, 2048, black);
-			normalize_and_push(649, 1871, color);
-			normalize_and_push(137, 1871, color);
-			normalize_and_push(137, 1036, color);
-			normalize_and_push(772, 1036, color);
-			normalize_and_push(772, 870, color);
-			normalize_and_push(901, 870, color);
-			normalize_and_push(901, 702, color);
-			normalize_and_push(1028, 702, color);
-			normalize_and_push(1028, 194, color);
-			normalize_and_push(1792, 194, color);
-			normalize_and_push(1792, 870, color);
-			normalize_and_push(2048, 870, color);
-			// Center structure
-			normalize_and_push(2048, 1722, black);
-			normalize_and_push(2048, 1357, color);
-			normalize_and_push(1533, 1357, color);
-			normalize_and_push(1665, 1357, color);
-			normalize_and_push(1665, 1202, color);
-			normalize_and_push(1789, 1202, color);
-			normalize_and_push(1789, 1030, color);
-			normalize_and_push(2048, 1030, color);
-			// Big structure
-			normalize_and_push(1157, 1886, black);
-			normalize_and_push(1157, 1712, color);
-			normalize_and_push(897, 1712, color);
-			normalize_and_push(389, 1712, color);
-			normalize_and_push(389, 1357, color);
-			normalize_and_push(1157, 1357, color);
-			normalize_and_push(1157, 1886, color);
-			// Small structure
-			normalize_and_push(1544, 1040, black);
-			normalize_and_push(1544, 505, color);
-			normalize_and_push(1280, 505, color);
-			normalize_and_push(1673, 505, color);
-			normalize_and_push(1673, 864, color);
-			normalize_and_push(1540, 864, color);
-			normalize_and_push(1540, 1040, color);
-			break;
+	//if (m_points.size()) {
+	switch (m_artwork) {
+	case GAME_ARMORA:
+		// Upper Right Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(3446, 2048, black);
+		m_vector_device->AddPoint(3958, 2048, color);
+		m_vector_device->AddPoint(3958, 2224, color);
+		m_vector_device->AddPoint(3958, 3059, color);
+		m_vector_device->AddPoint(3323, 3059, color);
+		m_vector_device->AddPoint(3323, 3225, color);
+		m_vector_device->AddPoint(3194, 3225, color);
+		m_vector_device->AddPoint(3194, 3393, color);
+		m_vector_device->AddPoint(3067, 3393, color);
+		m_vector_device->AddPoint(3067, 3901, color);
+		m_vector_device->AddPoint(2304, 3901, color);
+		m_vector_device->AddPoint(2304, 3225, color);
+		m_vector_device->AddPoint(2048, 3225, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 2373, black);
+		m_vector_device->AddPoint(2562, 2373, color);
+		m_vector_device->AddPoint(2562, 2738, color);
+		m_vector_device->AddPoint(2430, 2738, color);
+		m_vector_device->AddPoint(2430, 2893, color);
+		m_vector_device->AddPoint(2306, 2893, color);
+		m_vector_device->AddPoint(2306, 3065, color);
+		m_vector_device->AddPoint(2048, 3065, color);
+		// Big structure
+		m_vector_device->AddPoint(2938, 2209, black);
+		m_vector_device->AddPoint(3198, 2209, color);
+		m_vector_device->AddPoint(3198, 2383, color);
+		m_vector_device->AddPoint(3706, 2383, color);
+		m_vector_device->AddPoint(3706, 2738, color);
+		m_vector_device->AddPoint(2938, 2738, color);
+		m_vector_device->AddPoint(2938, 2209, color);
+		// Small structure
+		m_vector_device->AddPoint(2551, 3055, black);
+		m_vector_device->AddPoint(2551, 3590, color);
+		m_vector_device->AddPoint(2816, 3590, color);
+		m_vector_device->AddPoint(2422, 3590, color);
+		m_vector_device->AddPoint(2422, 3231, color);
+		m_vector_device->AddPoint(2555, 3231, color);
+		m_vector_device->AddPoint(2555, 3055, color);
+		// Upper Left Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(649, 2048, black);
+		m_vector_device->AddPoint(649, 2224, color);
+		m_vector_device->AddPoint(137, 2224, color);
+		m_vector_device->AddPoint(137, 3059, color);
+		m_vector_device->AddPoint(772, 3059, color);
+		m_vector_device->AddPoint(772, 3225, color);
+		m_vector_device->AddPoint(901, 3225, color);
+		m_vector_device->AddPoint(901, 3393, color);
+		m_vector_device->AddPoint(1028, 3393, color);
+		m_vector_device->AddPoint(1028, 3901, color);
+		m_vector_device->AddPoint(1792, 3901, color);
+		m_vector_device->AddPoint(1792, 3225, color);
+		m_vector_device->AddPoint(2048, 3225, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 2373, black);
+		m_vector_device->AddPoint(2048, 2738, color);
+		m_vector_device->AddPoint(1533, 2738, color);
+		m_vector_device->AddPoint(1665, 2738, color);
+		m_vector_device->AddPoint(1665, 2893, color);
+		m_vector_device->AddPoint(1789, 2893, color);
+		m_vector_device->AddPoint(1789, 3065, color);
+		m_vector_device->AddPoint(2048, 3065, color);
+		// Big structure
+		m_vector_device->AddPoint(1157, 2209, black);
+		m_vector_device->AddPoint(1157, 2383, color);
+		m_vector_device->AddPoint(897, 2383, color);
+		m_vector_device->AddPoint(389, 2383, color);
+		m_vector_device->AddPoint(389, 2738, color);
+		m_vector_device->AddPoint(1157, 2738, color);
+		m_vector_device->AddPoint(1157, 2209, color);
+		// Small structure
+		m_vector_device->AddPoint(1544, 3055, black);
+		m_vector_device->AddPoint(1544, 3590, color);
+		m_vector_device->AddPoint(1280, 3590, color);
+		m_vector_device->AddPoint(1673, 3590, color);
+		m_vector_device->AddPoint(1673, 3231, color);
+		m_vector_device->AddPoint(1540, 3231, color);
+		m_vector_device->AddPoint(1540, 3055, color);
+		// Lower Right Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(3446, 2048, black);
+		m_vector_device->AddPoint(3446, 1871, color);
+		m_vector_device->AddPoint(3958, 1871, color);
+		m_vector_device->AddPoint(3958, 1036, color);
+		m_vector_device->AddPoint(3323, 1036, color);
+		m_vector_device->AddPoint(3323, 870, color);
+		m_vector_device->AddPoint(3194, 870, color);
+		m_vector_device->AddPoint(3194, 702, color);
+		m_vector_device->AddPoint(3067, 702, color);
+		m_vector_device->AddPoint(3067, 194, color);
+		m_vector_device->AddPoint(2304, 194, color);
+		m_vector_device->AddPoint(2304, 870, color);
+		m_vector_device->AddPoint(2048, 870, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 1722, black);
+		m_vector_device->AddPoint(2048, 1357, color);
+		m_vector_device->AddPoint(2562, 1357, color);
+		m_vector_device->AddPoint(2430, 1357, color);
+		m_vector_device->AddPoint(2430, 1202, color);
+		m_vector_device->AddPoint(2306, 1202, color);
+		m_vector_device->AddPoint(2306, 1030, color);
+		m_vector_device->AddPoint(2048, 1030, color);
+		// Big structure
+		m_vector_device->AddPoint(2938, 1886, black);
+		m_vector_device->AddPoint(2938, 1712, color);
+		m_vector_device->AddPoint(3198, 1712, color);
+		m_vector_device->AddPoint(3706, 1712, color);
+		m_vector_device->AddPoint(3706, 1357, color);
+		m_vector_device->AddPoint(2938, 1357, color);
+		m_vector_device->AddPoint(2938, 1886, color);
+		// Small structure
+		m_vector_device->AddPoint(2551, 1040, black);
+		m_vector_device->AddPoint(2551, 505, color);
+		m_vector_device->AddPoint(2816, 505, color);
+		m_vector_device->AddPoint(2422, 505, color);
+		m_vector_device->AddPoint(2422, 864, color);
+		m_vector_device->AddPoint(2555, 864, color);
+		m_vector_device->AddPoint(2555, 1040, color);
+		// Lower Left Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(649, 2048, black);
+		m_vector_device->AddPoint(649, 1871, color);
+		m_vector_device->AddPoint(137, 1871, color);
+		m_vector_device->AddPoint(137, 1036, color);
+		m_vector_device->AddPoint(772, 1036, color);
+		m_vector_device->AddPoint(772, 870, color);
+		m_vector_device->AddPoint(901, 870, color);
+		m_vector_device->AddPoint(901, 702, color);
+		m_vector_device->AddPoint(1028, 702, color);
+		m_vector_device->AddPoint(1028, 194, color);
+		m_vector_device->AddPoint(1792, 194, color);
+		m_vector_device->AddPoint(1792, 870, color);
+		m_vector_device->AddPoint(2048, 870, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 1722, black);
+		m_vector_device->AddPoint(2048, 1357, color);
+		m_vector_device->AddPoint(1533, 1357, color);
+		m_vector_device->AddPoint(1665, 1357, color);
+		m_vector_device->AddPoint(1665, 1202, color);
+		m_vector_device->AddPoint(1789, 1202, color);
+		m_vector_device->AddPoint(1789, 1030, color);
+		m_vector_device->AddPoint(2048, 1030, color);
+		// Big structure
+		m_vector_device->AddPoint(1157, 1886, black);
+		m_vector_device->AddPoint(1157, 1712, color);
+		m_vector_device->AddPoint(897, 1712, color);
+		m_vector_device->AddPoint(389, 1712, color);
+		m_vector_device->AddPoint(389, 1357, color);
+		m_vector_device->AddPoint(1157, 1357, color);
+		m_vector_device->AddPoint(1157, 1886, color);
+		// Small structure
+		m_vector_device->AddPoint(1544, 1040, black);
+		m_vector_device->AddPoint(1544, 505, color);
+		m_vector_device->AddPoint(1280, 505, color);
+		m_vector_device->AddPoint(1673, 505, color);
+		m_vector_device->AddPoint(1673, 864, color);
+		m_vector_device->AddPoint(1540, 864, color);
+		m_vector_device->AddPoint(1540, 1040, color);
+		break;
 
-		case GAME_WARRIOR:
-			normalize_and_push(1187, 2232, black);
-			normalize_and_push(1863, 2232, color);
-			normalize_and_push(1187, 1372, black);
-			normalize_and_push(1863, 1372, color);
-			normalize_and_push(1187, 2232, black);
-			normalize_and_push(1187, 1372, color);
-			normalize_and_push(1863, 2232, black);
-			normalize_and_push(1863, 1372, color);
-			normalize_and_push(2273, 2498, black);
-			normalize_and_push(2949, 2498, color);
-			normalize_and_push(2273, 1658, black);
-			normalize_and_push(2949, 1658, color);
-			normalize_and_push(2273, 2498, black);
-			normalize_and_push(2273, 1658, color);
-			normalize_and_push(2949, 2498, black);
-			normalize_and_push(2949, 1658, color);
-			break;
-		}
-
-
-		send_vectors();
+	case GAME_WARRIOR:
+		m_vector_device->AddPoint(1187, 2232, black);
+		m_vector_device->AddPoint(1863, 2232, color);
+		m_vector_device->AddPoint(1187, 1372, black);
+		m_vector_device->AddPoint(1863, 1372, color);
+		m_vector_device->AddPoint(1187, 2232, black);
+		m_vector_device->AddPoint(1187, 1372, color);
+		m_vector_device->AddPoint(1863, 2232, black);
+		m_vector_device->AddPoint(1863, 1372, color);
+		m_vector_device->AddPoint(2273, 2498, black);
+		m_vector_device->AddPoint(2949, 2498, color);
+		m_vector_device->AddPoint(2273, 1658, black);
+		m_vector_device->AddPoint(2949, 1658, color);
+		m_vector_device->AddPoint(2273, 2498, black);
+		m_vector_device->AddPoint(2273, 1658, color);
+		m_vector_device->AddPoint(2949, 2498, black);
+		m_vector_device->AddPoint(2949, 1658, color);
+		break;
 	}
+
+
+	send_vectors();
+	//}
 
 	return 0;
 }
