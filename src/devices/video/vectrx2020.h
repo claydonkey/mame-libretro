@@ -131,6 +131,8 @@ public:
 	void set_rgb(bool enable);
 	void set_vector_host(const char* host);
 	void set_mirror(bool mirror);
+	void begin_settings_update();
+	void end_settings_update();
 
 private:
 	bool m_exclude_blank_vectors;
@@ -153,6 +155,8 @@ private:
 	bool m_centre_beam;
 	std::string  m_host;
 	bool m_mirror = false;
+	bool m_settings_dirty = false;
+	bool m_batch_update = false;
 
 	
 

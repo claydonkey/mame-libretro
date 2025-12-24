@@ -949,6 +949,8 @@ bool vectrx2020_device::send_local_info() {
 
 
 uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) {
+	if (!m_vector_device->HasPoints())
+		 return 0;
 
 	v_rgb_t color = v_rgb_t(108, 108, 108);
 	v_rgb_t black = v_rgb_t::black();
