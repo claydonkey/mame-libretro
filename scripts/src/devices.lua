@@ -36,6 +36,8 @@ function devicesProject(_target, _subtarget)
 		MAME_DIR .. "src/lib",
 		MAME_DIR .. "src/lib/util",
 		MAME_DIR .. "3rdparty",
+		ext_includedir("vectrx2020_lib"),
+		MAME_DIR .. "../../vectrx2020_Device",
 		GEN_DIR  .. "emu",
 		GEN_DIR  .. "emu/layout",
 		ext_includedir("asio"),
@@ -43,6 +45,11 @@ function devicesProject(_target, _subtarget)
 		ext_includedir("flac"),
 	}
 
+	defines {
+    -- 	"VECTRX2020_STATIC_LIB",
+	--	"NOMINMAX",
+  	 	"VECTRX2020_MAME"
+	}
 	dofile(path.join("src", "cpu.lua"))
 
 	dofile(path.join("src", "sound.lua"))

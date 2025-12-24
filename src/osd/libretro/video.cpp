@@ -202,7 +202,7 @@ static void get_resolution(const char *defdata, const char *data, osd_window_con
 		if (strcmp(defdata, OSDOPTVAL_AUTO) == 0)
 			return;
 		data = defdata;
-	}
+	} 
 
 	if (sscanf(data, "%dx%dx%d", &config->width, &config->height, &config->depth) < 2 && report_error)
 		osd_printf_error("Illegal resolution value = %s\n", data);

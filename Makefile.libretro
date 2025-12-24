@@ -1,5 +1,5 @@
 
-VERBOSE ?= 1
+VERBOSE ?= 0
 NOWERROR ?= 1
 CONFIG ?= libretro
 NO_USE_MIDI ?= 1
@@ -12,7 +12,7 @@ PYTHON_EXECUTABLE ?= python3
 REGENIE ?= 1
 GITHUB_REPO ?= https://github.com/libretro/mame/
 DEBUG ?= 0
-
+SUBTARGET=vectrx2020
 #see https://github.com/libretro/mame/blob/093209930f5fbdaee0d6f3a3666f3d70025d089f/3rdparty/genie/build/gmake.darwin/genie.make#L55C2-L55C47
 export LIBRETRO_OS
 #this make file need dont better ad use vars instead of the way it done again can wait till the mac builds work
@@ -127,6 +127,12 @@ ifneq ($(findstring win,$(platform)),)
 	ifneq ($(WINDRES),)
 		PLATFLAGS += WINDRES=$(WINDRES)
 	endif
+	    # Append Windows system libraries for linking (after LDOPTS overwrites above)
+  #   ifneq ($(BUILDFLAGS),)
+  #      BUILDFLAGS += LDOPTS="$(LDOPTS) -lsetupapi -lole32 -luuid"
+  #  else
+  #      BUILDFLAGS += LDOPTS=-lsetupapi -lole32 -luuid
+  #  endif
 endif
 # android only needs a valid ANDROID_NDK_HOME set no paths are needed toolchain and makefile takes care of that
 # make CONFIG=libretero OSD=retro android-xxx is all thes required
@@ -316,7 +322,7 @@ endif
 # undefine <var> is not supported on make 3.81 (used by macosx).
 MAKEFILE :=
 
-all: build
+all: build copy-vectrx2020-lib
 
 build:
 	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS)
@@ -326,5 +332,14 @@ vs2019:
 
 clean:
 	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS) clean
+
+# ---------------------------------------------------------
+# Copy vectrx2020_lib DLL + import library into libretro bin
+# ---------------------------------------------------------
+.PHONY: copy-vectrx2020-lib
+copy-vectrx2020-lib:
+	@echo "Copying vectrx2020_lib.dll and libvectrx2020_lib.a..."
+	cp -u ../../vectrx2020_lib/build/bin/vectrx2020_lib.dll .
+	cp -u ../../vectrx2020_lib/build/lib/libvectrx2020_lib.a build/libretro
 
 .PHONY: all build clean vs2019

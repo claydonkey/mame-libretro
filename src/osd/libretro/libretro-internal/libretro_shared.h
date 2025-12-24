@@ -23,7 +23,7 @@
 #define PIXEL_TYPE UINT16
 #endif
 
-#define CORE_NAME "mame"
+#define CORE_NAME "mamevectrx2020"
 #define RETRO_PATH_MAX 512
 
 enum
