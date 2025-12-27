@@ -18,7 +18,7 @@ vector_interface::vector_interface(const machine_config& mconfig, device_type ty
 	m_vector_index = 0;
 }
 
-void vector_interface::add_point(int x, int y, ::rgb_t color, int intensity) {};
+void vector_interface::add_point(int x, int y, rgb_t color, int intensity) {};
 void vector_interface::add_line(float xf0, float yf0, float xf1, float yf1, int intensity) {};
 bool vector_interface::mirror_enabled() const { return true; };
 

@@ -394,7 +394,7 @@ void vectrx2020_device::device_start() {
 			return;
 		}
 
-	 
+
 
 	}
 	catch (const std::exception& e) {
@@ -406,7 +406,7 @@ void vectrx2020_device::device_start() {
 }
 
 int vectrx2020_device::get_dwell() const { return m_st.settings.dwell; }
-m_sync_mode_t vectrx2020_device::get_sync_mode() const { return m_st.settings.sync_mode; }
+
 int vectrx2020_device::get_draw_steps() const { return m_st.settings.draw_steps; }
 m_compression_level_t vectrx2020_device::get_compression() const { return m_st.settings.compressionLevel; }
 int vectrx2020_device::get_dac_period() const { return m_st.settings.dac_period; }
@@ -454,16 +454,7 @@ void vectrx2020_device::set_dwell(int dwell)
 
 }
 
-void vectrx2020_device::set_sync_mode(m_sync_mode_t sync_mode)
-{
 
-	m_st.settings.dwell = sync_mode;
-	m_settings_dirty = true;
-
-	if (!m_batch_update)
-		set_dvg_settings();
-
-}
 
 void vectrx2020_device::set_draw_steps(int draw_steps)
 {
@@ -695,10 +686,6 @@ uint32_t vectrx2020_device::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, 
 
 
 
- 
-
- 
-
 void vectrx2020_device::transform_and_scale_coords(int* px, int* py) {
 	float x, y;
 
@@ -820,99 +807,90 @@ void vectrx2020_device::transform_final(int* px, int* py) {
 	*px = x;
 	*py = y;
 }
+void vectrx2020_device::reset_last_point()
+{
+	m_last_x = m_last_y = 0;
+	m_last_color = rgb_t::black();
+}
+void vectrx2020_device::cmd_reset(uint32_t initial)
+{
  
 
-void vectrx2020_device::add_point(int x, int y, rgb_t color, int intensity) {
-
-	static int last_x = 0, last_y = 0;
-	static rgb_t last_color;
+	m_have_first_point = false;
+	m_last_x = 0;
+	m_last_y = 0;
+	m_last_color = ::rgb_t::black();
+}
+void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity)
+{
 	bool add = true;
-	static bool first_point = true;
 
 	if (machine().config().options().debug())
 	{
-		if (!m_first_point)
-		{
+		if (!m_have_first_point)
 			osd_printf_info("----NEW FRAME ---\n");
-		}
-		osd_printf_info("x:%d y:%d r:%u g:%u b:%u i:%d\n", x, y, static_cast<unsigned>(color.r()), static_cast<unsigned>(color.g()), static_cast<unsigned>(color.b()), intensity);
-	}
-	// Clamp intensity and handle color
 
-	if ((intensity == 0 || color == rgb_t::black()) && !m_centre_beam) {
-		color = rgb_t::black();
+		osd_printf_info("x:%d y:%d r:%u g:%u b:%u i:%d\n",
+			x, y,
+			static_cast<unsigned>(color.r()),
+			static_cast<unsigned>(color.g()),
+			static_cast<unsigned>(color.b()),
+			intensity);
+	}
+
+	// Handle intensity / blanking exactly as before
+	if ((intensity == 0 || color == ::rgb_t::black()) && !m_centre_beam)
+	{
+		color = ::rgb_t::black();
 	}
 	else
 	{
-		float cscale = m_gamma_table[intensity];
-		// Ensure cscale is within a range that won't cause overflow when multiplied by color components
-		cscale = std::clamp(cscale, 0.0f, 1.0f);
+		float cscale = std::clamp(m_gamma_table[intensity], 0.0f, 1.0f);
 
-		if (m_st.settings.rgb) {
-
-
-			// Calculate new color values with proper casting and clamping
-			uint8_t new_r = static_cast<uint8_t>(std::clamp(static_cast<int>(cscale * color.r()), 0, 255));
-			uint8_t new_g = static_cast<uint8_t>(std::clamp(static_cast<int>(cscale * color.g()), 0, 255));
-			uint8_t new_b = static_cast<uint8_t>(std::clamp(static_cast<int>(cscale * color.b()), 0, 255));
-
-			// Set the new color values
-			color.set_r(new_r);
-			color.set_g(new_g);
-			color.set_b(new_b);
+		if (m_st.settings.rgb)
+		{
+			color.set_r(std::clamp(int(cscale * color.r()), 0, 255));
+			color.set_g(std::clamp(int(cscale * color.g()), 0, 255));
+			color.set_b(std::clamp(int(cscale * color.b()), 0, 255));
 		}
 		else
 		{
-			color.set_r(cscale * 255);
-			color.set_g(cscale * 255);
-			color.set_b(cscale * 255);
+			uint8_t mono = uint8_t(cscale * 255);
+			color.set_r(mono);
+			color.set_g(mono);
+			color.set_b(mono);
 		}
 	}
 
+	bool blank = (color == ::rgb_t::black());
 
-	bool blank = (color == rgb_t::black());
-
-	if ((last_x == x) && (last_y == y) && blank)
-	{
+	if ((m_last_x == x) && (m_last_y == y) && blank)
 		add = false;
-	}
 
-	if (m_exclude_blank_vectors)
+	if (m_exclude_blank_vectors && add)
+		add = !blank;
+
+	if (!m_have_first_point)
 	{
-		if (add)
-		{
-			add = !blank;
-		}
+		m_have_first_point = true;
 	}
-
-	// Check if this is the start of a new line or the end of the current line
-	if (!m_first_point) {
-		//  the point and its color will be last values for next point
-
-		m_first_point = true;
-	}
-	//else if(add && (m_st.settings.rgb || !blank))
 	else if (add)
 	{
-		// We have a line segment; clip and add it
-		int clipped_x1 = last_x;
-		int clipped_y1 = last_y;
+		int clipped_x1 = m_last_x;
+		int clipped_y1 = m_last_y;
 		int clipped_x2 = x;
 		int clipped_y2 = y;
 
-		// Transform and scale coordinates
 		transform_and_scale_coords(&clipped_x1, &clipped_y1);
 		transform_and_scale_coords(&clipped_x2, &clipped_y2);
 
-		// Clip the line using the Cohen-Sutherland algorithm
-		uint32_t accept = line_clip(&clipped_x1, &clipped_y1, &clipped_x2, &clipped_y2);
-
-		// If the line is accepted after clipping, add it to the vector
-		if (accept) {
+		if (line_clip(&clipped_x1, &clipped_y1,
+			&clipped_x2, &clipped_y2))
+		{
 			m_vector_device->AddPoint(
 				clipped_x1,
 				clipped_y1,
-				vectrx2020::v_rgb_t{ uint32_t(last_color) }
+				vectrx2020::v_rgb_t{ uint32_t(m_last_color) }
 			);
 
 			m_vector_device->AddPoint(
@@ -921,18 +899,19 @@ void vectrx2020_device::add_point(int x, int y, rgb_t color, int intensity) {
 				vectrx2020::v_rgb_t{ uint32_t(color) }
 			);
 		}
-
-		// The current point becomes the last point for the next line segment
-
 	}
-	last_x = x;
-	last_y = y;
-	last_color = color;
+
+	m_last_x = x;
+	m_last_y = y;
+	m_last_color = color;
 }
+
 
 bool vectrx2020_device::send_vectors() {
 
-	return m_vector_device->SendPoints();
+	  m_vector_device->SendPoints();
+	  cmd_reset(0);
+	  return true;
 }
 
 
@@ -949,8 +928,9 @@ bool vectrx2020_device::send_local_info() {
 
 
 uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) {
-	if (!m_vector_device->HasPoints())
-		 return 0;
+	//	reset_last_point();
+	 	if (!m_vector_device->HasPoints())
+	 	 return 0;
 
 	v_rgb_t color = v_rgb_t(108, 108, 108);
 	v_rgb_t black = v_rgb_t::black();
@@ -972,194 +952,194 @@ uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& b
 	m_xscale = (DVG_RES_MAX + 1.0) / (m_xmax - m_xmin);
 	m_yscale = (DVG_RES_MAX + 1.0) / (m_ymax - m_ymin);
 
-	//if (m_points.size()) {
-		switch (m_artwork) {
-		case GAME_ARMORA:
-			// Upper Right Quadrant
-			// Outer structure
-			m_vector_device->AddPoint(3446, 2048, black);
-			m_vector_device->AddPoint(3958, 2048, color);
-			m_vector_device->AddPoint(3958, 2224, color);
-			m_vector_device->AddPoint(3958, 3059, color);
-			m_vector_device->AddPoint(3323, 3059, color);
-			m_vector_device->AddPoint(3323, 3225, color);
-			m_vector_device->AddPoint(3194, 3225, color);
-			m_vector_device->AddPoint(3194, 3393, color);
-			m_vector_device->AddPoint(3067, 3393, color);
-			m_vector_device->AddPoint(3067, 3901, color);
-			m_vector_device->AddPoint(2304, 3901, color);
-			m_vector_device->AddPoint(2304, 3225, color);
-			m_vector_device->AddPoint(2048, 3225, color);
-			// Center structure
-			m_vector_device->AddPoint(2048, 2373, black);
-			m_vector_device->AddPoint(2562, 2373, color);
-			m_vector_device->AddPoint(2562, 2738, color);
-			m_vector_device->AddPoint(2430, 2738, color);
-			m_vector_device->AddPoint(2430, 2893, color);
-			m_vector_device->AddPoint(2306, 2893, color);
-			m_vector_device->AddPoint(2306, 3065, color);
-			m_vector_device->AddPoint(2048, 3065, color);
-			// Big structure
-			m_vector_device->AddPoint(2938, 2209, black);
-			m_vector_device->AddPoint(3198, 2209, color);
-			m_vector_device->AddPoint(3198, 2383, color);
-			m_vector_device->AddPoint(3706, 2383, color);
-			m_vector_device->AddPoint(3706, 2738, color);
-			m_vector_device->AddPoint(2938, 2738, color);
-			m_vector_device->AddPoint(2938, 2209, color);
-			// Small structure
-			m_vector_device->AddPoint(2551, 3055, black);
-			m_vector_device->AddPoint(2551, 3590, color);
-			m_vector_device->AddPoint(2816, 3590, color);
-			m_vector_device->AddPoint(2422, 3590, color);
-			m_vector_device->AddPoint(2422, 3231, color);
-			m_vector_device->AddPoint(2555, 3231, color);
-			m_vector_device->AddPoint(2555, 3055, color);
-			// Upper Left Quadrant
-			// Outer structure
-			m_vector_device->AddPoint(649, 2048, black);
-			m_vector_device->AddPoint(649, 2224, color);
-			m_vector_device->AddPoint(137, 2224, color);
-			m_vector_device->AddPoint(137, 3059, color);
-			m_vector_device->AddPoint(772, 3059, color);
-			m_vector_device->AddPoint(772, 3225, color);
-			m_vector_device->AddPoint(901, 3225, color);
-			m_vector_device->AddPoint(901, 3393, color);
-			m_vector_device->AddPoint(1028, 3393, color);
-			m_vector_device->AddPoint(1028, 3901, color);
-			m_vector_device->AddPoint(1792, 3901, color);
-			m_vector_device->AddPoint(1792, 3225, color);
-			m_vector_device->AddPoint(2048, 3225, color);
-			// Center structure
-			m_vector_device->AddPoint(2048, 2373, black);
-			m_vector_device->AddPoint(2048, 2738, color);
-			m_vector_device->AddPoint(1533, 2738, color);
-			m_vector_device->AddPoint(1665, 2738, color);
-			m_vector_device->AddPoint(1665, 2893, color);
-			m_vector_device->AddPoint(1789, 2893, color);
-			m_vector_device->AddPoint(1789, 3065, color);
-			m_vector_device->AddPoint(2048, 3065, color);
-			// Big structure
-			m_vector_device->AddPoint(1157, 2209, black);
-			m_vector_device->AddPoint(1157, 2383, color);
-			m_vector_device->AddPoint(897, 2383, color);
-			m_vector_device->AddPoint(389, 2383, color);
-			m_vector_device->AddPoint(389, 2738, color);
-			m_vector_device->AddPoint(1157, 2738, color);
-			m_vector_device->AddPoint(1157, 2209, color);
-			// Small structure
-			m_vector_device->AddPoint(1544, 3055, black);
-			m_vector_device->AddPoint(1544, 3590, color);
-			m_vector_device->AddPoint(1280, 3590, color);
-			m_vector_device->AddPoint(1673, 3590, color);
-			m_vector_device->AddPoint(1673, 3231, color);
-			m_vector_device->AddPoint(1540, 3231, color);
-			m_vector_device->AddPoint(1540, 3055, color);
-			// Lower Right Quadrant
-			// Outer structure
-			m_vector_device->AddPoint(3446, 2048, black);
-			m_vector_device->AddPoint(3446, 1871, color);
-			m_vector_device->AddPoint(3958, 1871, color);
-			m_vector_device->AddPoint(3958, 1036, color);
-			m_vector_device->AddPoint(3323, 1036, color);
-			m_vector_device->AddPoint(3323, 870, color);
-			m_vector_device->AddPoint(3194, 870, color);
-			m_vector_device->AddPoint(3194, 702, color);
-			m_vector_device->AddPoint(3067, 702, color);
-			m_vector_device->AddPoint(3067, 194, color);
-			m_vector_device->AddPoint(2304, 194, color);
-			m_vector_device->AddPoint(2304, 870, color);
-			m_vector_device->AddPoint(2048, 870, color);
-			// Center structure
-			m_vector_device->AddPoint(2048, 1722, black);
-			m_vector_device->AddPoint(2048, 1357, color);
-			m_vector_device->AddPoint(2562, 1357, color);
-			m_vector_device->AddPoint(2430, 1357, color);
-			m_vector_device->AddPoint(2430, 1202, color);
-			m_vector_device->AddPoint(2306, 1202, color);
-			m_vector_device->AddPoint(2306, 1030, color);
-			m_vector_device->AddPoint(2048, 1030, color);
-			// Big structure
-			m_vector_device->AddPoint(2938, 1886, black);
-			m_vector_device->AddPoint(2938, 1712, color);
-			m_vector_device->AddPoint(3198, 1712, color);
-			m_vector_device->AddPoint(3706, 1712, color);
-			m_vector_device->AddPoint(3706, 1357, color);
-			m_vector_device->AddPoint(2938, 1357, color);
-			m_vector_device->AddPoint(2938, 1886, color);
-			// Small structure
-			m_vector_device->AddPoint(2551, 1040, black);
-			m_vector_device->AddPoint(2551, 505, color);
-			m_vector_device->AddPoint(2816, 505, color);
-			m_vector_device->AddPoint(2422, 505, color);
-			m_vector_device->AddPoint(2422, 864, color);
-			m_vector_device->AddPoint(2555, 864, color);
-			m_vector_device->AddPoint(2555, 1040, color);
-			// Lower Left Quadrant
-			// Outer structure
-			m_vector_device->AddPoint(649, 2048, black);
-			m_vector_device->AddPoint(649, 1871, color);
-			m_vector_device->AddPoint(137, 1871, color);
-			m_vector_device->AddPoint(137, 1036, color);
-			m_vector_device->AddPoint(772, 1036, color);
-			m_vector_device->AddPoint(772, 870, color);
-			m_vector_device->AddPoint(901, 870, color);
-			m_vector_device->AddPoint(901, 702, color);
-			m_vector_device->AddPoint(1028, 702, color);
-			m_vector_device->AddPoint(1028, 194, color);
-			m_vector_device->AddPoint(1792, 194, color);
-			m_vector_device->AddPoint(1792, 870, color);
-			m_vector_device->AddPoint(2048, 870, color);
-			// Center structure
-			m_vector_device->AddPoint(2048, 1722, black);
-			m_vector_device->AddPoint(2048, 1357, color);
-			m_vector_device->AddPoint(1533, 1357, color);
-			m_vector_device->AddPoint(1665, 1357, color);
-			m_vector_device->AddPoint(1665, 1202, color);
-			m_vector_device->AddPoint(1789, 1202, color);
-			m_vector_device->AddPoint(1789, 1030, color);
-			m_vector_device->AddPoint(2048, 1030, color);
-			// Big structure
-			m_vector_device->AddPoint(1157, 1886, black);
-			m_vector_device->AddPoint(1157, 1712, color);
-			m_vector_device->AddPoint(897, 1712, color);
-			m_vector_device->AddPoint(389, 1712, color);
-			m_vector_device->AddPoint(389, 1357, color);
-			m_vector_device->AddPoint(1157, 1357, color);
-			m_vector_device->AddPoint(1157, 1886, color);
-			// Small structure
-			m_vector_device->AddPoint(1544, 1040, black);
-			m_vector_device->AddPoint(1544, 505, color);
-			m_vector_device->AddPoint(1280, 505, color);
-			m_vector_device->AddPoint(1673, 505, color);
-			m_vector_device->AddPoint(1673, 864, color);
-			m_vector_device->AddPoint(1540, 864, color);
-			m_vector_device->AddPoint(1540, 1040, color);
-			break;
+ 
+	switch (m_artwork) {
+	case GAME_ARMORA:
+		// Upper Right Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(3446, 2048, black);
+		m_vector_device->AddPoint(3958, 2048, color);
+		m_vector_device->AddPoint(3958, 2224, color);
+		m_vector_device->AddPoint(3958, 3059, color);
+		m_vector_device->AddPoint(3323, 3059, color);
+		m_vector_device->AddPoint(3323, 3225, color);
+		m_vector_device->AddPoint(3194, 3225, color);
+		m_vector_device->AddPoint(3194, 3393, color);
+		m_vector_device->AddPoint(3067, 3393, color);
+		m_vector_device->AddPoint(3067, 3901, color);
+		m_vector_device->AddPoint(2304, 3901, color);
+		m_vector_device->AddPoint(2304, 3225, color);
+		m_vector_device->AddPoint(2048, 3225, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 2373, black);
+		m_vector_device->AddPoint(2562, 2373, color);
+		m_vector_device->AddPoint(2562, 2738, color);
+		m_vector_device->AddPoint(2430, 2738, color);
+		m_vector_device->AddPoint(2430, 2893, color);
+		m_vector_device->AddPoint(2306, 2893, color);
+		m_vector_device->AddPoint(2306, 3065, color);
+		m_vector_device->AddPoint(2048, 3065, color);
+		// Big structure
+		m_vector_device->AddPoint(2938, 2209, black);
+		m_vector_device->AddPoint(3198, 2209, color);
+		m_vector_device->AddPoint(3198, 2383, color);
+		m_vector_device->AddPoint(3706, 2383, color);
+		m_vector_device->AddPoint(3706, 2738, color);
+		m_vector_device->AddPoint(2938, 2738, color);
+		m_vector_device->AddPoint(2938, 2209, color);
+		// Small structure
+		m_vector_device->AddPoint(2551, 3055, black);
+		m_vector_device->AddPoint(2551, 3590, color);
+		m_vector_device->AddPoint(2816, 3590, color);
+		m_vector_device->AddPoint(2422, 3590, color);
+		m_vector_device->AddPoint(2422, 3231, color);
+		m_vector_device->AddPoint(2555, 3231, color);
+		m_vector_device->AddPoint(2555, 3055, color);
+		// Upper Left Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(649, 2048, black);
+		m_vector_device->AddPoint(649, 2224, color);
+		m_vector_device->AddPoint(137, 2224, color);
+		m_vector_device->AddPoint(137, 3059, color);
+		m_vector_device->AddPoint(772, 3059, color);
+		m_vector_device->AddPoint(772, 3225, color);
+		m_vector_device->AddPoint(901, 3225, color);
+		m_vector_device->AddPoint(901, 3393, color);
+		m_vector_device->AddPoint(1028, 3393, color);
+		m_vector_device->AddPoint(1028, 3901, color);
+		m_vector_device->AddPoint(1792, 3901, color);
+		m_vector_device->AddPoint(1792, 3225, color);
+		m_vector_device->AddPoint(2048, 3225, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 2373, black);
+		m_vector_device->AddPoint(2048, 2738, color);
+		m_vector_device->AddPoint(1533, 2738, color);
+		m_vector_device->AddPoint(1665, 2738, color);
+		m_vector_device->AddPoint(1665, 2893, color);
+		m_vector_device->AddPoint(1789, 2893, color);
+		m_vector_device->AddPoint(1789, 3065, color);
+		m_vector_device->AddPoint(2048, 3065, color);
+		// Big structure
+		m_vector_device->AddPoint(1157, 2209, black);
+		m_vector_device->AddPoint(1157, 2383, color);
+		m_vector_device->AddPoint(897, 2383, color);
+		m_vector_device->AddPoint(389, 2383, color);
+		m_vector_device->AddPoint(389, 2738, color);
+		m_vector_device->AddPoint(1157, 2738, color);
+		m_vector_device->AddPoint(1157, 2209, color);
+		// Small structure
+		m_vector_device->AddPoint(1544, 3055, black);
+		m_vector_device->AddPoint(1544, 3590, color);
+		m_vector_device->AddPoint(1280, 3590, color);
+		m_vector_device->AddPoint(1673, 3590, color);
+		m_vector_device->AddPoint(1673, 3231, color);
+		m_vector_device->AddPoint(1540, 3231, color);
+		m_vector_device->AddPoint(1540, 3055, color);
+		// Lower Right Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(3446, 2048, black);
+		m_vector_device->AddPoint(3446, 1871, color);
+		m_vector_device->AddPoint(3958, 1871, color);
+		m_vector_device->AddPoint(3958, 1036, color);
+		m_vector_device->AddPoint(3323, 1036, color);
+		m_vector_device->AddPoint(3323, 870, color);
+		m_vector_device->AddPoint(3194, 870, color);
+		m_vector_device->AddPoint(3194, 702, color);
+		m_vector_device->AddPoint(3067, 702, color);
+		m_vector_device->AddPoint(3067, 194, color);
+		m_vector_device->AddPoint(2304, 194, color);
+		m_vector_device->AddPoint(2304, 870, color);
+		m_vector_device->AddPoint(2048, 870, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 1722, black);
+		m_vector_device->AddPoint(2048, 1357, color);
+		m_vector_device->AddPoint(2562, 1357, color);
+		m_vector_device->AddPoint(2430, 1357, color);
+		m_vector_device->AddPoint(2430, 1202, color);
+		m_vector_device->AddPoint(2306, 1202, color);
+		m_vector_device->AddPoint(2306, 1030, color);
+		m_vector_device->AddPoint(2048, 1030, color);
+		// Big structure
+		m_vector_device->AddPoint(2938, 1886, black);
+		m_vector_device->AddPoint(2938, 1712, color);
+		m_vector_device->AddPoint(3198, 1712, color);
+		m_vector_device->AddPoint(3706, 1712, color);
+		m_vector_device->AddPoint(3706, 1357, color);
+		m_vector_device->AddPoint(2938, 1357, color);
+		m_vector_device->AddPoint(2938, 1886, color);
+		// Small structure
+		m_vector_device->AddPoint(2551, 1040, black);
+		m_vector_device->AddPoint(2551, 505, color);
+		m_vector_device->AddPoint(2816, 505, color);
+		m_vector_device->AddPoint(2422, 505, color);
+		m_vector_device->AddPoint(2422, 864, color);
+		m_vector_device->AddPoint(2555, 864, color);
+		m_vector_device->AddPoint(2555, 1040, color);
+		// Lower Left Quadrant
+		// Outer structure
+		m_vector_device->AddPoint(649, 2048, black);
+		m_vector_device->AddPoint(649, 1871, color);
+		m_vector_device->AddPoint(137, 1871, color);
+		m_vector_device->AddPoint(137, 1036, color);
+		m_vector_device->AddPoint(772, 1036, color);
+		m_vector_device->AddPoint(772, 870, color);
+		m_vector_device->AddPoint(901, 870, color);
+		m_vector_device->AddPoint(901, 702, color);
+		m_vector_device->AddPoint(1028, 702, color);
+		m_vector_device->AddPoint(1028, 194, color);
+		m_vector_device->AddPoint(1792, 194, color);
+		m_vector_device->AddPoint(1792, 870, color);
+		m_vector_device->AddPoint(2048, 870, color);
+		// Center structure
+		m_vector_device->AddPoint(2048, 1722, black);
+		m_vector_device->AddPoint(2048, 1357, color);
+		m_vector_device->AddPoint(1533, 1357, color);
+		m_vector_device->AddPoint(1665, 1357, color);
+		m_vector_device->AddPoint(1665, 1202, color);
+		m_vector_device->AddPoint(1789, 1202, color);
+		m_vector_device->AddPoint(1789, 1030, color);
+		m_vector_device->AddPoint(2048, 1030, color);
+		// Big structure
+		m_vector_device->AddPoint(1157, 1886, black);
+		m_vector_device->AddPoint(1157, 1712, color);
+		m_vector_device->AddPoint(897, 1712, color);
+		m_vector_device->AddPoint(389, 1712, color);
+		m_vector_device->AddPoint(389, 1357, color);
+		m_vector_device->AddPoint(1157, 1357, color);
+		m_vector_device->AddPoint(1157, 1886, color);
+		// Small structure
+		m_vector_device->AddPoint(1544, 1040, black);
+		m_vector_device->AddPoint(1544, 505, color);
+		m_vector_device->AddPoint(1280, 505, color);
+		m_vector_device->AddPoint(1673, 505, color);
+		m_vector_device->AddPoint(1673, 864, color);
+		m_vector_device->AddPoint(1540, 864, color);
+		m_vector_device->AddPoint(1540, 1040, color);
+		break;
 
-		case GAME_WARRIOR:
-			m_vector_device->AddPoint(1187, 2232, black);
-			m_vector_device->AddPoint(1863, 2232, color);
-			m_vector_device->AddPoint(1187, 1372, black);
-			m_vector_device->AddPoint(1863, 1372, color);
-			m_vector_device->AddPoint(1187, 2232, black);
-			m_vector_device->AddPoint(1187, 1372, color);
-			m_vector_device->AddPoint(1863, 2232, black);
-			m_vector_device->AddPoint(1863, 1372, color);
-			m_vector_device->AddPoint(2273, 2498, black);
-			m_vector_device->AddPoint(2949, 2498, color);
-			m_vector_device->AddPoint(2273, 1658, black);
-			m_vector_device->AddPoint(2949, 1658, color);
-			m_vector_device->AddPoint(2273, 2498, black);
-			m_vector_device->AddPoint(2273, 1658, color);
-			m_vector_device->AddPoint(2949, 2498, black);
-			m_vector_device->AddPoint(2949, 1658, color);
-			break;
-		}
+	case GAME_WARRIOR:
+		m_vector_device->AddPoint(1187, 2232, black);
+		m_vector_device->AddPoint(1863, 2232, color);
+		m_vector_device->AddPoint(1187, 1372, black);
+		m_vector_device->AddPoint(1863, 1372, color);
+		m_vector_device->AddPoint(1187, 2232, black);
+		m_vector_device->AddPoint(1187, 1372, color);
+		m_vector_device->AddPoint(1863, 2232, black);
+		m_vector_device->AddPoint(1863, 1372, color);
+		m_vector_device->AddPoint(2273, 2498, black);
+		m_vector_device->AddPoint(2949, 2498, color);
+		m_vector_device->AddPoint(2273, 1658, black);
+		m_vector_device->AddPoint(2949, 1658, color);
+		m_vector_device->AddPoint(2273, 2498, black);
+		m_vector_device->AddPoint(2273, 1658, color);
+		m_vector_device->AddPoint(2949, 2498, black);
+		m_vector_device->AddPoint(2949, 1658, color);
+		break;
+	}
 
 
-		send_vectors();
-	//}
+	send_vectors();
+	 
 
 	return 0;
 }

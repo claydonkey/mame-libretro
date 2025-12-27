@@ -96,7 +96,7 @@ public:
 	} game_info_t;
 
 	vectrx2020_device(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock = 0);
-	virtual void add_point(int x, int y, ::rgb_t color, int intensity) override;
+	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) override;
 	virtual void device_start() override;
 	virtual void device_reset() override;
@@ -104,7 +104,6 @@ public:
 	virtual bool mirror_enabled() const override;
 	// ---- getters ----
 	int                     get_dwell() const;
-	m_sync_mode_t           get_sync_mode() const;
 	int                     get_draw_steps() const;
 	m_compression_level_t   get_compression() const;
 	int                     get_dac_period() const;
@@ -119,7 +118,6 @@ public:
 
 	// ---- setters ----
 	void set_dwell(int dwell);
-	void set_sync_mode(m_sync_mode_t mode);
 	void set_draw_steps(int steps);
 	void set_compression(m_compression_level_t level);
 	void set_dac_period(int period);
@@ -135,7 +133,7 @@ public:
 	void end_settings_update();
 
 private:
-	bool m_exclude_blank_vectors;
+	bool m_exclude_blank_vectors =false;
 	int32_t m_xmin;
 	int32_t m_xmax;
 	int32_t m_ymin;
@@ -157,10 +155,12 @@ private:
 	bool m_mirror = false;
 	bool m_settings_dirty = false;
 	bool m_batch_update = false;
+	int m_last_x = 0;
+	int m_last_y = 0;
+	rgb_t m_last_color = rgb_t::black();
+	bool    m_have_first_point = false;
 
-	
-
-	virtual bool send_vectors();
+	  bool send_vectors();
 	void transform_final(int* px, int* py);
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2);
@@ -169,7 +169,8 @@ private:
 	bool get_dvg_info();
 	bool set_dvg_settings();
 	bool get_dvg_settings();
-
+	void reset_last_point();
+	void cmd_reset(uint32_t initial);
 
 
 protected:
