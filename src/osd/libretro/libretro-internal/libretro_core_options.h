@@ -870,6 +870,21 @@ extern "C" {
 		},
 
 
+		/* Render mode */
+		{
+			CORE_NAME "_vectrx2020_render_mode",
+			"Vectrx2020 Render Mode",
+			"Set Render Mode",
+			"",
+			NULL,
+			"vector",
+			{
+				{ "float", NULL },
+				{ "bresenham", NULL },
+				{ NULL, NULL }
+			},
+			"disabled"
+		},
 		/* X Scale */
 		{
 			CORE_NAME "_vectrx2020_scale_x",

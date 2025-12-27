@@ -720,6 +720,7 @@ static void check_variables(void)
 	UPDATE_INT_SETTING("_vectrx2020_orientation", set_orientation, m_orientation_enum)
 	UPDATE_BOOL_SETTING("_vectrx2020_rgb", set_rgb)
 	UPDATE_BOOL_SETTING("_vectrx2020_mirror", set_mirror)
+	UPDATE_BOOL_SETTING("_vectrx2020_render_mode", set_render_mode)
 	UPDATE_STRING_SETTING("_vectrx2020_vector_host", set_vector_host)
 	vect->end_settings_update();
 

@@ -20,13 +20,14 @@
 #include <algorithm>
 #include <iostream>
 #include <functional>
+#include <cmath>
 
 
 using namespace std::chrono;
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
 using namespace util;
-using namespace std; // Defining region codes 
+using namespace std;
 
 #define DVG_RES_MIN              0
 #define DVG_RES_MAX              4095
@@ -333,10 +334,9 @@ vectrx2020_device::vectrx2020_device(const machine_config& mconfig, const char* 
 {
 }
 
-
 void vectrx2020_device::set_mirror(bool mirror)
 {
-	printf("set_mirror(%d)\n", mirror ? 1 : 0);
+    osd_printf_info("set_mirror(%d)\n", mirror ? 1 : 0);
 	m_mirror = mirror;
 }
 
@@ -345,7 +345,7 @@ bool vectrx2020_device::mirror_enabled() const { return m_mirror; }
 void vectrx2020_device::device_start() {
 
 	try {
-		printf("vectrx2020_device::device_start() CALLED\n");
+        osd_printf_info("vectrx2020_device::device_start() CALLED\n");
 
 		vector_interface::device_start();
 
@@ -358,10 +358,10 @@ void vectrx2020_device::device_start() {
 
 		m_vector_device = std::make_unique<WindowsDeviceHandler>(stdoutCb, stderrCb);
 
-		if (!m_vector_device->IsInitialized()) {
-			std::cerr << "Device handler failed to initialize." << std::endl;
-			return;
-		}
+        if (!m_vector_device || !m_vector_device->IsInitialized()) {
+            osd_printf_error("Device handler failed to initialize.\n");
+            return;
+        }
 
 		const char* c_host = machine().config().options().vector_host();
 		m_host = (c_host && c_host[0] != '\0') ? c_host : "vectrx2020";
@@ -375,38 +375,32 @@ void vectrx2020_device::device_start() {
 				machine().options().gamma()
 			);
 		}
-
-
 		m_centre_beam = machine().config().options().vector_centre_beam();
 
-		if (!m_vector_device->Connect(m_host)) {
-			std::cerr << "Device handler failed to Connect." << std::endl;
-			return;
-		}
+        if (!m_vector_device->Connect(m_host)) {
+            osd_printf_error("Device handler failed to Connect.\n");
+            return;
+        }
 
-		if (!m_vector_device->SendProtocol()) {
-			std::cerr << "Failed to SendProtocol." << std::endl;
-			return;
-		}
+        if (!m_vector_device->SendProtocol()) {
+            osd_printf_error("Failed to SendProtocol.\n");
+            return;
+        }
 
-		if (!get_dvg_info() || !get_dvg_settings() || !send_local_info()) {
-			std::cerr << "Failed to initialize DVG settings." << std::endl;
-			return;
-		}
-
-
-
+        if (!get_dvg_info() || !get_dvg_settings() || !send_local_info()) {
+            osd_printf_error("Failed to initialize DVG settings.\n");
+            return;
+        }
 	}
 	catch (const std::exception& e) {
-		std::cerr << "An exception occurred: " << e.what() << std::endl;
+        osd_printf_error("An exception occurred: %s\n", e.what());
 	}
 	catch (...) {
-		std::cerr << "An unknown exception occurred." << std::endl;
+        osd_printf_error("An unknown exception occurred.\n");
 	}
 }
 
 int vectrx2020_device::get_dwell() const { return m_st.settings.dwell; }
-
 int vectrx2020_device::get_draw_steps() const { return m_st.settings.draw_steps; }
 m_compression_level_t vectrx2020_device::get_compression() const { return m_st.settings.compressionLevel; }
 int vectrx2020_device::get_dac_period() const { return m_st.settings.dac_period; }
@@ -428,43 +422,32 @@ void vectrx2020_device::set_vector_host(const char* host)
 		OPTION_PRIORITY_CMDLINE
 	);
 }
+
 void vectrx2020_device::set_dac_period(int period)
 {
-
-
 	m_st.settings.dac_period = period;
 	m_settings_dirty = true;
 
 	if (!m_batch_update)
 		set_dvg_settings();
-
-
 }
 
 void vectrx2020_device::set_dwell(int dwell)
 {
-
-
 	m_st.settings.dwell = dwell;
 	m_settings_dirty = true;
 
 	if (!m_batch_update)
 		set_dvg_settings();
-
-
 }
-
-
 
 void vectrx2020_device::set_draw_steps(int draw_steps)
 {
-
 	m_st.settings.draw_steps = draw_steps;
 	m_settings_dirty = true;
 
 	if (!m_batch_update)
 		set_dvg_settings();
-
 }
 
 void vectrx2020_device::set_compression(m_compression_level_t compressionLevel)
@@ -474,7 +457,6 @@ void vectrx2020_device::set_compression(m_compression_level_t compressionLevel)
 
 	if (!m_batch_update)
 		set_dvg_settings();
-
 }
 
 void vectrx2020_device::set_scale_x(int scalex)
@@ -484,7 +466,6 @@ void vectrx2020_device::set_scale_x(int scalex)
 
 	if (!m_batch_update)
 		set_dvg_settings();
-
 }
 
 void vectrx2020_device::set_scale_y(int scaley)
@@ -524,7 +505,14 @@ void vectrx2020_device::set_orientation(m_orientation_enum orientation)
 		set_dvg_settings();
 }
 
+void vectrx2020_device::set_render_mode(bool bresenham)
+{
+	m_st.settings.bresenham = bresenham;
+	m_settings_dirty = true;
 
+	if (!m_batch_update)
+		set_dvg_settings();
+}
 
 void vectrx2020_device::set_rgb(bool rgb)
 {
@@ -564,23 +552,18 @@ void vectrx2020_device::device_reset() {
 void vectrx2020_device::device_stop() {
 	try {
 		// Send a command to the device to signal that we're about to close the connection
-		m_vector_device->SendExit();
-
-		// Perform any additional cleanup if necessary
-		// ...
-
-		// Log that the device was stopped successfully
-		osd_printf_info("Device connection closed gracefully.\n");
+        if (m_vector_device)
+            m_vector_device->SendExit();
+        osd_printf_info("Device connection closed gracefully.\n");
 	}
 	catch (const std::exception& e) {
-		// Log any exceptions that occur during shutdown
-		osd_printf_error("An exception occurred while stopping the device: %s\n", e.what());
+        osd_printf_error("An exception occurred while stopping the device: %s\n", e.what());
 	}
 	catch (...) {
-		// Catch any other exceptions
 		osd_printf_error("An unknown exception occurred while stopping the device.\n");
 	}
 }
+
 uint32_t vectrx2020_device::compute_code(int32_t x, int32_t y) {
 	// initialized as being inside 
 	uint32_t code = 0;
@@ -615,7 +598,7 @@ uint32_t vectrx2020_device::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, 
 	code1 = compute_code(x1, y1);
 	code2 = compute_code(x2, y2);
 
-	while (1) {
+	while (true) {
 		if ((code1 == 0) && (code2 == 0)) {
 			// If both endpoints lie within rectangle 
 			accept = 1;
@@ -641,26 +624,43 @@ uint32_t vectrx2020_device::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, 
 			// Find intersection point; 
 			// using formulas y = y1 + slope * (x - x1), 
 			// x = x1 + (1 / slope) * (y - y1) 
-			if (code_out & TOP) {
-				// point is above the clip rectangle 
-				x = x1 + (x2 - x1) * (m_clipy_max - y1) / (y2 - y1);
-				y = m_clipy_max;
-			}
-			else if (code_out & BOTTOM) {
-				// point is below the rectangle 
-				x = x1 + (x2 - x1) * (m_clipy_min - y1) / (y2 - y1);
-				y = m_clipy_min;
-			}
-			else if (code_out & RIGHT) {
-				// point is to the right of rectangle 
-				y = y1 + (y2 - y1) * (m_clipx_max - x1) / (x2 - x1);
-				x = m_clipx_max;
-			}
-			else if (code_out & LEFT) {
-				// point is to the left of rectangle 
-				y = y1 + (y2 - y1) * (m_clipx_min - x1) / (x2 - x1);
-				x = m_clipx_min;
-			}
+            // Use floating-point intersection and guard against division-by-zero
+            if (code_out & TOP) {
+                // point is above the clip rectangle
+                double denom = static_cast<double>(y2) - static_cast<double>(y1);
+                if (denom == 0.0)
+                    x = x1;
+                else
+                    x = static_cast<int32_t>(std::lround(x1 + (static_cast<double>(x2 - x1) * (static_cast<double>(m_clipy_max - y1) / denom))));
+                y = m_clipy_max;
+            }
+            else if (code_out & BOTTOM) {
+                // point is below the rectangle
+                double denom = static_cast<double>(y2) - static_cast<double>(y1);
+                if (denom == 0.0)
+                    x = x1;
+                else
+                    x = static_cast<int32_t>(std::lround(x1 + (static_cast<double>(x2 - x1) * (static_cast<double>(m_clipy_min - y1) / denom))));
+                y = m_clipy_min;
+            }
+            else if (code_out & RIGHT) {
+                // point is to the right of rectangle
+                double denom = static_cast<double>(x2) - static_cast<double>(x1);
+                if (denom == 0.0)
+                    y = y1;
+                else
+                    y = static_cast<int32_t>(std::lround(y1 + (static_cast<double>(y2 - y1) * (static_cast<double>(m_clipx_max - x1) / denom))));
+                x = m_clipx_max;
+            }
+            else if (code_out & LEFT) {
+                // point is to the left of rectangle
+                double denom = static_cast<double>(x2) - static_cast<double>(x1);
+                if (denom == 0.0)
+                    y = y1;
+                else
+                    y = static_cast<int32_t>(std::lround(y1 + (static_cast<double>(y2 - y1) * (static_cast<double>(m_clipx_min - x1) / denom))));
+                x = m_clipx_min;
+            }
 
 			// Now intersection point x, y is found 
 			// We replace point outside rectangle 
@@ -683,8 +683,6 @@ uint32_t vectrx2020_device::line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, 
 	*pY2 = y2;
 	return accept;
 }
-
-
 
 void vectrx2020_device::transform_and_scale_coords(int* px, int* py) {
 	float x, y;
@@ -726,7 +724,7 @@ bool vectrx2020_device::get_dvg_info() {
 	Document d;
 	d.Parse(jsonOutput.c_str());
 
-	if (!d.HasParseError()) {
+	if (!d.HasParseError() && d.HasMember("vertical") && d["vertical"].IsBool()) {
 		m_flip_y = false;
 		m_vertical_display = d["vertical"].GetBool();
 
@@ -807,20 +805,16 @@ void vectrx2020_device::transform_final(int* px, int* py) {
 	*px = x;
 	*py = y;
 }
-void vectrx2020_device::reset_last_point()
-{
-	m_last_x = m_last_y = 0;
-	m_last_color = rgb_t::black();
-}
+
+
 void vectrx2020_device::cmd_reset(uint32_t initial)
 {
- 
-
 	m_have_first_point = false;
 	m_last_x = 0;
 	m_last_y = 0;
 	m_last_color = ::rgb_t::black();
 }
+
 void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity)
 {
 	bool add = true;
@@ -909,9 +903,9 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity)
 
 bool vectrx2020_device::send_vectors() {
 
-	  m_vector_device->SendPoints();
-	  cmd_reset(0);
-	  return true;
+	m_vector_device->SendPoints();
+	cmd_reset(0);
+	return true;
 }
 
 
@@ -928,9 +922,9 @@ bool vectrx2020_device::send_local_info() {
 
 
 uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) {
-	//	reset_last_point();
-	 	if (!m_vector_device->HasPoints())
-	 	 return 0;
+
+	if (!m_vector_device->HasPoints())
+		return 0;
 
 	v_rgb_t color = v_rgb_t(108, 108, 108);
 	v_rgb_t black = v_rgb_t::black();
@@ -952,7 +946,7 @@ uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& b
 	m_xscale = (DVG_RES_MAX + 1.0) / (m_xmax - m_xmin);
 	m_yscale = (DVG_RES_MAX + 1.0) / (m_ymax - m_ymin);
 
- 
+
 	switch (m_artwork) {
 	case GAME_ARMORA:
 		// Upper Right Quadrant
@@ -1139,7 +1133,7 @@ uint32_t vectrx2020_device::screen_update(screen_device& screen, bitmap_rgb32& b
 
 
 	send_vectors();
-	 
+
 
 	return 0;
 }

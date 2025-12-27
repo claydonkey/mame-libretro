@@ -80,14 +80,11 @@ private:
 
 };
 
-
-
 using namespace std;
 using namespace vectrx2020;
 class vectrx2020_device : public vector_interface {
+
 public:
-
-
 	typedef struct {
 		const char* name;
 		bool exclude_blank_vectors;
@@ -102,19 +99,18 @@ public:
 	virtual void device_reset() override;
 	virtual void device_stop() override;
 	virtual bool mirror_enabled() const override;
+
 	// ---- getters ----
-	int                     get_dwell() const;
-	int                     get_draw_steps() const;
-	m_compression_level_t   get_compression() const;
-	int                     get_dac_period() const;
-
-	int                     get_scale_x() const;
-	int                     get_scale_y() const;
-	int                     get_x_offset() const;
-	int                     get_y_offset() const;
-
-	m_orientation_enum      get_orientation() const;
-	bool                    get_rgb() const;
+	int get_dwell() const;
+	int get_draw_steps() const;
+	bool get_rgb() const;
+	m_compression_level_t get_compression() const;
+	int get_dac_period() const;
+	int get_scale_x() const;
+	int get_scale_y() const;
+	int get_x_offset() const;
+	int get_y_offset() const;
+	m_orientation_enum get_orientation() const;
 
 	// ---- setters ----
 	void set_dwell(int dwell);
@@ -129,6 +125,7 @@ public:
 	void set_rgb(bool enable);
 	void set_vector_host(const char* host);
 	void set_mirror(bool mirror);
+	void set_render_mode(bool bresenham);
 	void begin_settings_update();
 	void end_settings_update();
 
@@ -158,9 +155,8 @@ private:
 	int m_last_x = 0;
 	int m_last_y = 0;
 	rgb_t m_last_color = rgb_t::black();
-	bool    m_have_first_point = false;
-
-	  bool send_vectors();
+	bool m_have_first_point = false;
+	bool send_vectors();
 	void transform_final(int* px, int* py);
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2);
@@ -169,9 +165,7 @@ private:
 	bool get_dvg_info();
 	bool set_dvg_settings();
 	bool get_dvg_settings();
-	void reset_last_point();
 	void cmd_reset(uint32_t initial);
-
 
 protected:
 	int32_t m_clipx_min;
