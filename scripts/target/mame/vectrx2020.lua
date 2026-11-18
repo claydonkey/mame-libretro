@@ -50,6 +50,8 @@ CPUS["M6800"]   = true
 CPUS["MCS48"]   = true
 CPUS["MCS51"]   = true
 CPUS["TMS9900"] = true
+CPUS["TMS32025"] = true
+SOUNDS["C140"] = true
 
 -- Sound devices commonly used by vector games
 SOUNDS["POKEY"]    = true
@@ -342,6 +344,11 @@ function createProjects_mame_vectrx2020(_target, _subtarget)
     -- 3) extract shortnames only from root vector drivers
     local drivernames    = extract_vector_shortnames(vector_roots)
 
+    -- Starblade is polygon hardware with an optional hidden-line capture path.
+    table.insert(drivernames, "starblad")
+    table.insert(drivernames, "starbladj")
+    table.sort(drivernames)
+
     -- 4) write vectrx2020.lst
     generate_vectrx2020_lst(drivernames)
 
@@ -388,6 +395,14 @@ function createProjects_mame_vectrx2020(_target, _subtarget)
         -- Vector driver sources (+ their companions)
         files(vector_sources)
         files {
+            MAME_DIR .. "src/mame/namco/namcos21_c67.cpp",
+            MAME_DIR .. "src/mame/namco/namcos21_dsp_c67.cpp",
+            MAME_DIR .. "src/mame/namco/namcos21_3d.cpp",
+            MAME_DIR .. "src/mame/namco/namco_dsp.cpp",
+            MAME_DIR .. "src/mame/namco/namco68.cpp",
+            MAME_DIR .. "src/mame/namco/namco_c139.cpp",
+            MAME_DIR .. "src/mame/namco/namco_c148.cpp",
+            MAME_DIR .. "src/mame/shared/namco_c355spr.cpp",
             MAME_DIR .. "src/mame/atari/redbaron.cpp",
             MAME_DIR .. "src/mame/atari/mathbox.cpp",
             MAME_DIR .. "src/mame/atari/slapstic.cpp",

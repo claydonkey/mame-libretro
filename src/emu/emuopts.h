@@ -121,6 +121,8 @@
 #define OPTION_VECTOR_HOST          "vector_host"
 #define OPTION_VECTOR_PROTOCOL      "vector_protocol"
 #define OPTION_VECTOR_COMPRESSION   "vector_compression"
+#define OPTION_STARBLADE_HLR "starblade_hlr"
+#define OPTION_STARBLADE_HLR_PREVIEW "starblade_hlr_preview"
 #define OPTION_VECTOR_SCREEN_MIRROR "vector_screen_mirror"
 #define OPTION_VECTOR_DRAW_STEPS    "vector_draw_steps"
 #define OPTION_VECTOR_SYNC_MODE     "vector_sync_mode"
@@ -432,6 +434,8 @@ public:
 	const int vector_sync_mode() const { return int_value(OPTION_VECTOR_SYNC_MODE); }
 	const bool vector_rgb() const { return bool_value(OPTION_VECTOR_RGB); }
 	const int vector_dwell() const { return int_value(OPTION_VECTOR_DWELL); }
+	bool starblade_hlr() const { return bool_value(OPTION_STARBLADE_HLR); }
+	bool starblade_hlr_preview() const { return bool_value(OPTION_STARBLADE_HLR_PREVIEW); }
 	bool  vector_screen_mirror() const { return bool_value(OPTION_VECTOR_SCREEN_MIRROR); }
 	float vector_scale() const { return float_value(OPTION_VECTOR_SCALE); }
 	float vector_scale_x() const { return float_value(OPTION_VECTOR_SCALE_X); }

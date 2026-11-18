@@ -117,7 +117,10 @@ namespace plib {
 				&& ci::os() == ci_os::WINDOWS)                                   ? ppmf_type::PMF :
 			(ci::mingw() && !ci::m64() && ci::version::full() >= typed_version<4,7>::full()) ? ppmf_type::PMF :
 			(ci::mingw() && !ci::m64())                                          ? ppmf_type::PMF : // Dropped support for mingw32 < 407 ppmf_type::INTERNAL_ITANIUM :
-			(ci::env() == ci_env::MSVC && ci::m64())                             ? ppmf_type::INTERNAL_MSC :
+			// MSVC's 16-byte multiple-inheritance PMF contains padding that the
+			// raw decoder can mistake for a virtual-base displacement. Preserve
+			// the compiler's member-pointer semantics instead of decoding its ABI.
+			(ci::env() == ci_env::MSVC && ci::m64())                             ? ppmf_type::PMF :
 			((ci::type() == ci_compiler::CLANG || ci::type() == ci_compiler::GCC)
 				&& (ci::arch() == ci_arch::MIPS
 					|| ci::arch() == ci_arch::ARM

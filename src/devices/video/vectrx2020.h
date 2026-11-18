@@ -97,6 +97,9 @@ public:
 	vectrx2020_device(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock = 0);
 	virtual void add_point(int x, int y, ::rgb_t color, int intensity) override;
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) override;
+	bool begin_segment_frame(screen_device &screen);
+	void add_segment(int x0, int y0, int x1, int y1, ::rgb_t color);
+	void end_segment_frame();
 	virtual void device_start() override;
 	virtual void device_reset() override;
 	virtual void device_stop() override;
@@ -147,6 +150,11 @@ private:
 	std::vector<dvg_pnt> m_points;
 	m_st_t m_st;
 	bool m_first_point = false;
+	bool m_segment_ready = false;
+	bool m_segment_warning = false;
+	unsigned m_segment_points = 0;
+	unsigned m_segment_frames = 0;
+	std::chrono::steady_clock::time_point m_next_segment_frame{};
 	std::unique_ptr<vectrx2020::WindowsDeviceHandler> m_vector_device;
 	bool m_centre_beam;
 	std::string  m_host;

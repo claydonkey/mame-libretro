@@ -253,6 +253,10 @@ Namco System 21 Video Hardware
 #include "emu.h"
 #include "screen.h"
 #include "emupal.h"
+#include "emuopts.h"
+#ifdef VECTRX2020_MAME
+#include "video/vectrx2020.h"
+#endif
 #include "speaker.h"
 #include "cpu/m68000/m68000.h"
 #include "cpu/m6805/m6805.h"
@@ -390,6 +394,62 @@ uint32_t namcos21_c67_state::screen_update(screen_device &screen, bitmap_ind16 &
 	for( pri=pivot; pri<8; pri++ )
 	{
 		m_c355spr->draw(screen, bitmap, cliprect, pri );
+	}
+	if (machine().options().starblade_hlr() || machine().options().starblade_hlr_preview())
+	{
+		const auto segments = m_namcos21_3d->visible_hlr_segments();
+		const bool preview = machine().options().starblade_hlr_preview();
+		uint16_t preview_white = 0;
+		if (preview)
+		{
+			bitmap.fill(0xff, cliprect);
+			if (!machine().options().vector_rgb())
+			{
+				int brightest = -1;
+				for (int pen = 0; pen < m_palette->entries(); ++pen)
+				{
+					const rgb_t c = m_palette->pen_color(pen);
+					const int brightness = c.r() + c.g() + c.b();
+					if (brightness > brightest)
+					{
+						brightest = brightness;
+						preview_white = pen;
+					}
+					if (brightest == 765)
+						break;
+				}
+			}
+		}
+#ifdef VECTRX2020_MAME
+		auto *output = subdevice<vectrx2020_device>("starblade_vectors");
+		if (output && !output->begin_segment_frame(screen))
+			output = nullptr;
+#endif
+		for (const auto &s : segments)
+		{
+			if (preview)
+			{
+				const int steps = std::max(1, int(std::ceil(std::max(std::abs(s.b.x-s.a.x), std::abs(s.b.y-s.a.y)))));
+				for (int i = 0; i <= steps; ++i)
+				{
+					const double t = double(i) / steps;
+					const int x = int(std::lround(s.a.x + t*(s.b.x-s.a.x)));
+					const int y = int(std::lround(s.a.y + t*(s.b.y-s.a.y)));
+					if (cliprect.contains(x, y))
+						bitmap.pix(y, x) = machine().options().vector_rgb() ? s.pen : preview_white;
+				}
+			}
+#ifdef VECTRX2020_MAME
+			if (output)
+				output->add_segment(int(s.a.x*65536.0), int(s.a.y*65536.0), int(s.b.x*65536.0), int(s.b.y*65536.0), m_palette->pen_color(s.pen));
+#endif
+		}
+#ifdef VECTRX2020_MAME
+		if (output)
+			output->end_segment_frame();
+#endif
+		if ((screen.frame_number() % 120) == 0)
+			osd_printf_verbose("Starblade HLR: %u visible segments (limit %u)\n", unsigned(segments.size()), unsigned(namcos21_hlr::max_segments));
 	}
 	return 0;
 }
@@ -861,6 +921,11 @@ void namcos21_c67_state::starblad(machine_config &config)
 {
 	namcos21(config);
 	m_namcos21_dsp_c67->set_gametype(namcos21_dsp_c67_device::NAMCOS21_STARBLADE);
+	m_namcos21_3d->set_hlr_enabled(config.options().starblade_hlr() || config.options().starblade_hlr_preview());
+#ifdef VECTRX2020_MAME
+	if (config.options().starblade_hlr())
+		VECTRX2020(config, "starblade_vectors");
+#endif
 }
 
 void namcos21_c67_state::cybsled(machine_config &config)

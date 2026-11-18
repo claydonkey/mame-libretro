@@ -405,6 +405,8 @@ void vectrx2020_device::device_start() {
 			std::cerr << "Failed to set_dvg_settings." << std::endl;
 			return;
 		}
+		m_segment_ready = true;
+		osd_printf_info("Vectrx2020: initialization complete, host=%s\n", m_host.c_str());
 
 	}
 	catch (const std::exception& e) {
@@ -764,7 +766,15 @@ bool vectrx2020_device::get_dvg_info() {
 	std::string jsonOutput;
 
 	// Call GetDvgInfo with the version string and the output string
-	bool result = m_vector_device->GetDvgInfo(versionString, jsonOutput);
+	bool result = false;
+	for (int attempt = 1; attempt <= 3; ++attempt)
+	{
+		jsonOutput.clear();
+		result = m_vector_device->GetDvgInfo(versionString, jsonOutput);
+		if (result)
+			break;
+		osd_printf_error("Vectrx2020: device-info handshake failed (attempt %d/3)\n", attempt);
+	}
 
 	if (!result) {
 		std::cerr << "Failed to receive packet data." << std::endl;
@@ -970,6 +980,69 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity) {
 	last_x = x;
 	last_y = y;
 	last_color = color;
+}
+
+// Raster-derived segments use explicit endpoints and do not share the native
+// vector point stream's previous-point state. Coordinates are 16.16 pixels.
+bool vectrx2020_device::begin_segment_frame(screen_device &screen)
+{
+	const auto now = std::chrono::steady_clock::now();
+	const auto period = std::chrono::microseconds(1000000 / std::clamp(machine().options().int_value("starblade_hlr_rate"), 1, 60));
+	if (now < m_next_segment_frame)
+		return false;
+	// Keep the rate's phase, but discard missed deadlines instead of sending
+	// old frames in a burst after a stall. The caller always has current geometry.
+	m_next_segment_frame = now - m_next_segment_frame >= period ? now + period : m_next_segment_frame + period;
+	m_segment_points = 0;
+	m_xscale = (DVG_RES_MAX + 1.0f) / std::max(1, screen.visible_area().width() - 1);
+	m_yscale = (DVG_RES_MAX + 1.0f) / std::max(1, screen.visible_area().height() - 1);
+	return true;
+}
+
+void vectrx2020_device::add_segment(int x0, int y0, int x1, int y1, ::rgb_t color)
+{
+	if (!m_segment_ready)
+		return;
+	transform_and_scale_coords(&x0, &y0);
+	transform_and_scale_coords(&x1, &y1);
+	if (line_clip(&x0, &y0, &x1, &y1))
+	{
+		if (!m_st.settings.rgb)
+			color = ::rgb_t::white();
+		m_vector_device->AddPoint(x0, y0, vectrx2020::v_rgb_t::black());
+		m_vector_device->AddPoint(x1, y1, vectrx2020::v_rgb_t{ uint32_t(color) });
+	m_segment_points += 2;
+	}
+}
+
+void vectrx2020_device::end_segment_frame()
+{
+	if (!m_segment_ready)
+	{
+		if (!m_segment_warning)
+		{
+			osd_printf_error("Starblade HLR: hardware output blocked because device initialization failed\n");
+			machine().popmessage("Vectrx2020 initialization failed; see console for handshake errors");
+			m_segment_warning = true;
+		}
+		return;
+	}
+	// Do not submit empty point buffers during Starblade's boot sequence.
+	if (!m_segment_points)
+		return;
+	const auto send_started = std::chrono::steady_clock::now();
+	const bool sent = send_vectors();
+	const auto send_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - send_started).count();
+	if (send_ms >= 100)
+		osd_printf_warning("Starblade HLR: driver submission blocked for %lld ms (%u points)\n", static_cast<long long>(send_ms), m_segment_points);
+	if (!sent && !m_segment_warning)
+	{
+		osd_printf_error("Starblade HLR: SendPoints failed (%u points)\n", m_segment_points);
+		machine().popmessage("Vectrx2020 frame submission failed; see console");
+		m_segment_warning = true;
+	}
+	if ((m_segment_frames++ % 120) == 0)
+		osd_printf_verbose("Starblade HLR output: %u points, driver submission %s (%lld ms)\n", m_segment_points, sent ? "accepted" : "FAILED", static_cast<long long>(send_ms));
 }
 
 bool vectrx2020_device::send_vectors() {

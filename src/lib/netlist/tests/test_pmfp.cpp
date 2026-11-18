@@ -13,6 +13,7 @@
 #include "plib/ppmf.h"
 
 #include <memory>
+#include <cstring>
 #include <utility>
 
 ///     `plib::late_pmfp<plib::pmfp<void, pstring>> a(&nld_7493::printer);`
@@ -75,3 +76,32 @@ PTEST(test_compile, compile)
 	PEXPECT_EQ(int(plib::ppmf_internal_selector::value), int(plib::ppmf_type::INTERNAL_ARM));
 #endif
 }
+
+#if defined(_MSC_VER) && defined(_WIN64) && !defined(__clang__)
+namespace {
+	struct pmfp_padding_left { virtual ~pmfp_padding_left() = default; int left = 1; };
+	struct pmfp_padding_right { virtual ~pmfp_padding_right() = default; int right = 2; };
+	struct pmfp_padding_target : pmfp_padding_left, pmfp_padding_right {
+		int calls = 0;
+		void callback() { ++calls; }
+	};
+}
+
+PTEST(test_pmfp, msvc_multiple_inheritance_padding)
+{
+	pmfp_padding_target target;
+	using member_type = void (pmfp_padding_target::*)();
+	member_type member = &pmfp_padding_target::callback;
+	static_assert(sizeof(member_type) == 16);
+	unsigned char bytes[sizeof(member_type)];
+	std::memcpy(bytes, &member, sizeof(member));
+	// These are padding bytes in MSVC's non-virtual multiple-inheritance PMF.
+	std::memset(bytes + 12, 0xcc, 4);
+	std::memcpy(&member, bytes, sizeof(member));
+	(target.*member)();
+	PEXPECT_EQ(target.calls, 1);
+	plib::pmfp<void()> callback(member, &target);
+	callback();
+	PEXPECT_EQ(target.calls, 2);
+}
+#endif
