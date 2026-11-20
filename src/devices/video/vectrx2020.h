@@ -8,6 +8,7 @@
 #include "screen.h"
 #include "video/vector.h"
 #include "vectrx2020_ui.h"
+#include "vectrx_segment_stats.h"
 #include <WindowsDeviceHandler.h>
 
 #ifdef __GNUC__
@@ -154,6 +155,14 @@ private:
 	bool m_segment_warning = false;
 	unsigned m_segment_points = 0;
 	unsigned m_segment_frames = 0;
+	bool m_measure_segment_frame = false;
+	bool m_deduplicate_segment_frame = false;
+	unsigned m_segment_duplicates_removed = 0;
+	vectrx_segment_stats::duplicate_filter m_segment_duplicate_filter;
+	bool m_merge_segment_overlaps = false;
+	unsigned m_segment_overlaps_trimmed = 0;
+	vectrx_segment_stats::overlap_filter m_segment_overlap_filter;
+	std::vector<vectrx_segment_stats::segment> m_segment_measurements;
 	std::chrono::steady_clock::time_point m_next_segment_frame{};
 	std::unique_ptr<vectrx2020::WindowsDeviceHandler> m_vector_device;
 	bool m_centre_beam;

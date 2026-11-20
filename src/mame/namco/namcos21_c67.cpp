@@ -397,7 +397,8 @@ uint32_t namcos21_c67_state::screen_update(screen_device &screen, bitmap_ind16 &
 	}
 	if (machine().options().starblade_hlr() || machine().options().starblade_hlr_preview())
 	{
-		const auto segments = m_namcos21_3d->visible_hlr_segments();
+		const bool planet_outline = machine().options().bool_value("starblade_hlr_planet_outline");
+		const auto segments = m_namcos21_3d->visible_hlr_segments(planet_outline);
 		const bool preview = machine().options().starblade_hlr_preview();
 		uint16_t preview_white = 0;
 		if (preview)
@@ -449,7 +450,7 @@ uint32_t namcos21_c67_state::screen_update(screen_device &screen, bitmap_ind16 &
 			output->end_segment_frame();
 #endif
 		if ((screen.frame_number() % 120) == 0)
-			osd_printf_verbose("Starblade HLR: %u visible segments (limit %u)\n", unsigned(segments.size()), unsigned(namcos21_hlr::max_segments));
+			osd_printf_verbose("Starblade HLR: %u visible segments (limit %u), planet_outline=%u\n", unsigned(segments.size()), unsigned(namcos21_hlr::max_segments), unsigned(planet_outline));
 	}
 	return 0;
 }

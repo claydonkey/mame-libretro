@@ -31,7 +31,7 @@ public:
 	void swap_and_clear_poly_framebuffer();
 
 	void set_hlr_enabled(bool enabled) { m_hlr_enabled = enabled; }
-	std::vector<namcos21_hlr::segment> visible_hlr_segments() const;
+	std::vector<namcos21_hlr::segment> visible_hlr_segments(bool planet_outline = false) const;
 	void draw_quad(int sx[4], int sy[4], int zcode[4], int color);
 
 protected:
@@ -62,6 +62,7 @@ private:
 	std::unique_ptr<uint16_t[]> m_mpPolyFrameBufferZ2;
 
 	bool m_hlr_enabled = false;
+	mutable bool m_hlr_dump_written = false;
 	std::vector<namcos21_hlr::quad> m_hlr_work, m_hlr_visible;
 	int m_fixed_palbase;
 	int m_zz_shift, m_zzmult;

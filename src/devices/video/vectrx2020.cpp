@@ -994,6 +994,14 @@ bool vectrx2020_device::begin_segment_frame(screen_device &screen)
 	// old frames in a burst after a stall. The caller always has current geometry.
 	m_next_segment_frame = now - m_next_segment_frame >= period ? now + period : m_next_segment_frame + period;
 	m_segment_points = 0;
+	m_deduplicate_segment_frame = machine().options().bool_value("starblade_hlr_deduplicate");
+	m_segment_duplicate_filter.clear();
+	m_segment_duplicates_removed = 0;
+	m_merge_segment_overlaps = machine().options().bool_value("starblade_hlr_merge_overlaps");
+	m_segment_overlap_filter.clear();
+	m_segment_overlaps_trimmed = 0;
+	m_measure_segment_frame = machine().options().verbose() && (m_segment_frames % 120 == 0);
+	m_segment_measurements.clear();
 	m_xscale = (DVG_RES_MAX + 1.0f) / std::max(1, screen.visible_area().width() - 1);
 	m_yscale = (DVG_RES_MAX + 1.0f) / std::max(1, screen.visible_area().height() - 1);
 	return true;
@@ -1009,9 +1017,34 @@ void vectrx2020_device::add_segment(int x0, int y0, int x1, int y1, ::rgb_t colo
 	{
 		if (!m_st.settings.rgb)
 			color = ::rgb_t::white();
-		m_vector_device->AddPoint(x0, y0, vectrx2020::v_rgb_t::black());
-		m_vector_device->AddPoint(x1, y1, vectrx2020::v_rgb_t{ uint32_t(color) });
-	m_segment_points += 2;
+		if (m_measure_segment_frame || m_deduplicate_segment_frame)
+		{
+			// Match AddPoint's /4096 normalization and the driver's *4095
+			// wire packing so duplicate measurements include quantization.
+			auto wire = [](int value) { return std::clamp(value, 0, DVG_RES_MAX) * 4095 / 4096; };
+			const vectrx_segment_stats::segment final_segment{wire(x0), wire(y0), wire(x1), wire(y1), uint32_t(color)};
+			if (m_measure_segment_frame)
+				m_segment_measurements.push_back(final_segment);
+			if (m_deduplicate_segment_frame && !m_segment_duplicate_filter.accept(final_segment))
+			{
+				++m_segment_duplicates_removed;
+				return;
+			}
+		}
+		auto submit = [&](const vectrx_segment_stats::segment &s) {
+			m_vector_device->AddPoint(s.x0, s.y0, vectrx2020::v_rgb_t::black());
+			m_vector_device->AddPoint(s.x1, s.y1, vectrx2020::v_rgb_t{ s.color });
+			m_segment_points += 2;
+		};
+		const vectrx_segment_stats::segment original{x0, y0, x1, y1, uint32_t(color)};
+		if (m_merge_segment_overlaps)
+		{
+			const auto pieces = m_segment_overlap_filter.trim(original);
+			if (pieces.size() != 1 || vectrx_segment_stats::key_for(pieces.front()) != vectrx_segment_stats::key_for(original))
+				++m_segment_overlaps_trimmed;
+			for (const auto &piece : pieces) submit(piece);
+		}
+		else submit(original);
 	}
 }
 
@@ -1030,6 +1063,13 @@ void vectrx2020_device::end_segment_frame()
 	// Do not submit empty point buffers during Starblade's boot sequence.
 	if (!m_segment_points)
 		return;
+	if (m_measure_segment_frame)
+	{
+		const auto stats = vectrx_segment_stats::measure(m_segment_measurements);
+		osd_printf_verbose("Starblade HLR geometry: frame=%u segments=%u duplicate_edges=%u zero_length=%u connected=%u visible_length=%.1f covered_length=%.1f overlap_length=%.1f blank_travel=%.1f units=wire12\n",
+			m_segment_frames, stats.segments, stats.duplicates, stats.zero_length, stats.connected,
+			stats.visible_length, stats.covered_length, std::max(0.0, stats.visible_length - stats.covered_length), stats.blank_travel);
+	}
 	const auto send_started = std::chrono::steady_clock::now();
 	const bool sent = send_vectors();
 	const auto send_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - send_started).count();
@@ -1042,7 +1082,7 @@ void vectrx2020_device::end_segment_frame()
 		m_segment_warning = true;
 	}
 	if ((m_segment_frames++ % 120) == 0)
-		osd_printf_verbose("Starblade HLR output: %u points, driver submission %s (%lld ms)\n", m_segment_points, sent ? "accepted" : "FAILED", static_cast<long long>(send_ms));
+		osd_printf_verbose("Starblade HLR output: %u points, driver submission %s (%lld ms), deduplicate=%u removed=%u merge_overlaps=%u trimmed=%u\n", m_segment_points, sent ? "accepted" : "FAILED", static_cast<long long>(send_ms), unsigned(m_deduplicate_segment_frame), m_segment_duplicates_removed, unsigned(m_merge_segment_overlaps), m_segment_overlaps_trimmed);
 }
 
 bool vectrx2020_device::send_vectors() {

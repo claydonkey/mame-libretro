@@ -2,7 +2,9 @@
 // copyright-holders:Phil Stroffolino, David Haywood
 
 #include "emu.h"
+#include "emuopts.h"
 #include "namcos21_3d.h"
+#include <fstream>
 
 DEFINE_DEVICE_TYPE(NAMCOS21_3D, namcos21_3d_device, "namcos21_3d", "Namco System 21 3D Rasterizer")
 
@@ -263,9 +265,27 @@ void namcos21_3d_device::rendertri(const n21_vertex *v0, const n21_vertex *v1, c
 	}
 }
 
-std::vector<namcos21_hlr::segment> namcos21_3d_device::visible_hlr_segments() const
+std::vector<namcos21_hlr::segment> namcos21_3d_device::visible_hlr_segments(bool planet_outline) const
 {
-	return namcos21_hlr::extract(m_hlr_visible, m_mpPolyFrameBufferZ2.get(), m_poly_frame_width, m_poly_frame_height);
+	const char *dump_path = machine().options().value("starblade_hlr_dump");
+	if (!m_hlr_dump_written && dump_path && *dump_path && machine().time().as_double() >= 40.0 && !m_hlr_visible.empty())
+	{
+		m_hlr_dump_written = true;
+		std::ofstream dump(dump_path);
+		if (dump)
+		{
+			dump << "pen,x0,y0,z0,x1,y1,z1,x2,y2,z2,x3,y3,z3\n";
+			for (const auto &q : m_hlr_visible)
+			{
+				dump << q.pen;
+				for (const auto &v : q.v) dump << ',' << v.x << ',' << v.y << ',' << v.z;
+				dump << '\n';
+			}
+			osd_printf_info("Starblade HLR: saved %u quads to %s\n", unsigned(m_hlr_visible.size()), dump_path);
+		}
+		else osd_printf_error("Starblade HLR: cannot write quad snapshot to %s\n", dump_path);
+	}
+	return namcos21_hlr::extract(m_hlr_visible, m_mpPolyFrameBufferZ2.get(), m_poly_frame_width, m_poly_frame_height, planet_outline);
 }
 
 void namcos21_3d_device::draw_quad(int sx[4], int sy[4], int zcode[4], int color)
