@@ -67,6 +67,26 @@ public:
 	template<class BitmapClass>
 	void render_sprites(const rectangle cliprect, bitmap_ind8 *pri_bitmap, BitmapClass &temp_bitmap, int alt_precision);
 
+	// Visit the resolved tiles in the current indexed sprite frame.
+	template<class Visitor>
+	void visit_tiles(const rectangle &area, Visitor visit)
+	{
+		for (int list = 0; list < 2; ++list)
+			for (auto s = m_spritelist[list].get(); s != m_sprite_end[list]; ++s)
+			{
+				if (s->disable || s->pri > 7) continue;
+				rectangle clip = s->clip & area;
+				for (int i = 0; i < s->size; ++i)
+				{
+					if (s->tile[i] & 0x8000) continue;
+					int code = (m_code2tile(s->tile[i]) + s->offset) % gfx(0)->elements();
+					visit(code, s->color, s->x[i] >> 16, s->y[i] >> 16,
+						(s->zoomx[i]*16+0x8000)>>16, (s->zoomy[i]*16+0x8000)>>16,
+						s->flipx, s->flipy, clip, gfx(0)->get_data(code));
+				}
+			}
+	}
+
 	void clear_screen_bitmap() { m_screenbitmap.fill(0xffff); }
 	void clear_screen_bitmap(const rectangle cliprect) { m_screenbitmap.fill(0xffff, cliprect); }
 	bitmap_ind16 &screen_bitmap() { return m_screenbitmap; }

@@ -46,7 +46,7 @@ function devicesProject(_target, _subtarget)
 	}
 
 	defines {
-    -- 	"VECTRX2020_STATIC_LIB",
+    "VECTRX2020_STATIC_LIB",
 	--	"NOMINMAX",
   	 	"VECTRX2020_MAME"
 	}

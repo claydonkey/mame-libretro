@@ -46,6 +46,7 @@ includedirs {
 	ext_includedir("rapidjson")
 }
 defines {
+	"VECTRX2020_STATIC_LIB",
   	 	"VECTRX2020_MAME"
 	}
 configuration { }

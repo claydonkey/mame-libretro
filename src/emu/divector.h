@@ -12,17 +12,16 @@
 //**************************************************************************
 //  TYPE DEFINITIONS
 //**************************************************************************
- 
+
 
 class vector_interface : public device_t, public device_video_interface
 {
 public:
 	// construction/destruction
 	vector_interface(const machine_config& mconfig, device_type type, const char* tag, device_t* owner, uint32_t clock = 0);
-
+	 
 	virtual void add_line(float xf0, float yf0, float xf1, float yf1, int intensity);
-	virtual void add_point(int x, int y, rgb_t color, int intensity);
-	virtual bool mirror_enabled() const;
+	virtual void add_point(int x, int y, ::rgb_t color, int intensity);
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect);
 	virtual void device_start() override;
 	virtual void device_stop() override;

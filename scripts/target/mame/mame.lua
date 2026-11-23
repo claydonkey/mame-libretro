@@ -88,7 +88,7 @@ function createMAMEProjects(_target, _subtarget, _name)
 		MAME_DIR .. "../../vectrx2020_Device",
 	}
     defines {
-    	-- "VECTRX2020_STATIC_LIB",
+    	"VECTRX2020_STATIC_LIB",
        -- "NOMINMAX",
         "VECTRX2020_MAME"
     }

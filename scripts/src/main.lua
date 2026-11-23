@@ -274,6 +274,7 @@ end
 		ext_lib("vectrx2020_lib"),
 		"optional",
 		"emu",
+		"setupapi",
 		"ole32", 
 		"uuid"
 
@@ -384,6 +385,10 @@ end
 		MAME_DIR .. "../../vectrx2020_Device",
 		ext_includedir("zlib"),
 		ext_includedir("flac"),
+	}
+
+	defines {
+		"VECTRX2020_STATIC_LIB",
 	}
 
 	resincludedirs {

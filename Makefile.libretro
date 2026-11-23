@@ -322,7 +322,7 @@ endif
 # undefine <var> is not supported on make 3.81 (used by macosx).
 MAKEFILE :=
 
-all: build copy-vectrx2020-lib
+all: build
 
 build:
 	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS)

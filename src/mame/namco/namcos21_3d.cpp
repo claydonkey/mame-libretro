@@ -2,7 +2,9 @@
 // copyright-holders:Phil Stroffolino, David Haywood
 
 #include "emu.h"
+#include "emuopts.h"
 #include "namcos21_3d.h"
+#include <fstream>
 
 DEFINE_DEVICE_TYPE(NAMCOS21_3D, namcos21_3d_device, "namcos21_3d", "Namco System 21 3D Rasterizer")
 
@@ -21,10 +23,14 @@ namcos21_3d_device::namcos21_3d_device(const machine_config &mconfig, const char
 void namcos21_3d_device::device_start()
 {
 	allocate_poly_framebuffer();
+	// Derived geometry is transient; discard it when restoring a saved frame.
+	machine().save().register_postload(save_prepost_delegate(FUNC(namcos21_3d_device::device_reset), this));
 }
 
 void namcos21_3d_device::device_reset()
 {
+	m_hlr_work.clear();
+	m_hlr_visible.clear();
 }
 
 void namcos21_3d_device::allocate_poly_framebuffer()
@@ -50,6 +56,8 @@ void namcos21_3d_device::allocate_poly_framebuffer()
 
 void namcos21_3d_device::swap_and_clear_poly_framebuffer()
 {
+	m_hlr_work.swap(m_hlr_visible);
+	m_hlr_work.clear();
 	/* swap work and visible framebuffers */
 	m_mpPolyFrameBufferZ.swap(m_mpPolyFrameBufferZ2);
 
@@ -257,6 +265,29 @@ void namcos21_3d_device::rendertri(const n21_vertex *v0, const n21_vertex *v1, c
 	}
 }
 
+std::vector<namcos21_hlr::segment> namcos21_3d_device::visible_hlr_segments(bool planet_outline) const
+{
+	const char *dump_path = machine().options().value("starblade_hlr_dump");
+	if (!m_hlr_dump_written && dump_path && *dump_path && machine().time().as_double() >= 40.0 && !m_hlr_visible.empty())
+	{
+		m_hlr_dump_written = true;
+		std::ofstream dump(dump_path);
+		if (dump)
+		{
+			dump << "pen,x0,y0,z0,x1,y1,z1,x2,y2,z2,x3,y3,z3\n";
+			for (const auto &q : m_hlr_visible)
+			{
+				dump << q.pen;
+				for (const auto &v : q.v) dump << ',' << v.x << ',' << v.y << ',' << v.z;
+				dump << '\n';
+			}
+			osd_printf_info("Starblade HLR: saved %u quads to %s\n", unsigned(m_hlr_visible.size()), dump_path);
+		}
+		else osd_printf_error("Starblade HLR: cannot write quad snapshot to %s\n", dump_path);
+	}
+	return namcos21_hlr::extract(m_hlr_visible, m_mpPolyFrameBufferZ2.get(), m_poly_frame_width, m_poly_frame_height, planet_outline);
+}
+
 void namcos21_3d_device::draw_quad(int sx[4], int sy[4], int zcode[4], int color)
 {
 	n21_vertex a, b, c, d;
@@ -293,6 +324,14 @@ void namcos21_3d_device::draw_quad(int sx[4], int sy[4], int zcode[4], int color
 				color |= 0x100;
 			}
 		}
+	}
+	if (m_hlr_enabled && m_hlr_work.size() < namcos21_hlr::max_quads)
+	{
+		namcos21_hlr::quad q;
+		q.pen = color;
+		for (int i = 0; i < 4; ++i)
+			q.v[i] = { double(sx[i]), double(sy[i]), double(zcode[i]) };
+		m_hlr_work.push_back(q);
 	}
 	a.x = sx[0];
 	a.y = sy[0];

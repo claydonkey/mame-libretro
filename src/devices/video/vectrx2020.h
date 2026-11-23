@@ -6,9 +6,9 @@
 
 #include "osdcore.h"
 #include "screen.h"
-#include "divector.h"
-#include <vector>
+#include "video/vector.h"
 #include "vectrx2020_ui.h"
+#include "vectrx_segment_stats.h"
 #include <WindowsDeviceHandler.h>
 
 #ifdef __GNUC__
@@ -80,11 +80,14 @@ private:
 
 };
 
+
+
 using namespace std;
 using namespace vectrx2020;
 class vectrx2020_device : public vector_interface {
-
 public:
+
+
 	typedef struct {
 		const char* name;
 		bool exclude_blank_vectors;
@@ -93,27 +96,32 @@ public:
 	} game_info_t;
 
 	vectrx2020_device(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock = 0);
-	virtual void add_point(int x, int y, rgb_t color, int intensity) override;
+	virtual void add_point(int x, int y, ::rgb_t color, int intensity) override;
 	virtual uint32_t screen_update(screen_device& screen, bitmap_rgb32& bitmap, const rectangle& cliprect) override;
+	bool begin_segment_frame(screen_device &screen);
+	void add_segment(int x0, int y0, int x1, int y1, ::rgb_t color);
+	void end_segment_frame();
 	virtual void device_start() override;
 	virtual void device_reset() override;
 	virtual void device_stop() override;
-	virtual bool mirror_enabled() const override;
-
 	// ---- getters ----
-	int get_dwell() const;
-	int get_draw_steps() const;
-	bool get_rgb() const;
-	m_compression_level_t get_compression() const;
-	int get_dac_period() const;
-	int get_scale_x() const;
-	int get_scale_y() const;
-	int get_x_offset() const;
-	int get_y_offset() const;
-	m_orientation_enum get_orientation() const;
+	int                     get_dwell() const;
+	m_sync_mode_t           get_sync_mode() const;
+	int                     get_draw_steps() const;
+	m_compression_level_t   get_compression() const;
+	int                     get_dac_period() const;
+
+	int                     get_scale_x() const;
+	int                     get_scale_y() const;
+	int                     get_x_offset() const;
+	int                     get_y_offset() const;
+
+	m_orientation_enum      get_orientation() const;
+	bool                    get_rgb() const;
 
 	// ---- setters ----
 	void set_dwell(int dwell);
+	void set_sync_mode(m_sync_mode_t mode);
 	void set_draw_steps(int steps);
 	void set_compression(m_compression_level_t level);
 	void set_dac_period(int period);
@@ -124,13 +132,15 @@ public:
 	void set_orientation(m_orientation_enum orient);
 	void set_rgb(bool enable);
 	void set_vector_host(const char* host);
+
+	// ---- Libretro core-option hooks (called from libretro.cpp) ----
 	void set_mirror(bool mirror);
 	void set_render_mode(bool bresenham);
 	void begin_settings_update();
 	void end_settings_update();
 
 private:
-	bool m_exclude_blank_vectors =false;
+	bool m_exclude_blank_vectors;
 	int32_t m_xmin;
 	int32_t m_xmax;
 	int32_t m_ymin;
@@ -144,28 +154,38 @@ private:
 	bool m_bw_game;
 	uint32_t m_vertical_display;
 	static const game_info_t s_games[];
+	std::vector<dvg_pnt> m_points;
 	m_st_t m_st;
 	bool m_first_point = false;
+	bool m_segment_ready = false;
+	bool m_segment_warning = false;
+	unsigned m_segment_points = 0;
+	unsigned m_segment_frames = 0;
+	bool m_measure_segment_frame = false;
+	bool m_deduplicate_segment_frame = false;
+	unsigned m_segment_duplicates_removed = 0;
+	vectrx_segment_stats::duplicate_filter m_segment_duplicate_filter;
+	bool m_merge_segment_overlaps = false;
+	unsigned m_segment_overlaps_trimmed = 0;
+	vectrx_segment_stats::overlap_filter m_segment_overlap_filter;
+	std::vector<vectrx_segment_stats::segment> m_segment_measurements;
+	std::chrono::steady_clock::time_point m_next_segment_frame{};
 	std::unique_ptr<vectrx2020::WindowsDeviceHandler> m_vector_device;
 	bool m_centre_beam;
 	std::string  m_host;
-	bool m_mirror = false;
-	bool m_settings_dirty = false;
-	bool m_batch_update = false;
-	int m_last_x = 0;
-	int m_last_y = 0;
-	rgb_t m_last_color = rgb_t::black();
-	bool m_have_first_point = false;
-	bool send_vectors();
+
+	virtual bool send_vectors();
 	void transform_final(int* px, int* py);
 	uint32_t compute_code(int32_t x, int32_t y);
 	uint32_t line_clip(int32_t* pX1, int32_t* pY1, int32_t* pX2, int32_t* pY2);
+ 
 	void transform_and_scale_coords(int* px, int* py);
 	bool send_local_info();
 	bool get_dvg_info();
 	bool set_dvg_settings();
 	bool get_dvg_settings();
-	void cmd_reset(uint32_t initial);
+ 
+
 
 protected:
 	int32_t m_clipx_min;
