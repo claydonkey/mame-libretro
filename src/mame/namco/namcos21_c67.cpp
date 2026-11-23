@@ -256,6 +256,7 @@ Namco System 21 Video Hardware
 #include "emuopts.h"
 #ifdef VECTRX2020_MAME
 #include "video/vectrx2020.h"
+#include "hershey_simplex.h"
 #endif
 #include "speaker.h"
 #include "cpu/m68000/m68000.h"
@@ -398,7 +399,65 @@ uint32_t namcos21_c67_state::screen_update(screen_device &screen, bitmap_ind16 &
 	if (machine().options().starblade_hlr() || machine().options().starblade_hlr_preview())
 	{
 		const bool planet_outline = machine().options().bool_value("starblade_hlr_planet_outline");
-		const auto segments = m_namcos21_3d->visible_hlr_segments(planet_outline);
+		auto segments = m_namcos21_3d->visible_hlr_segments(planet_outline);
+#ifdef VECTRX2020_MAME
+		std::vector<namcos21_hlr::segment> hud;
+		m_c355spr->visit_tiles(cliprect, [&](int code, int bank, int x, int y, int w, int h,
+				bool flipx, bool flipy, const rectangle &clip, const u8 *pixels)
+		{
+			if (!w || !h || clip.empty() || x+w <= clip.left() || x > clip.right() ||
+					y+h <= clip.top() || y > clip.bottom()) return;
+			const bool sight = code >= 0x100 && code <= 0x110;
+			char c = 0;
+			for (int base : { 0x194, 0x1e2, 0x20a, 0x22f })
+			{
+				if (code >= base && code < base+26) c = 'A'+code-base;
+				if (code >= base+26 && code < base+36) c = '0'+code-base-26;
+			}
+			if (code >= 0x399 && code <= 0x3a2) c = '0'+code-0x399;
+			if (code >= 0x21 && code <= 0x5a) c = code;
+			if (code >= 0x61 && code <= 0x9a) c = code-0x40;
+			if (!c && !sight) return;
+			auto line = [&](double ax, double ay, double bx, double by, int ink)
+			{
+				auto point = [&](double u, double v) -> namcos21_hlr::vertex {
+					return { x+(flipx ? 15-u : u)*(w-1)/15-clip.left(),
+						y+(flipy ? 15-v : v)*(h-1)/15-clip.top(), 0 };
+				};
+				auto a = point(ax,ay), b = point(bx,by);
+				if (hud.size() >= namcos21_hlr::max_segments ||
+						!namcos21_hlr::clip(a,b,clip.width(),clip.height())) return;
+				a.x += clip.left(); b.x += clip.left();
+				a.y += clip.top(); b.y += clip.top();
+				hud.push_back({a,b,u16(0x1000+bank*256+ink)});
+			};
+			if (sight)
+			{
+				for (int row=0; row<16; ++row)
+					for (int col=0; col<16; ++col)
+					{
+						int ink=pixels[row*16+col];
+						if (ink==255) continue;
+						int start=col;
+						while (col<15 && pixels[row*16+col+1]==ink) ++col;
+						line(start,row,col+0.45,row,ink);
+					}
+				return;
+			}
+			auto ink = std::find_if(pixels,pixels+256,[](u8 v){ return v>1 && v<255; });
+			if (ink==pixels+256) return;
+			const auto &glyph = hershey_simplex[c-' '];
+			for (int i=1; i<glyph.count; ++i)
+			{
+				const auto *pt = glyph.points+2*i-2;
+				if (pt[0]==-1 || pt[2]==-1) continue;
+				line(pt[0]*15.0/glyph.width,15-pt[1]*14.0/21,
+					pt[2]*15.0/glyph.width,15-pt[3]*14.0/21,*ink);
+			}
+		});
+		segments.resize(std::min(segments.size(),namcos21_hlr::max_segments-hud.size()));
+		segments.insert(segments.end(),hud.begin(),hud.end());
+#endif
 		const bool preview = machine().options().starblade_hlr_preview();
 		uint16_t preview_white = 0;
 		if (preview)
