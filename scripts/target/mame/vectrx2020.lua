@@ -433,6 +433,7 @@ function createProjects_mame_vectrx2020(_target, _subtarget)
         }
         defines {
          --   "NOMINMAX",
+            "VECTRX2020_STATIC_LIB",
             "VECTRX2020_MAME"
         }
 end
