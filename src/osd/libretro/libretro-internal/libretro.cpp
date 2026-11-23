@@ -363,21 +363,6 @@ static void update_runtime_variables(bool startup)
 static void check_variables(void)
 {
 	struct retro_variable var = { 0 };
-	auto* mgr = mame_machine_manager::instance();
-	if (!mgr || !mgr->machine())
-		return;
-
-	auto& machine = *mgr->machine();
-	printf("machine exists: %p\n", mgr->machine());
-
-
-	auto* vect = machine.device<vectrx2020_device>("vector:vectrx2020");
-
-	printf("vect device: %p\n", vect);
-	if (!vect)
-		return;
-
-
 	var.key = CORE_NAME "_joystick_deadzone";
 	var.value = NULL;
 	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -683,6 +668,29 @@ static void check_variables(void)
 		sprintf(mediaType, "-%s", var.value);
 	}
 
+	var.key = CORE_NAME "_vectrx2020_vector_host";
+	var.value = NULL;
+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		strncpy(vectrx2020_host, var.value, sizeof(vectrx2020_host) - 1);
+		vectrx2020_host[sizeof(vectrx2020_host) - 1] = '\0';
+	}
+
+	// Vectrx2020 live settings need the running machine and its device
+	auto* mgr = mame_machine_manager::instance();
+	if (!mgr || !mgr->machine())
+		return;
+
+	auto& machine = *mgr->machine();
+	printf("machine exists: %p\n", mgr->machine());
+
+
+	auto* vect = machine.device<vectrx2020_device>("vector:vectrx2020");
+
+	printf("vect device: %p\n", vect);
+	if (!vect)
+		return;
+
 #define UPDATE_INT_SETTING(key_suffix, setter, type) \
     { \
         std::string key = std::string(CORE_NAME) + key_suffix; \
@@ -720,8 +728,12 @@ static void check_variables(void)
 	UPDATE_INT_SETTING("_vectrx2020_orientation", set_orientation, m_orientation_enum)
 	UPDATE_BOOL_SETTING("_vectrx2020_rgb", set_rgb)
 	UPDATE_BOOL_SETTING("_vectrx2020_mirror", set_mirror)
-	UPDATE_BOOL_SETTING("_vectrx2020_render_mode", set_render_mode)
-	UPDATE_STRING_SETTING("_vectrx2020_vector_host", set_vector_host)
+	{
+		std::string key = std::string(CORE_NAME) + "_vectrx2020_render_mode";
+		var.key = key.c_str();
+		if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+			vect->set_render_mode(strcmp(var.value, "bresenham") == 0);
+	}
 	vect->end_settings_update();
 
 

@@ -988,7 +988,7 @@ extern "C" {
 {
 		 CORE_NAME "_vectrx2020_vector_host",
 		 "Vectrx2020 Vector Host",
-		 "Select the host system for vector output.",
+		 "Select the host system for vector output (applies on next game load).",
 		 "",
 		 NULL,
 		 "vector",

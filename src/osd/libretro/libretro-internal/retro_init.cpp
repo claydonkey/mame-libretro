@@ -69,6 +69,7 @@ char mame_4way_map[256];
 char joystick_deadzone[8];
 char joystick_saturation[8];
 char joystick_threshold[8];
+char vectrx2020_host[64] = "vectrx2020";
 
 // emu flags
 static bool arcade = false;
@@ -494,6 +495,12 @@ static void Set_Default_Option(void)
    Add_Option(joystick_saturation);
    Add_Option("-joystick_threshold");
    Add_Option(joystick_threshold);
+
+   if (vectrx2020_host[0])
+   {
+      Add_Option("-vector_host");
+      Add_Option(vectrx2020_host);
+   }
 
    if (mame_4way_enable)
    {

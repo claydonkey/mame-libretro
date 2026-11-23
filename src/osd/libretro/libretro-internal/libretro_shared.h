@@ -102,6 +102,7 @@ extern char mame_4way_map[256];
 extern char joystick_deadzone[8];
 extern char joystick_saturation[8];
 extern char joystick_threshold[8];
+extern char vectrx2020_host[64];
 
 extern int fb_width;
 extern int fb_height;
