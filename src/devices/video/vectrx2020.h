@@ -10,6 +10,12 @@
 #include "vectrx2020_ui.h"
 #include "vectrx_segment_stats.h"
 #include <WindowsDeviceHandler.h>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <thread>
 
 #ifdef __GNUC__
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
@@ -171,8 +177,54 @@ private:
 	std::vector<vectrx_segment_stats::segment> m_segment_measurements;
 	std::chrono::steady_clock::time_point m_next_segment_frame{};
 	std::unique_ptr<vectrx2020::WindowsDeviceHandler> m_vector_device;
+
+	// ---- Libretro: batched settings, applied off the frame thread ----
+	// Declared after m_vector_device so it is destroyed, and its thread joined, first.
+	class settings_sender
+	{
+	public:
+		~settings_sender() { stop(); }
+		void post(const m_st_t &st, std::function<bool(const m_st_t &)> send);
+		void stop();
+		unsigned failures() const { return m_failures.load(); }
+
+	private:
+		void run();
+
+		std::thread m_thread;
+		std::mutex m_lock;
+		std::condition_variable m_wake;
+		std::function<bool(const m_st_t &)> m_send;
+		m_st_t m_pending{};
+		bool m_has_pending = false;
+		bool m_stop = false;
+		std::atomic<unsigned> m_failures{0};
+	};
+	bool m_batch_update = false;
+	bool m_settings_dirty = false;
+	settings_sender m_settings_sender;
+
 	bool m_centre_beam;
 	std::string  m_host;
+
+	// VEC2 spinner as a MAME mouse X axis (CTRL-001). A thread reads the
+	// driver's cached controller state; the item getter only reads the
+	// latest snapshot. Sticks and buttons are deliberately not exposed.
+	void start_controls();
+	void stop_controls();
+	static s32 controls_dial(void *device_internal, void *item_internal);
+	std::thread m_controls_thread;
+	std::atomic<bool> m_controls_stop{ false };
+	std::mutex m_controls_mutex;
+	controller_state_t m_controls_state{};
+	bool m_controls_valid = false;
+	bool m_controls_have_angle = false;
+	uint16_t m_controls_last_angle = 0;
+	int32_t m_controls_dial_pending = 0;   // MAME units not yet handed to MAME
+	int32_t m_controls_dial_latched = 0;   // MAME units reported for the current frame
+	std::chrono::steady_clock::time_point m_controls_last_motion{}; // last reported change
+	uint64_t m_controls_dial_frame = ~uint64_t(0);
+	screen_device *m_controls_screen = nullptr; // frame clock for the dial
 
 	virtual bool send_vectors();
 	void transform_final(int* px, int* py);

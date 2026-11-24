@@ -4,6 +4,7 @@
 #include "vector.h"
 #include "vectrx2020.h"
 #include "emuopts.h"
+#include "inputdev.h"
 #include "rendutil.h"
 
 #include <rapidjson/include/rapidjson/document.h>
@@ -406,6 +407,7 @@ void vectrx2020_device::device_start() {
 			return;
 		}
 		m_segment_ready = true;
+		start_controls();
 		osd_printf_info("Vectrx2020: initialization complete, host=%s\n", m_host.c_str());
 
 	}
@@ -620,11 +622,22 @@ void vectrx2020_device::begin_settings_update()
 {
 	// Use the settings cached at device start and by later setters. Reading the
 	// device here blocks the frame thread and zeroes the cache if the read fails.
+	// Setters only mark the settings dirty until end_settings_update().
+	m_batch_update = true;
+	m_settings_dirty = false;
 }
 
 void vectrx2020_device::end_settings_update()
 {
-	// the setters send each change immediately; nothing is batched
+	m_batch_update = false;
+	if (!m_settings_dirty)
+		return;
+	m_settings_dirty = false;
+
+	// One coalesced send per update, off the frame thread.
+	m_settings_sender.post(m_st, [this](const m_st_t &st) {
+		return m_vector_device && m_vector_device->SendDvgSettings(st);
+	});
 }
 
 bool vectrx2020_device::get_dvg_settings() {
@@ -632,14 +645,70 @@ bool vectrx2020_device::get_dvg_settings() {
 }
 
 bool vectrx2020_device::set_dvg_settings() {
+	if (m_batch_update) {
+		m_settings_dirty = true; // sent once by end_settings_update()
+		return true;
+	}
 	return m_vector_device->SendDvgSettings(m_st);
+}
+
+void vectrx2020_device::settings_sender::post(const m_st_t &st, std::function<bool(const m_st_t &)> send)
+{
+	{
+		std::lock_guard<std::mutex> guard(m_lock);
+		if (m_stop)
+			return;
+		m_pending = st; // newer settings replace any not yet sent
+		m_has_pending = true;
+		m_send = std::move(send);
+		if (!m_thread.joinable())
+			m_thread = std::thread([this] { run(); });
+	}
+	m_wake.notify_one();
+}
+
+void vectrx2020_device::settings_sender::stop()
+{
+	{
+		std::lock_guard<std::mutex> guard(m_lock);
+		m_stop = true;
+	}
+	m_wake.notify_one();
+	if (m_thread.joinable())
+		m_thread.join();
+}
+
+void vectrx2020_device::settings_sender::run()
+{
+	std::unique_lock<std::mutex> lock(m_lock);
+	for (;;)
+	{
+		m_wake.wait(lock, [this] { return m_has_pending || m_stop; });
+		if (m_has_pending)
+		{
+			m_st_t st = m_pending;
+			m_has_pending = false;
+			auto send = m_send;
+			lock.unlock();
+			if (!send || !send(st))
+				++m_failures;
+			lock.lock();
+			continue; // flush anything newer before honouring stop
+		}
+		if (m_stop)
+			return;
+	}
 }
 
 void vectrx2020_device::device_reset() {
 }
 
 void vectrx2020_device::device_stop() {
+	stop_controls();
 	try {
+		// Flush any pending core-option settings and stop the sender before exiting
+		m_settings_sender.stop();
+
 		// Send a command to the device to signal that we're about to close the connection
 		m_vector_device->SendExit();
 
@@ -658,6 +727,130 @@ void vectrx2020_device::device_stop() {
 		osd_printf_error("An unknown exception occurred while stopping the device.\n");
 	}
 }
+//-------------------------------------------------
+//  VEC2 spinner (CTRL-001)
+//-------------------------------------------------
+
+namespace {
+// MAME relative units per spinner count (the encoder has 4096 per turn).
+constexpr s32 CONTROLS_DIAL_SCALE = 128;
+// A still knob jitters by a few counts (about +/-2 measured). At rest, movement
+// only starts once the knob is further than this from the last reported angle;
+// while it is moving every count is reported.
+constexpr int32_t CONTROLS_DIAL_DEADBAND = 4;
+// The knob counts as moving for this long after the last reported change.
+constexpr auto CONTROLS_DIAL_MOVING = std::chrono::milliseconds(150);
+// Largest backlog of movement kept, in MAME units (1/8 turn), so readings that
+// arrive bunched cannot carry the control past where the knob stopped.
+constexpr int32_t CONTROLS_DIAL_BACKLOG = 512 * CONTROLS_DIAL_SCALE;
+}
+
+void vectrx2020_device::start_controls()
+{
+	const int player = machine().config().options().int_value("vector_controls"); // emuopts.cpp
+	if (player <= 0 || player > MAX_PLAYERS || !m_vector_device)
+		return;
+	// The first answer can take a while (name lookup, the device applying the
+	// settings just sent), so retry for about two seconds before giving up.
+	controller_state_t probe{};
+	bool answered = false;
+	for (int attempt = 0; attempt < 20 && !answered; ++attempt) {
+		answered = m_vector_device->ReceiveControllerState(probe);
+		if (!answered)
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+	if (!answered) {
+		osd_printf_info("Vectrx2020: spinner not available\n");
+		return;
+	}
+
+	// Only the spinner is exposed, as a mouse X axis. MAME's standard defaults
+	// use mouse X for the dial, paddle and trackball X; the device's sticks and
+	// buttons are not registered, so unwired pins cannot reach the game.
+	input_class &mice = machine().input().device_class(DEVICE_CLASS_MOUSE);
+	input_device &spinner = mice.add_device("Vectrx2020 spinner", "vectrx2020-spinner", this);
+	spinner.add_item("Spinner", std::string_view(), ITEM_ID_XAXIS, controls_dial, nullptr);
+
+	// Standard defaults follow the mouse index, so move the spinner to the
+	// requested player's slot; adjacent swaps keep the order of real mice.
+	int index = spinner.devindex();
+	for (const int target = player - 1; index > target; --index)
+		mice.remap_device_index(index, index - 1);
+	for (const int target = player - 1; index < target; ++index)
+		mice.remap_device_index(index, index + 1);
+
+#if defined(__LIBRETRO__)
+	// RetroArch owns the pointer, so enabling mouse input has no side effect.
+	if (!mice.enabled())
+		mice.enable(true);
+#else
+	// Windows MAME hides and captures the pointer when mouse input is on, so
+	// leave that to the game's ini (Tempest-style dial games set mouse 1).
+	if (!mice.enabled())
+		osd_printf_info("Vectrx2020: mouse input is off for this game; set 'mouse 1' in its ini to use the spinner\n");
+#endif
+
+	m_controls_screen = screen_device_enumerator(machine().root_device()).first();
+	m_controls_stop = false;
+	m_controls_thread = std::thread([this] {
+		while (!m_controls_stop) {
+			controller_state_t state{};
+			const bool ok = m_vector_device->ReceiveControllerState(state);
+			{
+				std::lock_guard<std::mutex> lock(m_controls_mutex);
+				m_controls_valid = ok;
+				if (ok) {
+					m_controls_state = state;
+					if (!m_controls_have_angle) {
+						m_controls_last_angle = state.spinner_angle;
+						m_controls_have_angle = true;
+					} else {
+						// Shortest way round the 12-bit encoder, measured from the last
+						// reported angle so jitter at rest never accumulates.
+						const int32_t delta = ((int32_t(state.spinner_angle) - int32_t(m_controls_last_angle) + 2048) & 4095) - 2048;
+						const auto now = std::chrono::steady_clock::now();
+						const bool moving = now - m_controls_last_motion < CONTROLS_DIAL_MOVING;
+						if (moving ? delta != 0 : std::abs(delta) > CONTROLS_DIAL_DEADBAND) {
+							m_controls_dial_pending = std::clamp(m_controls_dial_pending + delta * CONTROLS_DIAL_SCALE,
+								-CONTROLS_DIAL_BACKLOG, CONTROLS_DIAL_BACKLOG);
+							m_controls_last_angle = state.spinner_angle;
+							m_controls_last_motion = now;
+						}
+					}
+				} else {
+					m_controls_have_angle = false;
+				}
+			}
+			// Read the driver cache often (it refreshes about every 16 ms) so new
+			// angles reach MAME quickly; back off while it is unavailable.
+			std::this_thread::sleep_for(std::chrono::milliseconds(ok ? 8 : 250));
+		}
+	});
+	osd_printf_info("Vectrx2020: spinner is mouse %d (player %d dial, paddle and trackball X)\n", player, player);
+}
+
+void vectrx2020_device::stop_controls()
+{
+	m_controls_stop = true;
+	if (m_controls_thread.joinable())
+		m_controls_thread.join();
+}
+
+s32 vectrx2020_device::controls_dial(void *device_internal, void *)
+{
+	// Relative items report movement per frame: hand over all movement gathered
+	// since the previous frame once, and repeat that value within the frame.
+	auto &self = *static_cast<vectrx2020_device *>(device_internal);
+	const uint64_t frame = self.m_controls_screen ? self.m_controls_screen->frame_number() : 0;
+	std::lock_guard<std::mutex> lock(self.m_controls_mutex);
+	if (frame != self.m_controls_dial_frame) {
+		self.m_controls_dial_frame = frame;
+		self.m_controls_dial_latched = self.m_controls_dial_pending;
+		self.m_controls_dial_pending = 0;
+	}
+	return self.m_controls_valid ? self.m_controls_dial_latched : 0;
+}
+
 uint32_t vectrx2020_device::compute_code(int32_t x, int32_t y) {
 	// initialized as being inside 
 	uint32_t code = 0;
