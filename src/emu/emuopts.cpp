@@ -156,7 +156,7 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_VECTOR_RGB,                                 "0",        core_options::option_type::BOOLEAN,    "enable rgb" },
 	{ OPTION_VECTOR_DWELL,                               "0",        core_options::option_type::INTEGER,    "number of dwell steps at vector nodes" },
 	{ OPTION_VECTOR_DRAW_STEPS,                          "6",        core_options::option_type::INTEGER,    "number of draw steps for vector line" },
-	{ OPTION_VECTOR_SYNC_MODE,                           "2",        core_options::option_type::INTEGER,    "set vector screen sync mode" },
+	{ OPTION_VECTOR_SYNC_MODE,                           "2",        core_options::option_type::INTEGER,    "ignored: the Vectrx2020 frame swap is fixed (kept for old ini files)" },
 	{ OPTION_VECTOR_DAC_PERIOD,                          "300",      core_options::option_type::INTEGER,    "set the dac cycle period" },
 	{ OPTION_VECTOR_SCALE "(0.1-2.0)",                   "1.0",      core_options::option_type::FLOAT,      "set vector serial output scale" },
 	{ OPTION_VECTOR_SCALE_X "(0.1-2.0)",                 "1.0",      core_options::option_type::FLOAT,      "set vector x axis serial output scale" },
