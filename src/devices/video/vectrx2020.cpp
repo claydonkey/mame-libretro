@@ -400,6 +400,11 @@ void vectrx2020_device::device_start() {
 		m_st.settings.y_offset = machine().config().options().vector_offset_y();
 		m_st.settings.orientation = static_cast<m_orientation_enum>(machine().config().options().vector_rotate());
 		m_st.settings.rgb = machine().config().options().vector_rgb();
+		{
+			// Display output (DVG-OUTPUT-001); "auto" keeps the device setting.
+			const std::string_view output = machine().config().options().value("vector_output"); // emuopts.cpp
+			m_st.settings.output_mode = output == "rgb" ? mOUTPUT_RGB : output == "z" ? mOUTPUT_Z : output == "xy" ? mOUTPUT_XY : mOUTPUT_AUTO;
+		}
 
 
 		if (!set_dvg_settings()) {
