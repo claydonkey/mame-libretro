@@ -144,6 +144,8 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_VECTOR_PROTOCOL,                            "udp",       core_options::option_type::STRING,     "set vector ip protocol (tcp, udp)"} ,
 	{ OPTION_VECTOR_COMPRESSION "(0-17)",                "0",         core_options::option_type::INTEGER,     "set vector compression level (0-17 1==SAFE) " },
 	{ "vector_output",                                      "auto",      core_options::option_type::STRING,      "Vectrx2020 display: auto (device setting), rgb (colour monitor), z (scope with Z), xy (scope without Z)" },
+	{ "vector_auto_spacing",                                "keep",      core_options::option_type::STRING,      "Vectrx2020 automatic line spacing: keep (device setting), on, off" },
+	{ "vector_target_hz(0-200)",                            "0",         core_options::option_type::INTEGER,     "Vectrx2020 target refresh for automatic spacing (0 = device setting)" },
 	{ "vector_controls(0-8)",                               "1",         core_options::option_type::INTEGER,     "player whose dial, paddle and trackball X use the Vectrx2020 spinner (0 = off)" },
 	{ OPTION_VECTOR_PORT,                                "\\\\.\\COM4",  core_options::option_type::STRING,    "set vector serial port"},
 	{ OPTION_STARBLADE_HLR, "0", core_options::option_type::BOOLEAN, "send Starblade hidden-line polygons to Vectrx2020" },
