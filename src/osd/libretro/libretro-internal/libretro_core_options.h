@@ -853,21 +853,7 @@ extern "C" {
 			"6"
 		},
 
-		/* RGB Output */
-		{
-			CORE_NAME "_vectrx2020_rgb",
-			"Vectrx2020 RGB",
-			"Enable or disable RGB output",
-			"",
-			NULL,
-			"vector",
-			{
-				{ "disabled", NULL },
-				{ "enabled", NULL },
-				{ NULL, NULL }
-			},
-			"disabled"
-		},
+		/* RGB follows the Display Output (UI-OUTPUT-001); no separate option. */
 
 
 		/* Render mode */
@@ -1000,6 +986,90 @@ extern "C" {
 	},
 		 "vectrx2020"
 }, 
+		/* Vectrx2020 display output (DVG-OUTPUT-001) */
+		{
+			CORE_NAME "_vectrx2020_output",
+			"Vectrx2020 Display Output",
+			"What is connected to the Vectrx2020. Decides colour and blanking: RGB monitor = colours, a scope = monochrome; Scope + Z blanks moves, Scope XY jumps (applies on next game load).",
+			"",
+			NULL,
+			"vector",
+			{
+				{ "auto", "Device setting" },
+				{ "rgb", "RGB monitor" },
+				{ "z", "Scope + Z" },
+				{ "xy", "Scope XY" },
+				{ NULL, NULL }
+			},
+			"auto"
+		},
+		/* Vectrx2020 automatic drawing (DVG-AUTO-001/007/010) */
+		{
+			CORE_NAME "_vectrx2020_auto_drawing",
+			"Vectrx2020 Automatic Drawing",
+			"The device picks line spacing and timing itself; DAC Period and Draw Steps are then ignored (applies on next game load).",
+			"",
+			NULL,
+			"vector",
+			{
+				{ "keep", "Device setting" },
+				{ "on", "On" },
+				{ "off", "Off" },
+				{ NULL, NULL }
+			},
+			"keep"
+		},
+		{
+			CORE_NAME "_vectrx2020_smoothness",
+			"Vectrx2020 Line Smoothness",
+			"With automatic drawing: higher gives solid lines but fewer redraws a second, lower gives dotted lines and faster redraws (applies on next game load).",
+			"",
+			NULL,
+			"vector",
+			{
+				{ "0", "Device setting" },
+				{ "10", NULL }, { "20", NULL }, { "30", NULL }, { "40", NULL }, { "50", NULL },
+				{ "60", NULL }, { "70", NULL }, { "80", NULL }, { "90", NULL }, { "100", NULL },
+				{ NULL, NULL }
+			},
+			"0"
+		},
+		/* Vectrx2020 device controls */
+		{
+			CORE_NAME "_vectrx2020_controls",
+			"Vectrx2020 Spinner",
+			"Player whose dial, paddle and trackball X use the Vectrx2020 spinner (applies on next game load).",
+			"",
+			NULL,
+			"vector",
+			{
+				{ "1", "Player 1" },
+				{ "2", "Player 2" },
+				{ "3", "Player 3" },
+				{ "4", "Player 4" },
+				{ "0", "Off" },
+				{ NULL, NULL }
+			},
+			"1"
+		},
+		/* Compression */
+		{
+			CORE_NAME "_vectrx2020_compression",
+			"Vectrx2020 Compression",
+			"LZ4 compression of vector frames when the device firmware supports it (takes effect immediately).",
+			"",
+			NULL,
+			"vector",
+			{
+				{ "0", "Off" },
+				{ "1", "LZ4 (fast)" },
+				{ "4", "LZ4-HC low" },
+				{ "9", "LZ4-HC medium" },
+				{ "13", "LZ4-HC max" },
+				{ NULL, NULL }
+			},
+			"0"
+		},
 		/* Mirror */
 		{
 			CORE_NAME "_vectrx2020_mirror",

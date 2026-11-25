@@ -70,6 +70,10 @@ char joystick_deadzone[8];
 char joystick_saturation[8];
 char joystick_threshold[8];
 char vectrx2020_host[64] = "vectrx2020";
+char vectrx2020_controls[4] = "1";
+char vectrx2020_output[8] = "auto";
+char vectrx2020_auto_spacing[8] = "keep";
+char vectrx2020_smoothness[4] = "0";
 
 // emu flags
 static bool arcade = false;
@@ -501,6 +505,20 @@ static void Set_Default_Option(void)
       Add_Option("-vector_host");
       Add_Option(vectrx2020_host);
    }
+
+   /* Vectrx2020 display output: auto, rgb, z or xy */
+   Add_Option("-vector_output");
+   Add_Option(vectrx2020_output);
+
+   /* Vectrx2020 automatic drawing (keep, on, off) and line smoothness (0 = device setting) */
+   Add_Option("-vector_auto_spacing");
+   Add_Option(vectrx2020_auto_spacing);
+   Add_Option("-vector_brightness");
+   Add_Option(vectrx2020_smoothness);
+
+   /* Player for the Vectrx2020 device controls (0 = off) */
+   Add_Option("-vector_controls");
+   Add_Option(vectrx2020_controls);
 
    if (mame_4way_enable)
    {

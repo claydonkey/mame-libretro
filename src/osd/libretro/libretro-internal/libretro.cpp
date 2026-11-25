@@ -676,6 +676,38 @@ static void check_variables(void)
 		vectrx2020_host[sizeof(vectrx2020_host) - 1] = '\0';
 	}
 
+	var.key = CORE_NAME "_vectrx2020_output";
+	var.value = NULL;
+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		strncpy(vectrx2020_output, var.value, sizeof(vectrx2020_output) - 1);
+		vectrx2020_output[sizeof(vectrx2020_output) - 1] = '\0';
+	}
+
+	var.key = CORE_NAME "_vectrx2020_auto_drawing";
+	var.value = NULL;
+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		strncpy(vectrx2020_auto_spacing, var.value, sizeof(vectrx2020_auto_spacing) - 1);
+		vectrx2020_auto_spacing[sizeof(vectrx2020_auto_spacing) - 1] = '\0';
+	}
+
+	var.key = CORE_NAME "_vectrx2020_smoothness";
+	var.value = NULL;
+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		strncpy(vectrx2020_smoothness, var.value, sizeof(vectrx2020_smoothness) - 1);
+		vectrx2020_smoothness[sizeof(vectrx2020_smoothness) - 1] = '\0';
+	}
+
+	var.key = CORE_NAME "_vectrx2020_controls";
+	var.value = NULL;
+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+	{
+		strncpy(vectrx2020_controls, var.value, sizeof(vectrx2020_controls) - 1);
+		vectrx2020_controls[sizeof(vectrx2020_controls) - 1] = '\0';
+	}
+
 	// Vectrx2020 live settings need the running machine and its device
 	auto* mgr = mame_machine_manager::instance();
 	if (!mgr || !mgr->machine())
@@ -720,13 +752,14 @@ static void check_variables(void)
 	vect->begin_settings_update();
 	UPDATE_INT_SETTING("_vectrx2020_dac_period", set_dac_period, int)
 	UPDATE_INT_SETTING("_vectrx2020_dwell", set_dwell, int)
+	UPDATE_INT_SETTING("_vectrx2020_compression", set_compression, m_compression_level_t)
 	UPDATE_INT_SETTING("_vectrx2020_draw_steps", set_draw_steps, int)
 	UPDATE_INT_SETTING("_vectrx2020_scale_x", set_scale_x, int)
 	UPDATE_INT_SETTING("_vectrx2020_scale_y", set_scale_y, int)
 	UPDATE_INT_SETTING("_vectrx2020_x_offset", set_offset_x, int)
 	UPDATE_INT_SETTING("_vectrx2020_y_offset", set_offset_y, int)
 	UPDATE_INT_SETTING("_vectrx2020_orientation", set_orientation, m_orientation_enum)
-	UPDATE_BOOL_SETTING("_vectrx2020_rgb", set_rgb)
+	// RGB follows the Display Output (UI-OUTPUT-001): no live override.
 	UPDATE_BOOL_SETTING("_vectrx2020_mirror", set_mirror)
 	{
 		std::string key = std::string(CORE_NAME) + "_vectrx2020_render_mode";

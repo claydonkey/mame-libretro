@@ -103,6 +103,10 @@ extern char joystick_deadzone[8];
 extern char joystick_saturation[8];
 extern char joystick_threshold[8];
 extern char vectrx2020_host[64];
+extern char vectrx2020_controls[4];
+extern char vectrx2020_output[8];
+extern char vectrx2020_auto_spacing[8];
+extern char vectrx2020_smoothness[4];
 
 extern int fb_width;
 extern int fb_height;
