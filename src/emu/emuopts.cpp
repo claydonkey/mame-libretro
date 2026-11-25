@@ -158,7 +158,7 @@ const options_entry emu_options::s_option_entries[] =
 	{ "starblade_hlr_dump", "", core_options::option_type::STRING, "write one HLR quad diagnostic snapshot after 40 emulated seconds" },
 	{ "starblade_hlr_planet_outline", "1", core_options::option_type::BOOLEAN, "remove Starblade planet surface contours, keeping its outer silhouette" },
 	{ OPTION_VECTOR_SCREEN_MIRROR,                       "0",        core_options::option_type::BOOLEAN,    "enable screen mirror"},
-	{ OPTION_VECTOR_RGB,                                 "0",        core_options::option_type::BOOLEAN,    "enable rgb" },
+	{ OPTION_VECTOR_RGB,                                 "0",        core_options::option_type::BOOLEAN,    "colour output; ignored when vector_output is rgb, z or xy (rgb = colour, z/xy = monochrome)" },
 	{ OPTION_VECTOR_DWELL,                               "0",        core_options::option_type::INTEGER,    "number of dwell steps at vector nodes" },
 	{ OPTION_VECTOR_DRAW_STEPS,                          "6",        core_options::option_type::INTEGER,    "number of draw steps for vector line" },
 	{ OPTION_VECTOR_SYNC_MODE,                           "2",        core_options::option_type::INTEGER,    "ignored: the Vectrx2020 frame swap is fixed (kept for old ini files)" },
