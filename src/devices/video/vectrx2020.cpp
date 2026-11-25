@@ -404,6 +404,10 @@ void vectrx2020_device::device_start() {
 			// Display output (DVG-OUTPUT-001); "auto" keeps the device setting.
 			const std::string_view output = machine().config().options().value("vector_output"); // emuopts.cpp
 			m_st.settings.output_mode = output == "rgb" ? mOUTPUT_RGB : output == "z" ? mOUTPUT_Z : output == "xy" ? mOUTPUT_XY : mOUTPUT_AUTO;
+			// Automatic line spacing (DVG-AUTO-001); "keep" and 0 leave the device setting.
+			const std::string_view spacing = machine().config().options().value("vector_auto_spacing"); // emuopts.cpp
+			m_st.settings.auto_spacing = spacing == "on" ? mAUTO_SPACING_ON : spacing == "off" ? mAUTO_SPACING_OFF : mAUTO_SPACING_KEEP;
+			m_st.settings.target_hz = static_cast<uint16_t>(std::clamp(machine().config().options().int_value("vector_target_hz"), 0, 200));
 		}
 
 
