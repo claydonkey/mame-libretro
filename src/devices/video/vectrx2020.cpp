@@ -408,6 +408,9 @@ void vectrx2020_device::device_start() {
 			const std::string_view spacing = machine().config().options().value("vector_auto_spacing"); // emuopts.cpp
 			m_st.settings.auto_spacing = spacing == "on" ? mAUTO_SPACING_ON : spacing == "off" ? mAUTO_SPACING_OFF : mAUTO_SPACING_KEEP;
 			m_st.settings.target_hz = static_cast<uint16_t>(std::clamp(machine().config().options().int_value("vector_target_hz"), 0, 200));
+			// Beam-speed automatic drawing (DVG-AUTO-007); 0 leaves the device setting.
+			m_st.settings.brightness = static_cast<uint8_t>(std::clamp(machine().config().options().int_value("vector_brightness"), 0, 100));
+			m_st.settings.auto_dac_period = static_cast<uint16_t>(std::clamp(machine().config().options().int_value("vector_auto_dac_period"), 0, 1000));
 		}
 
 
