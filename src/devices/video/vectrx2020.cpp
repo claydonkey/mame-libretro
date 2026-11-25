@@ -605,6 +605,9 @@ void vectrx2020_device::set_orientation(m_orientation_enum orient)
 
 void vectrx2020_device::set_rgb(bool enable)
 {
+	// The display output decides colour (UI-OUTPUT-001/002); no override.
+	if (m_st.settings.output_mode != mOUTPUT_AUTO)
+		return;
 	if (m_st.settings.rgb == enable)
 		return;
 
@@ -949,7 +952,6 @@ bool vectrx2020_device::get_dvg_info() {
 
 		m_bw_game = false;
 		m_artwork = GAME_NONE;
-		m_exclude_blank_vectors = false;
 		if (!strcmp(emulator_info::get_appname_lower(), "mess")) {
 			m_bw_game = 1;
 		}
@@ -957,7 +959,6 @@ bool vectrx2020_device::get_dvg_info() {
 			for (int i = 0; s_games[i].name; i++) {
 				if (!strcmp(machine().system().name, s_games[i].name)) {
 					m_artwork = s_games[i].artwork;
-					m_exclude_blank_vectors = s_games[i].exclude_blank_vectors;
 					m_bw_game = s_games[i].bw_game;
 					break;
 				}
@@ -968,8 +969,6 @@ bool vectrx2020_device::get_dvg_info() {
 	{
 		return false;
 	}
-	//todo: check if need for RGB currently mhavoc needs this to be true
-	m_exclude_blank_vectors = true;
 	return true;
 
 }
@@ -1073,6 +1072,10 @@ void vectrx2020_device::add_point(int x, int y, ::rgb_t color, int intensity) {
 		add = false;
 	}
 
+	// Blank vectors follow the display type (UI-OUTPUT-002), not the game:
+	// XY cannot blank, so the device skips them and they are not sent; RGB,
+	// Z and auto send them and the device blanks the beam along them.
+	m_exclude_blank_vectors = m_st.settings.output_mode == mOUTPUT_XY;
 	if (m_exclude_blank_vectors)
 	{
 		if (add)
