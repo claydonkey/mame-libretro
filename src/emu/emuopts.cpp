@@ -148,6 +148,8 @@ const options_entry emu_options::s_option_entries[] =
 	{ "vector_target_hz(0-200)",                            "0",         core_options::option_type::INTEGER,     "ignored: the Vectrx2020 fits busy scenes to the game frame rate automatically" },
 	{ "vector_brightness(0-100)",                           "0",         core_options::option_type::INTEGER,     "Vectrx2020 automatic mode brightness 1-100 (0 = device setting)" },
 	{ "vector_auto_dac_period(0-1000)",                     "0",         core_options::option_type::INTEGER,     "Vectrx2020 fixed timer period in automatic mode (0 = device setting)" },
+	{ "vector_move_slew_per_ms(0-4095000)",                 "0",         core_options::option_type::INTEGER,     "Vectrx2020 calibrated blank moves: speed in DAC units per ms (0 = device setting, 1 = off)" },
+	{ "vector_move_settle_us(0-1000)",                      "0",         core_options::option_type::INTEGER,     "Vectrx2020 calibrated blank moves: extra settle after a full-screen move, us (0 = device setting)" },
 	{ "vector_controls(0-8)",                               "1",         core_options::option_type::INTEGER,     "player whose dial, paddle and trackball X use the Vectrx2020 spinner (0 = off)" },
 	{ OPTION_VECTOR_PORT,                                "\\\\.\\COM4",  core_options::option_type::STRING,    "set vector serial port"},
 	{ OPTION_STARBLADE_HLR, "0", core_options::option_type::BOOLEAN, "send Starblade hidden-line polygons to Vectrx2020" },
