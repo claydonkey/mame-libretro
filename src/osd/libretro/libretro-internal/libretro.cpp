@@ -968,6 +968,55 @@ void retro_run(void)
 
 	/* LED interface */
 	if (led_state_cb)
+/* Vectrx2020: one notification per game load with the drawing settings this
+ * core sends to the device, using the option labels ("device ..." when an
+ * option keeps the device's own setting). Libretro convention:
+ * SET_MESSAGE_EXT when the frontend's message interface is version 1 or
+ * later, SET_MESSAGE otherwise. Games without a Vectrx2020 device get none. */
+static bool vectrx2020_message_shown;
+static void vectrx2020_show_settings(void)
+{
+	if (vectrx2020_message_shown || !retro_load_ok)
+		return;
+	auto* mgr = mame_machine_manager::instance();
+	if (!mgr || !mgr->machine())
+		return;
+	vectrx2020_message_shown = true;
+	if (!mgr->machine()->device<vectrx2020_device>("vector:vectrx2020"))
+		return;
+
+	const char* output = !strcmp(vectrx2020_output, "rgb") ? "RGB monitor"
+		: !strcmp(vectrx2020_output, "z") ? "Scope + Z"
+		: !strcmp(vectrx2020_output, "xy") ? "Scope XY" : "device output";
+	const char* drawing = !strcmp(vectrx2020_auto_spacing, "on") ? "automatic drawing"
+		: !strcmp(vectrx2020_auto_spacing, "off") ? "manual drawing" : "device drawing mode";
+	char smoothness[32];
+	if (atoi(vectrx2020_smoothness) > 0)
+		snprintf(smoothness, sizeof(smoothness), "line smoothness %s", vectrx2020_smoothness);
+	else
+		snprintf(smoothness, sizeof(smoothness), "device line smoothness");
+	char compression[32] = "no compression";
+	struct retro_variable var = { CORE_NAME "_vectrx2020_compression", NULL };
+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && atoi(var.value) > 0)
+		snprintf(compression, sizeof(compression), "LZ4 level %s", var.value);
+
+	char msg[224];
+	snprintf(msg, sizeof(msg), "Vectrx2020 %s: %s, %s, %s, %s",
+		vectrx2020_host[0] ? vectrx2020_host : "device", output, drawing, smoothness, compression);
+	unsigned version = 0;
+	if (environ_cb(RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION, &version) && version >= 1)
+	{
+		struct retro_message_ext ext = { msg, 6000, 1, RETRO_LOG_INFO,
+			RETRO_MESSAGE_TARGET_ALL, RETRO_MESSAGE_TYPE_NOTIFICATION, -1 };
+		environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, &ext);
+	}
+	else
+	{
+		struct retro_message plain = { msg, 360 }; /* frames, about 6 s */
+		environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &plain);
+	}
+}
+
 		retro_led_interface();
 
 	if (first_run)
@@ -981,6 +1030,7 @@ void retro_run(void)
 #if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES)
 	do_glflush();
 #else
+	vectrx2020_show_settings();
 	if (draw_this_frame)
 		video_cb(videoBuffer, fb_width, fb_height, fb_width << LOG_PIXEL_BYTES);
 	else
@@ -1017,6 +1067,7 @@ bool retro_load_game(const struct retro_game_info* info)
 	RPATH[0] = '\0';
 
 	if (info && info->path)
+	vectrx2020_message_shown = false;
 	{
 		// Extract directory for MAME (artwork, samples, etc.)
 		extract_directory(g_rom_dir, info->path, sizeof(g_rom_dir));
