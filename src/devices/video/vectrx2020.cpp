@@ -415,6 +415,8 @@ void vectrx2020_device::device_start() {
 			// Beam-speed automatic drawing (DVG-AUTO-007); 0 leaves the device setting.
 			m_st.settings.brightness = static_cast<uint8_t>(std::clamp(machine().config().options().int_value("vector_brightness"), 0, 100));
 			m_st.settings.auto_dac_period = static_cast<uint16_t>(std::clamp(machine().config().options().int_value("vector_auto_dac_period"), 0, 1000));
+			m_st.settings.move_slew_per_ms = static_cast<uint32_t>(std::clamp(machine().config().options().int_value("vector_move_slew_per_ms"), 0, 4095000));
+			m_st.settings.move_settle_us = static_cast<uint16_t>(std::clamp(machine().config().options().int_value("vector_move_settle_us"), 0, 1000));
 		}
 
 
