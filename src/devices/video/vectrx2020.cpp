@@ -403,7 +403,8 @@ void vectrx2020_device::device_start() {
 		{
 			// Display output (DVG-OUTPUT-001); "auto" keeps the device setting.
 			const std::string_view output = machine().config().options().value("vector_output"); // emuopts.cpp
-			m_st.settings.output_mode = output == "rgb" ? mOUTPUT_RGB : output == "z" ? mOUTPUT_Z : output == "xy" ? mOUTPUT_XY : mOUTPUT_AUTO;
+			m_st.settings.output_mode = output == "rgb" ? mOUTPUT_RGB : output == "z" ? mOUTPUT_Z : output == "xy" ? mOUTPUT_XY :
+				output == "intensity" ? mOUTPUT_Z_INTENSITY : mOUTPUT_AUTO; // intensity: analog Z (DVG-ZDAC-001)
 			// The output decides colour (UI-OUTPUT-001): RGB monitor = colours, a scope
 			// (with or without Z) = monochrome; vector_rgb only applies to "auto".
 			if (m_st.settings.output_mode != mOUTPUT_AUTO)
@@ -1256,7 +1257,8 @@ void vectrx2020_device::add_segment(int x0, int y0, int x1, int y1, ::rgb_t colo
 	transform_and_scale_coords(&x1, &y1);
 	if (line_clip(&x0, &y0, &x1, &y1))
 	{
-		if (!m_st.settings.rgb)
+		// Mono: full beam, except with analog Z intensity, which uses the colour's level (DVG-ZDAC-001).
+		if (!m_st.settings.rgb && m_st.settings.output_mode != mOUTPUT_Z_INTENSITY)
 			color = ::rgb_t::white();
 		if (m_measure_segment_frame || m_deduplicate_segment_frame)
 		{

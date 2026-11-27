@@ -987,7 +987,8 @@ static void vectrx2020_show_settings(void)
 
 	const char* output = !strcmp(vectrx2020_output, "rgb") ? "RGB monitor"
 		: !strcmp(vectrx2020_output, "z") ? "Scope + Z"
-		: !strcmp(vectrx2020_output, "xy") ? "Scope XY" : "device output";
+		: !strcmp(vectrx2020_output, "xy") ? "Scope XY"
+		: !strcmp(vectrx2020_output, "intensity") ? "Scope + Z intensity" : "device output";
 	const char* drawing = !strcmp(vectrx2020_auto_spacing, "on") ? "automatic drawing"
 		: !strcmp(vectrx2020_auto_spacing, "off") ? "manual drawing" : "device drawing mode";
 	char smoothness[32];

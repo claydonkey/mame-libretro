@@ -990,7 +990,7 @@ extern "C" {
 		{
 			CORE_NAME "_vectrx2020_output",
 			"Vectrx2020 Display Output",
-			"What is connected to the Vectrx2020. Decides colour and blanking: RGB monitor = colours, a scope = monochrome; Scope + Z blanks moves, Scope XY jumps (applies on next game load).",
+			"What is connected to the Vectrx2020. Decides colour and blanking: RGB monitor = colours, a scope = monochrome; Scope + Z blanks moves, Scope XY jumps, Scope + Z intensity drives brightness levels on the Z DAC (PA6) (applies on next game load).",
 			"",
 			NULL,
 			"vector",
@@ -999,6 +999,7 @@ extern "C" {
 				{ "rgb", "RGB monitor" },
 				{ "z", "Scope + Z" },
 				{ "xy", "Scope XY" },
+				{ "intensity", "Scope + Z intensity" },
 				{ NULL, NULL }
 			},
 			"auto"
